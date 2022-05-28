@@ -1,0 +1,44 @@
+using Netcorext.Auth.Enums;
+using Netcorext.Contracts;
+using Netcorext.Mediator;
+
+namespace Netcorext.Auth.API.Services.User;
+
+public class UpdateUser : IRequest<Result>
+{
+    public long Id { get; set; }
+    public string? Username { get; set; }
+    public string? Password { get; set; }
+    public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
+    public bool? TwoFactorEnabled { get; set; }
+    public bool? RequiredChangePassword { get; set; }
+    public int? TokenExpireSeconds { get; set; }
+    public int? RefreshTokenExpireSeconds { get; set; }
+    public int? CodeExpireSeconds { get; set; }
+    public bool? Disabled { get; set; }
+    public UserRole[]? Roles { get; set; }
+    public UserExtendData[]? ExtendData { get; set; }
+    public UserExternalLogin[]? ExternalLogins { get; set; }
+
+    public class UserRole
+    {
+        public CRUD CRUD { get; set; }
+        public long RoleId { get; set; }
+        public DateTimeOffset? ExpireDate { get; set; }
+    }
+
+    public class UserExtendData
+    {
+        public CRUD CRUD { get; set; }
+        public string Key { get; set; } = null!;
+        public string? Value { get; set; }
+    }
+
+    public class UserExternalLogin
+    {
+        public CRUD CRUD { get; set; }
+        public string Provider { get; set; } = null!;
+        public string UniqueId { get; set; } = null!;
+    }
+}

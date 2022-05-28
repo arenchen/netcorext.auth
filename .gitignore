@@ -336,6 +336,9 @@ Properties\PublishProfiles
 Thumbs.db
 *.bak
 
+### appsettings.json
+appsettings.override.json
+
 ### Web.config
 Web.*.config
 

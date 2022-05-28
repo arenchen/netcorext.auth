@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{080F684A-CF39-4F81-810A-04DA1129E3B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netcorext.Auth.API", "src\Netcorext.Auth.API\Netcorext.Auth.API.csproj", "{69668299-0D19-4C91-82D0-CDCFAAB079B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netcorext.Auth.Authentication", "src\Netcorext.Auth.Authentication\Netcorext.Auth.Authentication.csproj", "{BDA81175-AAF2-4328-8B82-887E68BCF539}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netcorext.Auth.Authorization", "src\Netcorext.Auth.Authorization\Netcorext.Auth.Authorization.csproj", "{9206EB85-23F7-4B34-B912-A6AE7CD3F62B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netcorext.Auth.Core", "src\Netcorext.Auth.Core\Netcorext.Auth.Core.csproj", "{9A93016B-04C8-4FA8-8A28-95F9AD8EAF4F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{69668299-0D19-4C91-82D0-CDCFAAB079B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69668299-0D19-4C91-82D0-CDCFAAB079B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69668299-0D19-4C91-82D0-CDCFAAB079B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69668299-0D19-4C91-82D0-CDCFAAB079B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDA81175-AAF2-4328-8B82-887E68BCF539}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDA81175-AAF2-4328-8B82-887E68BCF539}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDA81175-AAF2-4328-8B82-887E68BCF539}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDA81175-AAF2-4328-8B82-887E68BCF539}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9206EB85-23F7-4B34-B912-A6AE7CD3F62B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9206EB85-23F7-4B34-B912-A6AE7CD3F62B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9206EB85-23F7-4B34-B912-A6AE7CD3F62B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9206EB85-23F7-4B34-B912-A6AE7CD3F62B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A93016B-04C8-4FA8-8A28-95F9AD8EAF4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A93016B-04C8-4FA8-8A28-95F9AD8EAF4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A93016B-04C8-4FA8-8A28-95F9AD8EAF4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A93016B-04C8-4FA8-8A28-95F9AD8EAF4F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{69668299-0D19-4C91-82D0-CDCFAAB079B3} = {080F684A-CF39-4F81-810A-04DA1129E3B4}
+		{BDA81175-AAF2-4328-8B82-887E68BCF539} = {080F684A-CF39-4F81-810A-04DA1129E3B4}
+		{9206EB85-23F7-4B34-B912-A6AE7CD3F62B} = {080F684A-CF39-4F81-810A-04DA1129E3B4}
+		{9A93016B-04C8-4FA8-8A28-95F9AD8EAF4F} = {080F684A-CF39-4F81-810A-04DA1129E3B4}
+	EndGlobalSection
+EndGlobal

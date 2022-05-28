@@ -1,0 +1,46 @@
+<Project>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="5.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="1.5" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="10.4"/>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.46" />
+    <PackageReference Include="Mapster" Version="7.3" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Netcorext.Algorithms.Otp" Version="1.0" />
+    <PackageReference Include="Netcorext.Algorithms.Snowflake" Version="1.0" />
+    <PackageReference Include="Netcorext.Auth.Extensions.AspNetCore" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Auth.Protobufs" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Contracts.Abstractions" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Diagnostics.HealthChecks.AspNetCore" Version="1.0" />
+    <PackageReference Include="Netcorext.Diagnostics.HealthChecks.PostgreSql" Version="1.0" />
+    <PackageReference Include="Netcorext.Diagnostics.HealthChecks.Redis" Version="1.0" />
+    <PackageReference Include="Netcorext.Diagnostics.HealthChecks.Version" Version="1.0" />
+    <PackageReference Include="Netcorext.Extensions.AspNetCore" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Commons" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Contracts.AspNetCore" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.DependencyInjection.AspNetCore" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Grpc" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Hash" Version="1.0" />
+    <PackageReference Include="Netcorext.Extensions.Linq" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Logging.AspNetCoreLogger" Version="1.0" />
+    <PackageReference Include="Netcorext.Logging.HttpClientLogger" Version="1.0" />
+    <PackageReference Include="Netcorext.Mediator" Version="1.0.0-dev.*" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="../Netcorext.Auth.Core/Netcorext.Auth.Core.csproj" />
+  </ItemGroup>
+
+</Project>
