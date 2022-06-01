@@ -33,7 +33,6 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
     public async Task<Result> Handle(RegisterRoute request, CancellationToken cancellationToken = default)
     {
         var ds = _context.Set<Domain.Entities.Route>();
-        var dsRouteValue = _context.Set<Domain.Entities.RouteValue>();
 
         Expression<Func<Domain.Entities.Route, bool>> predicate = p => false;
 
@@ -47,10 +46,6 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 
         if (await qRoute.AnyAsync(cancellationToken))
         {
-            // var qRouteValue = qRoute.SelectMany(t => t.RouteValues);
-            //
-            // if (await qRouteValue.AnyAsync(cancellationToken)) dsRouteValue.RemoveRange(qRoute.SelectMany(t => t.RouteValues));
-
             ds.RemoveRange(qRoute);
         }
 
