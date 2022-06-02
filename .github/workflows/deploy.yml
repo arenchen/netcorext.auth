@@ -57,7 +57,7 @@ jobs:
           FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine AS base
           ENV ASPNETCORE_ENVIRONMENT=Production
           WORKDIR /app
-          VOLUME [ "appsetting.override.json" ]
+          VOLUME [ "/app/appsettings.override.json" ]
           EXPOSE 80 443
 
           FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
