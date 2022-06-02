@@ -41,6 +41,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
 
         if (request.ExtendData != null && request.ExtendData.Any())
         {
+            // 先將請求資料依照 CRUD 進行分組
             var gExtendData = request.ExtendData
                                      .GroupBy(t => t.CRUD, (mode, data) => new
                                                                            {
@@ -82,6 +83,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
 
         if (request.Permissions != null && request.Permissions.Any())
         {
+            // 先將請求資料依照 CRUD 進行分組
             var gPermissions = request.Permissions
                                       .GroupBy(t => t.CRUD, (mode, data) => new
                                                                             {

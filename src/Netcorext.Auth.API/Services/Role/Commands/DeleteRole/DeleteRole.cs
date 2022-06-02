@@ -5,5 +5,5 @@ namespace Netcorext.Auth.API.Services.Role;
 
 public class DeleteRole : IRequest<Result>
 {
-    public long Id { get; set; }
+    public long[] Ids { get; set; }
 }

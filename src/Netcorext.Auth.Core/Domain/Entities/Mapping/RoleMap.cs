@@ -8,8 +8,7 @@ public class RoleMap : EntityMap<Role>
     public RoleMap(ModelBuilder modelBuilder) : base(modelBuilder)
     {
         // Indexes
-        Builder.HasIndex(t => t.Name)
-               .IsUnique();
+        Builder.HasIndex(t => t.Name);
 
         // Properties
         Builder.Property(t => t.Name)

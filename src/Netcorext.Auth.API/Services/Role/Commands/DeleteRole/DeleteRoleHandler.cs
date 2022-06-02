@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
+using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
 namespace Netcorext.Auth.API.Services.Role;
@@ -18,7 +20,11 @@ public class DeleteRoleHandler : IRequestHandler<DeleteRole, Result>
     {
         var ds = _context.Set<Domain.Entities.Role>();
 
-        var qRole = ds.Where(t => t.Id == request.Id);
+        Expression<Func<Domain.Entities.Role, bool>> predicate = p => false;
+
+        predicate = request.Ids.Aggregate(predicate, (current, id) => current.Or(t => t.Id == id));
+
+        var qRole = ds.Where(predicate);
 
         if (!await qRole.AnyAsync(cancellationToken)) return Result.Success;
         

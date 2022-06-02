@@ -23,7 +23,7 @@ public class ServiceConfig
                 .AddRequestPipeline<UserChangeNotifyPipeline, CreateUser, Result<long?>>()
                 .AddRequestPipeline<UserChangeNotifyPipeline, UpdateUser, Result>()
                 .AddRequestPipeline<UserChangeNotifyPipeline, DeleteUser, Result>()
-                .AddRequestPipeline<RoleChangeNotifyPipeline, CreateRole, Result<long?>>()
+                .AddRequestPipeline<RoleChangeNotifyPipeline, CreateRole, Result<IEnumerable<long>>>()
                 .AddRequestPipeline<RoleChangeNotifyPipeline, UpdateRole, Result>()
                 .AddRequestPipeline<RoleChangeNotifyPipeline, DeleteRole, Result>();
     }

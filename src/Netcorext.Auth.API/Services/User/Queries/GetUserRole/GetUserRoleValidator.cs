@@ -6,6 +6,6 @@ public class GetUserRoleValidator : AbstractValidator<GetUserRole>
 {
     public GetUserRoleValidator()
     {
-        RuleFor(t => t.Id).NotEmpty();
+        RuleFor(t => t.Ids).NotEmpty();
     }
 }

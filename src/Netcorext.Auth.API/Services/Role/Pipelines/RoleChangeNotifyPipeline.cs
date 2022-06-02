@@ -8,7 +8,7 @@ using Netcorext.Mediator.Pipelines;
 
 namespace Netcorext.Auth.API.Services.Role.Pipelines;
 
-public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<long?>>,
+public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnumerable<long>>>,
                                         IRequestPipeline<UpdateRole, Result>,
                                         IRequestPipeline<DeleteRole, Result>
 {
@@ -23,12 +23,12 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<long
         _config = config.Value;
     }
     
-    public async Task<Result<long?>?> InvokeAsync(CreateRole request, PipelineDelegate<Result<long?>> next, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<long>>?> InvokeAsync(CreateRole request, PipelineDelegate<Result<IEnumerable<long>>> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
         
-        if (result == Result.Success && result.Content.HasValue)
-            await NotifyAsync(result.Content.Value);
+        if (result == Result.Success && result.Content != null)
+            await NotifyAsync(result.Content.ToArray());
 
         return result;
     }
@@ -48,7 +48,7 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<long
         var result = await next(request, cancellationToken);
         
         if (result == Result.Success)
-            await NotifyAsync(request.Id);
+            await NotifyAsync(request.Ids);
 
         return result;
     }

@@ -5,5 +5,5 @@ namespace Netcorext.Auth.API.Services.User;
 
 public class GetUserRole : IRequest<Result<IEnumerable<Models.SimpleUserRole>>>
 {
-    public long Id { get; set; }
+    public long[] Ids { get; set; } = null!;
 }

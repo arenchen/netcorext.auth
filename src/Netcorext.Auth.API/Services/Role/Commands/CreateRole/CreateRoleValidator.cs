@@ -6,13 +6,18 @@ public class CreateRoleValidator : AbstractValidator<CreateRole>
 {
     public CreateRoleValidator()
     {
-        RuleFor(t => t.Name).NotEmpty();
+        RuleFor(t => t.Roles).NotEmpty();
 
-        RuleForEach(t => t.Permissions).ChildRules(c =>
-                                                   {
-                                                       c.RuleFor(t => t.FunctionId).NotEmpty();
-                                                       c.RuleFor(t => t.PermissionType).IsInEnum().NotEmpty();
-                                                       c.RuleFor(t => t.ExpireDate).GreaterThan(t => DateTimeOffset.UtcNow).When(t => t.ExpireDate.HasValue);
-                                                   });
+        RuleForEach(t => t.Roles).ChildRules(c =>
+                                             {
+                                                 c.RuleFor(t => t.Name).NotEmpty();
+
+                                                 c.RuleForEach(t2 => t2.Permissions).ChildRules(c2 =>
+                                                                                                {
+                                                                                                    c2.RuleFor(t => t.FunctionId).NotEmpty();
+                                                                                                    c2.RuleFor(t => t.PermissionType).IsInEnum().NotEmpty();
+                                                                                                    c2.RuleFor(t => t.ExpireDate).GreaterThan(t => DateTimeOffset.UtcNow).When(t => t.ExpireDate.HasValue);
+                                                                                                });
+                                             });
     }
 }

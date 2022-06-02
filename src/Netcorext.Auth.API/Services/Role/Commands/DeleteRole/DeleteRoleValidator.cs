@@ -6,6 +6,6 @@ public class DeleteRoleValidator : AbstractValidator<DeleteRole>
 {
     public DeleteRoleValidator()
     {
-        RuleFor(t => t.Id).NotEmpty();
+        RuleFor(t => t.Ids).NotEmpty();
     }
 }

@@ -4,13 +4,18 @@ using Netcorext.Mediator;
 
 namespace Netcorext.Auth.API.Services.Role;
 
-public class CreateRole : IRequest<Result<long?>>
+public class CreateRole : IRequest<Result<IEnumerable<long>>>
 {
-    public string? Name { get; set; }
-    public int Priority { get; set; }
-    public bool Disabled { get; set; }
-    public RoleExtendData[]? ExtendData { get; set; }
-    public Permission[]? Permissions { get; set; }
+    public Role[] Roles { get; set; } = null!;
+
+    public class Role
+    {
+        public string Name { get; set; } = null!;
+        public int Priority { get; set; }
+        public bool Disabled { get; set; }
+        public RoleExtendData[]? ExtendData { get; set; }
+        public Permission[]? Permissions { get; set; }    
+    }
 
     public class RoleExtendData
     {
