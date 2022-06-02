@@ -29,7 +29,6 @@ jobs:
           ADDITIONAL_ARGUMENTS="-c Debug --version-suffix ${BRANCH}.${COMMIT_TIME}+${COMMIT_SHORT_SHA}"
           TAG_LATEST="${BRANCH}-latest"
 
-
           if [ "$BRANCH" = "main" ]; then
             ADDITIONAL_ARGUMENTS="-c Release"
             TAG_LATEST="latest"
