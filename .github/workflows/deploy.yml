@@ -27,9 +27,12 @@ jobs:
           COMMIT_COUNT=`git rev-list --count HEAD`
           COMMIT_TIME=`git show -s --format=%ct HEAD`
           ADDITIONAL_ARGUMENTS="-c Debug --version-suffix ${BRANCH}.${COMMIT_TIME}+${COMMIT_SHORT_SHA}"
+          TAG_LATEST="${BRANCH}-latest"
+
 
           if [ "$BRANCH" = "main" ]; then
             ADDITIONAL_ARGUMENTS="-c Release"
+            TAG_LATEST="latest"
           fi
     
           dotnet build src/Netcorext.Auth.Authentication/Netcorext.Auth.Authentication.csproj -o ./dist
@@ -51,6 +54,7 @@ jobs:
           echo "ADDITIONAL_ARGUMENTS=$ADDITIONAL_ARGUMENTS" >> $GITHUB_ENV
           echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_ENV
           echo "IMAGE_VERSION=$IMAGE_VERSION" >> $GITHUB_ENV
+          echo "TAG_LATEST=$TAG_LATEST" >> $GITHUB_ENV
       - name: Create Dockerfile
         run: |
           cat > dockerfile << EOF
@@ -87,6 +91,7 @@ jobs:
           tags: |
             netcorext/netcorext.auth.authentication:${{ env.COMMIT_SHORT_SHA }}
             netcorext/netcorext.auth.authentication:${{ env.IMAGE_VERSION }}
+            netcorext/netcorext.auth.authentication:${{ env.TAG_LATEST }}
       - name: Build and push Netcorext.Auth.Authorization image
         uses: docker/build-push-action@v3
         with:
@@ -96,6 +101,7 @@ jobs:
           tags: |
             netcorext/netcorext.auth.authorization:${{ env.COMMIT_SHORT_SHA }}
             netcorext/netcorext.auth.authorization:${{ env.IMAGE_VERSION }}
+            netcorext/netcorext.auth.authorization:${{ env.TAG_LATEST }}
       - name: Build and push Netcorext.Auth.API image
         uses: docker/build-push-action@v3
         with:
@@ -105,3 +111,4 @@ jobs:
           tags: |
             netcorext/netcorext.auth.api:${{ env.COMMIT_SHORT_SHA }}
             netcorext/netcorext.auth.api:${{ env.IMAGE_VERSION }}
+            netcorext/netcorext.auth.api:${{ env.TAG_LATEST }}
