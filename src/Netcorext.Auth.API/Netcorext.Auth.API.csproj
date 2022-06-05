@@ -2,9 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
-  
+
   <Import Project="../Packages.targets" />
   <Import Project="../Versioning.targets" />
 

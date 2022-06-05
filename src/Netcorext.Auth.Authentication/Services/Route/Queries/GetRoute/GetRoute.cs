@@ -3,7 +3,7 @@ using Netcorext.Mediator;
 
 namespace Netcorext.Auth.Authentication.Services.Route;
 
-public class GetRoute : IRequest<Result<IEnumerable<Models.Route>>>
+public class GetRoute : IRequest<Result<IEnumerable<Models.RouteGroup>>>
 {
-    public long[]? Ids { get; set; }
+    public long[]? GroupIds { get; set; }
 }

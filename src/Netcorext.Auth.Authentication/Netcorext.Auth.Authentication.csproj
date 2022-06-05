@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Netcorext.Worker.Abstractions" Version="1.0.0-dev.1651650976" />
   </ItemGroup>
-  
+
   <Import Project="../Packages.targets" />
   <Import Project="../Versioning.targets" />
 

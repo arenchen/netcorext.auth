@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Netcorext.Configuration;
-using Yarp.ReverseProxy.Forwarder;
 
 namespace Netcorext.Auth.Authentication.Settings;
 
@@ -24,15 +22,11 @@ public class AppSettings
     public int HealthCheckTimeout { get; set; } = 15 * 1000;
     public int CacheTokenExpires { get; set; } = 30 * 60 * 1000;
     public bool UseNativeStatus { get; set; }
-    public string HttpHostMatchPattern { get; set; } = "*:10080";
-    public string Http2HostMatchPattern { get; set; } = "*:10081";
     public string InternalHost { get; set; } = "localhost";
     public string HttpBaseUrl { get; set; } = null!;
     public string Http2BaseUrl { get; set; } = null!;
-
-    public ForwarderRequestConfig ForwarderRequestConfig { get; set; } = new()
-                                                                         {
-                                                                             Version = new Version(2, 0),
-                                                                             VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
-                                                                         };
+    public string? ForwarderRequestVersion { get; set; }
+    public HttpVersionPolicy? ForwarderHttpVersionPolicy { get; set; }
+    public TimeSpan? ForwarderActivityTimeout { get; set; }
+    public bool? ForwarderAllowResponseBuffering { get; set; }
 }

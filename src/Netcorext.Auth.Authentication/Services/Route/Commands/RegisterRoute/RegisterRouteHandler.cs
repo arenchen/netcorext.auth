@@ -32,58 +32,100 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 
     public async Task<Result> Handle(RegisterRoute request, CancellationToken cancellationToken = default)
     {
-        var ds = _context.Set<Domain.Entities.Route>();
+        var ds = _context.Set<Domain.Entities.RouteGroup>();
+        var dsRoute = _context.Set<Domain.Entities.Route>();
 
-        Expression<Func<Domain.Entities.Route, bool>> predicate = p => false;
+        Expression<Func<Domain.Entities.RouteGroup, bool>> predicate = p => false;
 
-        predicate = request.Routes!
-                           .Select(t => t)
-                           .Distinct()
-                           .Aggregate(predicate, (current, route) => current.Or(p => p.Group == route.Group && p.RelativePath.ToUpper() == route.RelativePath.ToUpper()));
+        predicate = request.Groups.Aggregate(predicate, (current, g) => current.Or(t => t.Name.ToUpper() == g.Name.ToUpper()));
 
-        var qRoute = ds.Include(t => t.RouteValues)
-                       .Where(predicate);
+        var groups = ds.Include(t => t.Routes).ThenInclude(t => t.RouteValues)
+                       .Where(predicate)
+                       .ToArray();
 
-        if (await qRoute.AnyAsync(cancellationToken))
-        {
-            ds.RemoveRange(qRoute);
-        }
+        var requestGroups = request.Groups.Select(t =>
+                                                  {
+                                                      var gid = _snowflake.Generate();
 
-        var entRoutes = request.Routes!.Select(t =>
-                                               {
-                                                   var id = _snowflake.Generate();
+                                                      return new Domain.Entities.RouteGroup
+                                                             {
+                                                                 Id = gid,
+                                                                 Name = t.Name,
+                                                                 BaseUrl = t.BaseUrl,
+                                                                 ForwarderRequestVersion = t.ForwarderRequestVersion,
+                                                                 ForwarderHttpVersionPolicy = t.ForwarderHttpVersionPolicy,
+                                                                 ForwarderActivityTimeout = t.ForwarderActivityTimeout,
+                                                                 ForwarderAllowResponseBuffering = t.ForwarderAllowResponseBuffering,
+                                                                 Routes = t.Routes.Select(t2 =>
+                                                                                          {
+                                                                                              var id = _snowflake.Generate();
 
-                                                   return new Domain.Entities.Route
-                                                          {
-                                                              Id = id,
-                                                              Group = t.Group,
-                                                              Protocol = t.Protocol.ToUpper(),
-                                                              HttpMethod = t.HttpMethod.ToUpper(),
-                                                              BaseUrl = t.BaseUrl,
-                                                              RelativePath = t.RelativePath,
-                                                              Template = t.Template,
-                                                              FunctionId = t.FunctionId,
-                                                              NativePermission = t.NativePermission,
-                                                              AllowAnonymous = t.AllowAnonymous,
-                                                              Tag = t.Tag,
-                                                              RouteValues = (t.RouteValues ?? Array.Empty<RegisterRoute.RouteValue>())
-                                                                           .Select(t2 => new Domain.Entities.RouteValue
-                                                                                         {
-                                                                                             Id = id,
-                                                                                             Key = t2.Key,
-                                                                                             Value = t2.Value
-                                                                                         })
-                                                                           .ToArray()
-                                                          };
-                                               })
-                               .ToArray();
+                                                                                              return new Domain.Entities.Route
+                                                                                                     {
+                                                                                                         Id = id,
+                                                                                                         GroupId = gid,
+                                                                                                         Protocol = t2.Protocol.ToUpper(),
+                                                                                                         HttpMethod = t2.HttpMethod.ToUpper(),
+                                                                                                         RelativePath = t2.RelativePath,
+                                                                                                         Template = t2.Template,
+                                                                                                         FunctionId = t2.FunctionId,
+                                                                                                         NativePermission = t2.NativePermission,
+                                                                                                         AllowAnonymous = t2.AllowAnonymous,
+                                                                                                         Tag = t2.Tag,
+                                                                                                         RouteValues = (t2.RouteValues ?? Array.Empty<RegisterRoute.RouteValue>())
+                                                                                                                      .Select(t3 => new Domain.Entities.RouteValue
+                                                                                                                                    {
+                                                                                                                                        Id = id,
+                                                                                                                                        Key = t3.Key,
+                                                                                                                                        Value = t3.Value
+                                                                                                                                    })
+                                                                                                                      .ToHashSet()
+                                                                                                     };
+                                                                                          })
+                                                                           .ToHashSet()
+                                                             };
+                                                  })
+                                   .ToHashSet();
 
-        await ds.AddRangeAsync(entRoutes, cancellationToken);
+        var diffGroups = groups.IntersectExcept(requestGroups, t => t.Name);
+
+        if (diffGroups.FirstExcept.Any())
+            ds.RemoveRange(diffGroups.FirstExcept);
+
+        if (diffGroups.SecondExcept.Any())
+            await ds.AddRangeAsync(diffGroups.SecondExcept, cancellationToken);
+
+        diffGroups.FirstIntersect.Merge(diffGroups.SecondIntersect, t => t.Name,
+                                        (src, desc) =>
+                                        {
+                                            src.BaseUrl = desc.BaseUrl;
+                                            src.ForwarderRequestVersion = desc.ForwarderRequestVersion;
+                                            src.ForwarderHttpVersionPolicy = desc.ForwarderHttpVersionPolicy;
+                                            src.ForwarderActivityTimeout = desc.ForwarderActivityTimeout;
+                                            src.ForwarderAllowResponseBuffering = desc.ForwarderAllowResponseBuffering;
+
+                                            dsRoute.RemoveRange(src.Routes);
+
+                                            src.Routes = desc.Routes
+                                                             .Select(t =>
+                                                                     {
+                                                                         t.GroupId = src.Id;
+
+                                                                         return t;
+                                                                     })
+                                                             .ToHashSet();
+
+                                            return src;
+                                        });
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var ids = entRoutes.Select(t => t.Id).ToArray();
-        
+        var ids = diffGroups.FirstExcept.Select(t => t.Id)
+                            .Union(diffGroups.SecondExcept.Select(t => t.Id))
+                            .Union(diffGroups.FirstIntersect.Select(t => t.Id))
+                            .Distinct()
+                            .ToArray();
+
         _redis.Publish(_config.Queues[ConfigSettings.QUEUES_ROUTE_CHANGE_EVENT], JsonSerializer.Serialize(ids, _jsonOptions));
 
         return Result.Success;

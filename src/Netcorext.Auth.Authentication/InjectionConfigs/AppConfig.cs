@@ -16,7 +16,7 @@ public class AppConfig
     public AppConfig(WebApplication app)
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
-        
+
         app.EnsureCreateDatabase<Domain.Entities.Route>();
         app.UseMiddleware<TokenMiddleware>();
         app.UseJwtAuthentication();
@@ -40,10 +40,10 @@ public class AppConfig
         app.UseSimpleHealthChecks(provider =>
                                   {
                                       var routePrefixValue = config.AppSettings.RoutePrefix?.Replace("$id", config.Id).ToLower() ?? "";
-        
+
                                       return "/" + routePrefixValue + config.AppSettings.HealthRoute;
                                   });
-        
+
         app.MapGrpcService<RouteServiceFacade>();
         app.MapGrpcService<PermissionServiceFacade>();
 
@@ -51,30 +51,42 @@ public class AppConfig
                                         {
                                             var request = new RegisterRoute
                                                           {
-                                                              Routes = endpoints.Select(t => new RegisterRoute.Route
+                                                              Groups = endpoints.GroupBy(t => t.Protocol)
+                                                                                .Select(t => new RegisterRoute.RouteGroup
                                                                                              {
-                                                                                                 Group = t.Group,
-                                                                                                 Protocol = t.Protocol,
-                                                                                                 HttpMethod = t.HttpMethod,
-                                                                                                 BaseUrl = HttpProtocols.Http2.ToString().Equals(t.Protocol, StringComparison.OrdinalIgnoreCase)
+                                                                                                 Name = config.Id + " - " + t.Key,
+                                                                                                 BaseUrl = HttpProtocols.Http2.ToString().Equals(t.Key, StringComparison.OrdinalIgnoreCase)
                                                                                                                ? config.AppSettings.Http2BaseUrl
                                                                                                                : config.AppSettings.HttpBaseUrl,
-                                                                                                 RelativePath = t.RelativePath,
-                                                                                                 Template = t.Template,
-                                                                                                 FunctionId = t.FunctionId,
-                                                                                                 NativePermission = t.NativePermission,
-                                                                                                 AllowAnonymous = t.AllowAnonymous,
-                                                                                                 Tag = t.Tag,
-                                                                                                 RouteValues = t.RouteValues
-                                                                                                                .Select(t2 => new RegisterRoute.RouteValue
-                                                                                                                              {
-                                                                                                                                  Key = t2.Key,
-                                                                                                                                  Value = t2.Value
-                                                                                                                              })
+                                                                                                 ForwarderRequestVersion = config.AppSettings.ForwarderRequestVersion,
+                                                                                                 ForwarderHttpVersionPolicy = config.AppSettings.ForwarderHttpVersionPolicy,
+                                                                                                 ForwarderActivityTimeout = config.AppSettings.ForwarderActivityTimeout,
+                                                                                                 ForwarderAllowResponseBuffering = config.AppSettings.ForwarderAllowResponseBuffering,
+                                                                                                 Routes = t.Select(t2 => new RegisterRoute.Route
+                                                                                                                         {
+                                                                                                                             Protocol = t2.Protocol,
+                                                                                                                             HttpMethod = t2.HttpMethod,
+                                                                                                                             RelativePath = t2.RelativePath,
+                                                                                                                             Template = t2.Template,
+                                                                                                                             FunctionId = t2.FunctionId,
+                                                                                                                             NativePermission = t2.NativePermission,
+                                                                                                                             AllowAnonymous = t2.AllowAnonymous,
+                                                                                                                             Tag = t2.Tag,
+                                                                                                                             RouteValues = t2.RouteValues
+                                                                                                                                             .Select(t3 => new RegisterRoute.RouteValue
+                                                                                                                                                           {
+                                                                                                                                                               Key = t3.Key,
+                                                                                                                                                               Value = t3.Value
+                                                                                                                                                           })
+                                                                                                                                             .ToArray()
+                                                                                                                         })
+                                                                                                           .ToArray()
                                                                                              })
+                                                                                .ToArray()
                                                           };
 
                                             var dispatcher = provider.GetRequiredService<IDispatcher>();
+
                                             dispatcher.SendAsync(request).GetAwaiter().GetResult();
                                         });
 

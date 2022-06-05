@@ -1,3 +1,4 @@
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authorization.Services.Authorization;
@@ -16,7 +17,7 @@ public class AppConfig
     public AppConfig(WebApplication app)
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
-        
+
         app.EnsureCreateDatabase<Domain.Entities.Route>();
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseJwtAuthentication();
@@ -40,10 +41,7 @@ public class AppConfig
             var docRoute = config.DocumentUrl.Replace("$id", config.Id).ToLower();
 
             app.MapSwagger(docRoute + "/{documentName}/swagger.json");
-            // app.UseSwagger(options =>
-            //                {
-            //                    options.RouteTemplate = docRoute + "/{documentName}/swagger.json";
-            //                });
+
             app.UseSwaggerUI(options =>
                              {
                                  options.SwaggerEndpoint("v1/swagger.json", typeof(ConfigSettings).Assembly.GetName().Name);
@@ -65,36 +63,47 @@ public class AppConfig
                                         {
                                             var request = new RegisterRouteRequest
                                                           {
-                                                              Routes =
+                                                              Groups =
                                                               {
-                                                                  endpoints.Select(t => new RegisterRouteRequest.Types.Route
+                                                                  endpoints.GroupBy(t => t.Protocol)
+                                                                           .Select(t => new RegisterRouteRequest.Types.RouteGroup
                                                                                         {
-                                                                                            Group = t.Group,
-                                                                                            Protocol = t.Protocol,
-                                                                                            HttpMethod = t.HttpMethod,
-                                                                                            BaseUrl = HttpProtocols.Http2.ToString().Equals(t.Protocol, StringComparison.OrdinalIgnoreCase)
+                                                                                            Name = config.Id + " - " + t.Key,
+                                                                                            BaseUrl = HttpProtocols.Http2.ToString().Equals(t.Key, StringComparison.OrdinalIgnoreCase)
                                                                                                           ? config.AppSettings.Http2BaseUrl
                                                                                                           : config.AppSettings.HttpBaseUrl,
-                                                                                            RelativePath = t.RelativePath,
-                                                                                            Template = t.Template,
-                                                                                            FunctionId = t.FunctionId,
-                                                                                            NativePermission = t.NativePermission.ToProtobufPermissionType(),
-                                                                                            AllowAnonymous = t.AllowAnonymous,
-                                                                                            Tag = t.Tag,
-                                                                                            RouteValues =
+                                                                                            ForwarderRequestVersion = config.AppSettings.ForwarderRequestVersion,
+                                                                                            ForwarderHttpVersionPolicy = config.AppSettings.ForwarderHttpVersionPolicy.HasValue ? (int)config.AppSettings.ForwarderHttpVersionPolicy.Value : null,
+                                                                                            ForwarderActivityTimeout = config.AppSettings.ForwarderActivityTimeout.HasValue ? Duration.FromTimeSpan(config.AppSettings.ForwarderActivityTimeout.Value) : null,
+                                                                                            ForwarderAllowResponseBuffering = config.AppSettings.ForwarderAllowResponseBuffering,
+                                                                                            Routes =
                                                                                             {
-                                                                                                t.RouteValues.Select(t2 => new RegisterRouteRequest.Types.RouteValue
-                                                                                                                           {
-                                                                                                                               Key = t2.Key,
-                                                                                                                               Value = t2.Value
-                                                                                                                           })
+                                                                                                t.Select(t2 => new RegisterRouteRequest.Types.Route
+                                                                                                               {
+                                                                                                                   Protocol = t2.Protocol,
+                                                                                                                   HttpMethod = t2.HttpMethod,
+                                                                                                                   RelativePath = t2.RelativePath,
+                                                                                                                   Template = t2.Template,
+                                                                                                                   FunctionId = t2.FunctionId,
+                                                                                                                   NativePermission = t2.NativePermission.ToProtobufPermissionType(),
+                                                                                                                   AllowAnonymous = t2.AllowAnonymous,
+                                                                                                                   Tag = t2.Tag,
+                                                                                                                   RouteValues =
+                                                                                                                   {
+                                                                                                                       t2.RouteValues.Select(t3 => new RegisterRouteRequest.Types.RouteValue
+                                                                                                                                                   {
+                                                                                                                                                       Key = t3.Key,
+                                                                                                                                                       Value = t3.Value
+                                                                                                                                                   })
+                                                                                                                   }
+                                                                                                               })
                                                                                             }
                                                                                         })
                                                               }
                                                           };
-        
+
                                             var routeService = provider.GetRequiredService<RouteService.RouteServiceClient>();
-        
+
                                             routeService.RegisterRoute(request);
                                         });
 
