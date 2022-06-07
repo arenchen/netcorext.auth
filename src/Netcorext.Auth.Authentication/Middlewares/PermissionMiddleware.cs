@@ -38,14 +38,16 @@ internal class PermissionMiddleware
 
         _dispatcher = context.RequestServices.GetRequiredService<IDispatcher>();
 
-        var permissionEndpoints = _cache.Get<Dictionary<long, Services.Route.Models.Route>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Models.Route>();
+        var permissionEndpoints = _cache.Get<Dictionary<long, Services.Route.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Models.RouteGroup>();
         var allowAnonymous = false;
         var functionId = string.Empty;
         var role = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Role)?.Value;
         var path = context.Request.GetPath();
         var method = context.Request.GetMethod();
 
-        foreach (var endpoint in permissionEndpoints.Values)
+        var endpoints = permissionEndpoints.Values.SelectMany(t => t.Routes);
+
+        foreach (var endpoint in endpoints)
         {
             var template = TemplateParser.Parse(endpoint.Template);
 
@@ -89,7 +91,7 @@ internal class PermissionMiddleware
                           .Where(t => !t.IsEmpty() && long.TryParse(t, out var _))
                           .Select(long.Parse)
                           .ToArray();
-        
+
         var result = await _dispatcher.SendAsync(new ValidatePermission
                                                  {
                                                      RoleId = roleIds,
@@ -102,6 +104,7 @@ internal class PermissionMiddleware
                                                                                           })
                                                                              .ToArray()
                                                  });
+
         return result == Result.Success;
     }
 }
