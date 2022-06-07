@@ -80,7 +80,7 @@ internal class PermissionMiddleware
             }
         }
 
-        await context.ForbiddenAsync();
+        await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
     }
 
     private async Task<bool> IsValidAsync(string? role, string functionId, string httpMethod, RouteValueDictionary routeValues)
