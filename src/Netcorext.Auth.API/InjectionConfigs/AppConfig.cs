@@ -40,9 +40,9 @@ public class AppConfig
 
         app.UseSimpleHealthChecks(provider =>
                                   {
-                                      var routePrefixValue = config.AppSettings.RoutePrefix?.Replace("$id", config.Id).ToLower() ?? "";
+                                      var routePrefixValue = config.AppSettings.HealthRoute?.Replace("$id", config.Id).ToLower() ?? "";
 
-                                      return "/" + routePrefixValue + config.AppSettings.HealthRoute;
+                                      return routePrefixValue;
                                   });
 
         app.MapGrpcService<ClientServiceFacade>();
