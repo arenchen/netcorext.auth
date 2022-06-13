@@ -7,7 +7,6 @@ using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
 using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
-using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
 namespace Netcorext.Auth.API.Services.User;
@@ -41,7 +40,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         _context.Entry(entity)
                 .UpdateProperty(t => t.Username, request.Username)
                 .UpdateProperty(t => t.NormalizedUsername, request.Username?.ToUpper())
-                .UpdateProperty(t => t.Password, request.Password!.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds()))
+                .UpdateProperty(t => t.Password, request.Password?.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds()))
                 .UpdateProperty(t => t.RequiredChangePassword, false)
                 .UpdateProperty(t => t.Email, request.Email, true, user =>
                                                                    {
@@ -119,7 +118,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                                                           .ToArray()
                                                                            })
                                      .ToArray();
-            
+
             var createExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.C)?.Data ?? Array.Empty<UserExtendData>();
             var updateExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.U)?.Data ?? Array.Empty<UserExtendData>();
             var deleteExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.D)?.Data ?? Array.Empty<UserExtendData>();
