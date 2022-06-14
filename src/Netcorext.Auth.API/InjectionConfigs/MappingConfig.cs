@@ -10,6 +10,8 @@ public class MappingConfig
 {
     public MappingConfig()
     {
+        TypeAdapterConfig.GlobalSettings.Default.NameMatchingStrategy(NameMatchingStrategy.IgnoreCase);
+
         TypeAdapterConfig.GlobalSettings.Default
                          .UseDestinationValue(t => t.SetterModifier == AccessModifier.None &&
                                                    t.Type.IsGenericType &&
