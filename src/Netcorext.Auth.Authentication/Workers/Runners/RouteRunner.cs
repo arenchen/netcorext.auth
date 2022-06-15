@@ -104,15 +104,18 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
                                        .ToArray();
 
             var routes = dRouteGroups.Values
-                                     .SelectMany(t => t.Routes.Select(t2 => new RouteConfig
-                                                                            {
-                                                                                ClusterId = $"{t.Id}-{t.Name}",
-                                                                                RouteId = $"{t2.Protocol} - {t2.HttpMethod} {t.BaseUrl}/{t2.RelativePath}",
-                                                                                Match = new RouteMatch
-                                                                                        {
-                                                                                            Path = t2.RelativePath
-                                                                                        }
-                                                                            }))
+                                     .SelectMany(t => t.Routes
+                                                       .Select(t2 => new { t2.Protocol, t2.RelativePath })
+                                                       .Distinct()
+                                                       .Select(t2 => new RouteConfig
+                                                                     {
+                                                                         ClusterId = $"{t.Id}-{t.Name}",
+                                                                         RouteId = $"{t2.Protocol} - {t.BaseUrl}/{t2.RelativePath}",
+                                                                         Match = new RouteMatch
+                                                                                 {
+                                                                                     Path = t2.RelativePath
+                                                                                 }
+                                                                     }))
                                      .ToArray();
 
             _memoryConfigProvider.Update(routes, clusters);

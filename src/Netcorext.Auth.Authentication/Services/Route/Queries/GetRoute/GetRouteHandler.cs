@@ -21,7 +21,7 @@ public class GetRouteHandler : IRequestHandler<GetRoute, Result<IEnumerable<Mode
     {
         var ds = _context.Set<Domain.Entities.RouteGroup>();
 
-        Expression<Func<Domain.Entities.RouteGroup, bool>> predicate = p => false;
+        Expression<Func<Domain.Entities.RouteGroup, bool>> predicate = p => request.GroupIds == null;
 
         if (request.GroupIds != null && request.GroupIds.Any())
         {
