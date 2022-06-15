@@ -20,7 +20,7 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
     {
         var ds = _context.Set<Domain.Entities.Role>();
 
-        Expression<Func<Domain.Entities.Role, bool>> predicate = p => false;
+        Expression<Func<Domain.Entities.Role, bool>> predicate = p => request.Ids == null;
 
         if (request.Ids != null && request.Ids.Any())
         {
@@ -31,7 +31,7 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
                       .Include(t => t.Permissions).ThenInclude(t => t.ExtendData)
                       .Where(predicate)
                       .AsNoTracking();
-        
+
         var content = qRole.SelectMany(t => t.Permissions)
                            .Where(t => t.ExpireDate == null || t.ExpireDate < DateTimeOffset.UtcNow)
                            .Select(t => new Models.Permission
@@ -54,7 +54,7 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
                                                                         }),
                                             Disabled = t.Role.Disabled
                                         });
-        
+
         if (!await content.AnyAsync(cancellationToken)) content = null;
 
         return Result<IEnumerable<Models.Permission>>.Success.Clone(content?.ToArray());

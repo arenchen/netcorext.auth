@@ -6,8 +6,6 @@ public class UpdateRoleValidator : AbstractValidator<UpdateRole>
 {
     public UpdateRoleValidator()
     {
-        RuleFor(t => t.Name).NotEmpty();
-
         RuleForEach(t => t.Permissions).ChildRules(c =>
                                                    {
                                                        c.RuleFor(t => t.FunctionId).NotEmpty();

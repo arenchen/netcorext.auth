@@ -5,7 +5,6 @@ using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
-using Netcorext.Extensions.Commons;
 using Netcorext.Mediator;
 
 namespace Netcorext.Auth.API.Services.Role;
@@ -29,7 +28,6 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
         var dsPermissionExtendData = _context.Set<PermissionExtendData>();
 
         if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
-        if (!request.Name.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.Name == request.Name, cancellationToken)) return Result.Conflict;
 
         var entity = ds.Include(t => t.ExtendData)
                        .Include(t => t.Permissions).ThenInclude(t => t.ExtendData)
@@ -102,7 +100,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                                                                                                                    Allowed = t.Allowed!.Value,
                                                                                                                                    Priority = t.Priority!.Value,
                                                                                                                                    ReplaceExtendData = t.ReplaceExtendData!.Value,
-                                                                                                                                   ExpireDate = t.ExpireDate,
+                                                                                                                                   ExpireDate = t.ExpireDate
                                                                                                                                },
                                                                                                                   ExtendData = (t.ExtendData ?? Array.Empty<UpdateRole.PermissionExtendData>())
                                                                                                                               .GroupBy(t2 => t2.CRUD,
@@ -149,7 +147,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                 if (createPermission.Any())
                     dsPermission.AddRange(createPermission.Select(t =>
                                                                   {
-                                                                      t.Permission.ExtendData = t.ExtendData?.First(t2 => t2.Mode == CRUD.C).Data ?? Array.Empty<PermissionExtendData>();
+                                                                      t.Permission.ExtendData = t.ExtendData.FirstOrDefault(t2 => t2.Mode == CRUD.C)?.Data ?? Array.Empty<PermissionExtendData>();
 
                                                                       return t.Permission;
                                                                   }));
