@@ -1,3 +1,3 @@
 # Netcorext.Auth
 
-OAuth 2.0
+ASP.NET Core Auth Microservice

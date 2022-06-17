@@ -15,9 +15,9 @@
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeProjectReferences</TargetsForTfmSpecificBuildOutput>
     <Authors>NETCOREXT</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/arenchen/Netcorext.EntityFramework</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/arenchen/Netcorext.EntityFramework.git</RepositoryUrl>
-    <Description>Normalized Entity Base</Description>
+    <PackageProjectUrl>https://github.com/NETCOREXT/Netcorext.Auth</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/NETCOREXT/Netcorext.Auth.git</RepositoryUrl>
+    <Description>ASP.NET Core Auth Microservice</Description>
     <NoWarn>$(NoWarn);1591,NU1603</NoWarn>
   </PropertyGroup>
 

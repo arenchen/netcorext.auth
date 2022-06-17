@@ -1,14 +1,11 @@
-name: Build and Deploy Image
+name: Build and Deploy
 
 on:
   push:
     branches: [ main, dev ]
 
-env:
-  NUGET_API_URL: https://api.nuget.org/v3/index.json
-
 jobs:
-  CI:
+  Build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -27,6 +24,10 @@ jobs:
           COMMIT_COUNT=`git rev-list --count HEAD`
           COMMIT_TIME=`git show -s --format=%ct HEAD`
           ADDITIONAL_ARGUMENTS="-c Debug --version-suffix ${BRANCH}.${COMMIT_TIME}+${COMMIT_SHORT_SHA}"
+          IMAGE_NAME_AUTHENTICATION="netcorext/netcorext-auth-authentication"
+          IMAGE_NAME_AUTHORIZATION="netcorext/netcorext-auth-authorization"
+          IMAGE_NAME_API="netcorext/netcorext-auth-api"
+          
           TAG_LATEST="${BRANCH}-latest"
 
           if [ "$BRANCH" = "main" ]; then
@@ -52,6 +53,9 @@ jobs:
           echo "COMMIT_TIME=$COMMIT_TIME" >> $GITHUB_ENV
           echo "ADDITIONAL_ARGUMENTS=$ADDITIONAL_ARGUMENTS" >> $GITHUB_ENV
           echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_ENV
+          echo "IMAGE_NAME_AUTHENTICATION=$IMAGE_NAME_AUTHENTICATION" >> $GITHUB_ENV
+          echo "IMAGE_NAME_AUTHORIZATION=$IMAGE_NAME_AUTHORIZATION" >> $GITHUB_ENV
+          echo "IMAGE_NAME_API=$IMAGE_NAME_API" >> $GITHUB_ENV
           echo "IMAGE_VERSION=$IMAGE_VERSION" >> $GITHUB_ENV
           echo "TAG_LATEST=$TAG_LATEST" >> $GITHUB_ENV
       - name: Create Dockerfile
@@ -88,9 +92,9 @@ jobs:
           push: true
           build-args: APP=Netcorext.Auth.Authentication
           tags: |
-            netcorext/netcorext.auth.authentication:${{ env.COMMIT_SHORT_SHA }}
-            netcorext/netcorext.auth.authentication:${{ env.IMAGE_VERSION }}
-            netcorext/netcorext.auth.authentication:${{ env.TAG_LATEST }}
+            ${{ env.IMAGE_NAME_AUTHENTICATION }}:${{ env.COMMIT_SHORT_SHA }}
+            ${{ env.IMAGE_NAME_AUTHENTICATION }}:${{ env.IMAGE_VERSION }}
+            ${{ env.IMAGE_NAME_AUTHENTICATION }}:${{ env.TAG_LATEST }}
       - name: Build and push Netcorext.Auth.Authorization image
         uses: docker/build-push-action@v3
         with:
@@ -98,9 +102,9 @@ jobs:
           push: true
           build-args: APP=Netcorext.Auth.Authorization
           tags: |
-            netcorext/netcorext.auth.authorization:${{ env.COMMIT_SHORT_SHA }}
-            netcorext/netcorext.auth.authorization:${{ env.IMAGE_VERSION }}
-            netcorext/netcorext.auth.authorization:${{ env.TAG_LATEST }}
+            ${{ env.IMAGE_NAME_AUTHORIZATION }}:${{ env.COMMIT_SHORT_SHA }}
+            ${{ env.IMAGE_NAME_AUTHORIZATION }}:${{ env.IMAGE_VERSION }}
+            ${{ env.IMAGE_NAME_AUTHORIZATION }}:${{ env.TAG_LATEST }}
       - name: Build and push Netcorext.Auth.API image
         uses: docker/build-push-action@v3
         with:
@@ -108,6 +112,6 @@ jobs:
           push: true
           build-args: APP=Netcorext.Auth.API
           tags: |
-            netcorext/netcorext.auth.api:${{ env.COMMIT_SHORT_SHA }}
-            netcorext/netcorext.auth.api:${{ env.IMAGE_VERSION }}
-            netcorext/netcorext.auth.api:${{ env.TAG_LATEST }}
+            ${{ env.IMAGE_NAME_API }}:${{ env.COMMIT_SHORT_SHA }}
+            ${{ env.IMAGE_NAME_API }}:${{ env.IMAGE_VERSION }}
+            ${{ env.IMAGE_NAME_API }}:${{ env.TAG_LATEST }}
