@@ -19,12 +19,12 @@ public class DeleteUserHandler : IRequestHandler<DeleteUser, Result>
 
         var qUser = ds.Where(t => t.Id == request.Id);
 
-        if (!qUser.Any()) return Result.Success;
+        if (!qUser.Any()) return Result.SuccessNoContent;
 
         ds.RemoveRange(qUser);
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result.Success;
+        return Result.SuccessNoContent;
     }
 }

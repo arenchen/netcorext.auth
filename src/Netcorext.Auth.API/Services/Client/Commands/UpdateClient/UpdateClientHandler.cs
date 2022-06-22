@@ -130,6 +130,6 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result.Success;
+        return Result.SuccessNoContent;
     }
 }

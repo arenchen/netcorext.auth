@@ -188,6 +188,6 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result.Success;
+        return Result.SuccessNoContent;
     }
 }

@@ -26,12 +26,12 @@ public class DeleteRoleHandler : IRequestHandler<DeleteRole, Result>
 
         var qRole = ds.Where(predicate);
 
-        if (!await qRole.AnyAsync(cancellationToken)) return Result.Success;
+        if (!await qRole.AnyAsync(cancellationToken)) return Result.SuccessNoContent;
         
         ds.RemoveRange(qRole);
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result.Success;
+        return Result.SuccessNoContent;
     }
 }

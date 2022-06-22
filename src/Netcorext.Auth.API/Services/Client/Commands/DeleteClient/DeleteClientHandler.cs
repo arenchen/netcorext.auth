@@ -19,12 +19,12 @@ public class DeleteClientHandler : IRequestHandler<DeleteClient, Result>
 
         var qClient = ds.Where(t => t.Id == request.Id);
 
-        if (!qClient.Any()) return Result.Success;
+        if (!qClient.Any()) return Result.SuccessNoContent;
         
         ds.RemoveRange(qClient);
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result.Success;
+        return Result.SuccessNoContent;
     }
 }
