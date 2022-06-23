@@ -19,8 +19,6 @@ public class AppConfig
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
         app.EnsureCreateDatabase<Domain.Entities.Route>();
-        app.UseMiddleware<CustomExceptionMiddleware>();
-        app.UseJwtAuthentication();
 
         app.UseCors(b =>
                     {
@@ -35,6 +33,9 @@ public class AppConfig
                          .AllowAnyMethod()
                          .AllowCredentials();
                     });
+
+        app.UseMiddleware<CustomExceptionMiddleware>();
+        app.UseJwtAuthentication();
 
         if (app.Environment.IsDevelopment() || app.Environment.IsLocalhost())
         {
