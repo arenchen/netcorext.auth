@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Netcorext.Worker.Abstractions" Version="1.0.0-dev.1651650976" />
+    <PackageReference Include="Netcorext.Worker.Abstractions" Version="1.0.0-dev.*" />
   </ItemGroup>
 
   <Import Project="../Packages.targets" />
