@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
+using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 using Netcorext.Worker;
 
@@ -49,14 +50,25 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
             using var scope = _serviceProvider.CreateScope();
             var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
+            var reqIds = ids == null ? null : JsonSerializer.Deserialize<long[]>(ids);
+            
             var result = await dispatcher.SendAsync(new GetRolePermission
                                                     {
-                                                        Ids = ids == null ? null : JsonSerializer.Deserialize<long[]>(ids)
+                                                        Ids = reqIds
                                                     }, cancellationToken);
 
             if (result?.Content == null || result.Code != Result.Success) return;
 
             var cachePermissions = _cache.Get<Dictionary<long, Services.Permission.Models.Permission>>(ConfigSettings.CACHE_ROLE_PERMISSION) ?? new Dictionary<long, Services.Permission.Models.Permission>();
+            
+            if (reqIds != null && reqIds.Any())
+            {
+                var repIds = result.Content.Select(t => t.Id);
+
+                var diffIds = reqIds.Except(repIds);
+                
+                diffIds.ForEach(t => cachePermissions.Remove(t));
+            }
 
             foreach (var permission in result.Content)
             {

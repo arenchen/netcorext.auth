@@ -51,9 +51,11 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             using var scope = _serviceProvider.CreateScope();
             var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
+            var reqIds = ids == null ? null : JsonSerializer.Deserialize<long[]>(ids);
+            
             var request = new GetRoute
                           {
-                              GroupIds = ids == null ? null : JsonSerializer.Deserialize<long[]>(ids)
+                              GroupIds = reqIds
                           };
 
             var result = await dispatcher.SendAsync(request, cancellationToken);
@@ -63,14 +65,23 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             if (result?.Content == null || result.Code != Result.Success)
                 return;
 
-            var dRouteGroups = _cache.Get<Dictionary<long, Services.Route.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Models.RouteGroup>();
+            var cacheRouteGroups = _cache.Get<Dictionary<long, Services.Route.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Models.RouteGroup>();
 
+            if (reqIds != null && reqIds.Any())
+            {
+                var repIds = result.Content.Select(t => t.Id);
+
+                var diffIds = reqIds.Except(repIds);
+                
+                diffIds.ForEach(t => cacheRouteGroups.Remove(t));
+            }
+            
             foreach (var group in result.Content)
             {
-                if (dRouteGroups.TryAdd(group.Id, group))
+                if (cacheRouteGroups.TryAdd(group.Id, group))
                     continue;
 
-                dRouteGroups[group.Id] = group;
+                cacheRouteGroups[group.Id] = group;
             }
 
             if (request.GroupIds != null)
@@ -79,13 +90,13 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
                 foreach (var id in diffIds.First)
                 {
-                    dRouteGroups.Remove(id);
+                    cacheRouteGroups.Remove(id);
                 }
             }
 
-            _cache.Set(ConfigSettings.CACHE_ROUTE, dRouteGroups);
+            _cache.Set(ConfigSettings.CACHE_ROUTE, cacheRouteGroups);
 
-            var clusters = dRouteGroups.Values
+            var clusters = cacheRouteGroups.Values
                                        .Select(t => new ClusterConfig
                                                     {
                                                         ClusterId = $"{t.Id}-{t.Name}",
@@ -103,7 +114,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
                                                     })
                                        .ToArray();
 
-            var routes = dRouteGroups.Values
+            var routes = cacheRouteGroups.Values
                                      .SelectMany(t => t.Routes
                                                        .Select(t2 => new { t2.Protocol, t2.RelativePath })
                                                        .Distinct()
