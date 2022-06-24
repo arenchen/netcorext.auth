@@ -10,6 +10,7 @@ using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Extensions;
 using Netcorext.Auth.Helpers;
+using Netcorext.Auth.Utilities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Commons;
@@ -22,15 +23,17 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 {
     private readonly DatabaseContext _context;
     private readonly ISnowflake _snowflake;
+    private readonly JwtGenerator _jwtGenerator;
     private readonly RedisClient _redis;
     private readonly ConfigSettings _config;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly AuthOptions _authOptions;
 
-    public CreateTokenHandler(DatabaseContext context, ISnowflake snowflake, IOptions<AuthOptions> authOptions, RedisClient redis, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
+    public CreateTokenHandler(DatabaseContext context, ISnowflake snowflake, JwtGenerator jwtGenerator, IOptions<AuthOptions> authOptions, RedisClient redis, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
     {
         _context = context;
         _snowflake = snowflake;
+        _jwtGenerator = jwtGenerator;
         _redis = redis;
         _config = config.Value;
         _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
@@ -101,33 +104,12 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = TokenHelper.GenerateJwt(TokenType.AccessToken,
-                                                                                                 ResourceType.User,
-                                                                                                 DateTime.UtcNow.AddSeconds(client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds),
-                                                                                                 client.Id.ToString(),
-                                                                                                 request.UniqueId,
-                                                                                                 request.Scope ?? clientScope,
-                                                                                                 _authOptions.Issuer,
-                                                                                                 _authOptions.Audience,
-                                                                                                 _authOptions.SigningKey,
-                                                                                                 _authOptions.NameClaimType,
-                                                                                                 _authOptions.RoleClaimType
-                                                                                                ),
+                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client,
+                                                                                                client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope),
                                                            Scope = request.Scope ?? clientScope,
                                                            RefreshToken = _authOptions.AllowClientCredentialsRefreshToken
-                                                                              ? TokenHelper.GenerateJwt(TokenType.RefreshToken,
-                                                                                                        ResourceType.User,
-                                                                                                        DateTime.UtcNow.AddSeconds(client.RefreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds),
-                                                                                                        client.Id.ToString(),
-                                                                                                        request.UniqueId,
-                                                                                                        request.Scope ?? clientScope,
-                                                                                                        _authOptions.Issuer,
-                                                                                                        _authOptions.Audience,
-                                                                                                        _authOptions.SigningKey,
-                                                                                                        _authOptions.NameClaimType,
-                                                                                                        _authOptions.RoleClaimType,
-                                                                                                        clientScope
-                                                                                                       )
+                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client,
+                                                                                                       client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
                                                                               : null,
                                                            ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                        });
@@ -234,33 +216,14 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = TokenHelper.GenerateJwt(TokenType.AccessToken,
-                                                                                                 ResourceType.User,
-                                                                                                 DateTime.UtcNow.AddSeconds(client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds),
-                                                                                                 user.Id.ToString(),
-                                                                                                 null,
-                                                                                                 request.Scope ?? userScope,
-                                                                                                 _authOptions.Issuer,
-                                                                                                 _authOptions.Audience,
-                                                                                                 _authOptions.SigningKey,
-                                                                                                 _authOptions.NameClaimType,
-                                                                                                 _authOptions.RoleClaimType
-                                                                                                ),
+                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
+                                                                                                user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope),
                                                            Scope = request.Scope ?? userScope,
                                                            RefreshToken = _authOptions.AllowPasswordRefreshToken
-                                                                              ? TokenHelper.GenerateJwt(TokenType.RefreshToken,
-                                                                                                        ResourceType.User,
-                                                                                                        DateTime.UtcNow.AddSeconds(client.RefreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds),
-                                                                                                        user.Id.ToString(),
-                                                                                                        null,
-                                                                                                        request.Scope ?? userScope,
-                                                                                                        _authOptions.Issuer,
-                                                                                                        _authOptions.Audience,
-                                                                                                        _authOptions.SigningKey,
-                                                                                                        _authOptions.NameClaimType,
-                                                                                                        _authOptions.RoleClaimType,
-                                                                                                        userScope
-                                                                                                       )
+                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken,
+                                                                                                       ResourceType.User,
+                                                                                                       user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope
+                                                                                                      )
                                                                               : null,
                                                            ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                        });
@@ -391,34 +354,13 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
             var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                            {
                                                                TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                               AccessToken = TokenHelper.GenerateJwt(TokenType.AccessToken,
-                                                                                                     resourceType,
-                                                                                                     DateTime.UtcNow.AddSeconds(tokenExpireSeconds ?? _authOptions.TokenExpireSeconds),
-                                                                                                     resourceId!,
-                                                                                                     uid,
-                                                                                                     request.Scope ?? role,
-                                                                                                     _authOptions.Issuer,
-                                                                                                     _authOptions.Audience,
-                                                                                                     _authOptions.SigningKey,
-                                                                                                     _authOptions.NameClaimType,
-                                                                                                     _authOptions.RoleClaimType
-                                                                                                    ),
+                                                               AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType,
+                                                                                                    resourceId!, uid, tokenExpireSeconds, request.Scope ?? role),
                                                                Scope = request.Scope ?? role,
                                                                RefreshToken = resourceType == ResourceType.Client && _authOptions.AllowClientCredentialsRefreshToken
                                                                            || resourceType == ResourceType.User && _authOptions.AllowPasswordRefreshToken
-                                                                                  ? TokenHelper.GenerateJwt(TokenType.RefreshToken,
-                                                                                                            ResourceType.User,
-                                                                                                            DateTime.UtcNow.AddSeconds(refreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds),
-                                                                                                            resourceId!,
-                                                                                                            uid,
-                                                                                                            request.Scope ?? role,
-                                                                                                            _authOptions.Issuer,
-                                                                                                            _authOptions.Audience,
-                                                                                                            _authOptions.SigningKey,
-                                                                                                            _authOptions.NameClaimType,
-                                                                                                            _authOptions.RoleClaimType,
-                                                                                                            role
-                                                                                                           )
+                                                                                  ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType,
+                                                                                                           resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
                                                                                   : null,
                                                                ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                            });

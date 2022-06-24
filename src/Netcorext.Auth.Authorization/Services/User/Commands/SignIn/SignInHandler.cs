@@ -4,7 +4,7 @@ using Netcorext.Algorithms;
 using Netcorext.Auth.Authorization.Models;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Extensions;
-using Netcorext.Auth.Helpers;
+using Netcorext.Auth.Utilities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
@@ -18,13 +18,15 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 {
     private readonly DatabaseContext _context;
     private readonly ISnowflake _snowflake;
+    private readonly JwtGenerator _jwtGenerator;
     private readonly HttpContext? _httpContext;
     private readonly AuthOptions _config;
 
-    public SignInHandler(DatabaseContext context, ISnowflake snowflake, IHttpContextAccessor httpContextAccessor, IOptions<AuthOptions> config)
+    public SignInHandler(DatabaseContext context, ISnowflake snowflake, IHttpContextAccessor httpContextAccessor, JwtGenerator jwtGenerator, IOptions<AuthOptions> config)
     {
         _context = context;
         _snowflake = snowflake;
+        _jwtGenerator = jwtGenerator;
         _httpContext = httpContextAccessor.HttpContext;
         _config = config.Value;
     }
@@ -33,9 +35,11 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
     {
         var ds = _context.Set<Domain.Entities.User>();
 
-        if (!await ds.AnyAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken)) return Result<TokenResult>.UsernameOrPasswordIncorrect;
+        if (!await ds.AnyAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken))
+            return Result<TokenResult>.UsernameOrPasswordIncorrect;
 
-        var entity = await ds.FirstAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken);
+        var entity = await ds.Include(t => t.Roles)
+                             .FirstAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken);
 
         _context.Entry(entity).UpdateProperty(t => t.LastSignInDate, DateTimeOffset.UtcNow);
         _context.Entry(entity).UpdateProperty(t => t.LastSignInIp, _httpContext?.GetIp());
@@ -93,33 +97,12 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = TokenHelper.GenerateJwt(TokenType.AccessToken,
-                                                                                                 ResourceType.User,
-                                                                                                 DateTime.UtcNow.AddSeconds(entity.TokenExpireSeconds ?? _config.TokenExpireSeconds),
-                                                                                                 entity.Id.ToString(),
-                                                                                                 null,
-                                                                                                 scope,
-                                                                                                 _config.Issuer,
-                                                                                                 _config.Audience,
-                                                                                                 _config.SigningKey,
-                                                                                                 _config.NameClaimType,
-                                                                                                 _config.RoleClaimType
-                                                                                                ),
+                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
+                                                                                                entity.Id.ToString(), null, entity.TokenExpireSeconds, scope),
                                                            Scope = scope,
                                                            RefreshToken = _config.AllowPasswordRefreshToken
-                                                                              ? TokenHelper.GenerateJwt(TokenType.RefreshToken,
-                                                                                                        ResourceType.User,
-                                                                                                        DateTime.UtcNow.AddSeconds(entity.RefreshTokenExpireSeconds ?? _config.RefreshTokenExpireSeconds),
-                                                                                                        entity.Id.ToString(),
-                                                                                                        null,
-                                                                                                        scope,
-                                                                                                        _config.Issuer,
-                                                                                                        _config.Audience,
-                                                                                                        _config.SigningKey,
-                                                                                                        _config.NameClaimType,
-                                                                                                        _config.RoleClaimType,
-                                                                                                        scope
-                                                                                                       )
+                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
+                                                                                                       entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
                                                                               : null,
                                                            ExpiresIn = entity.TokenExpireSeconds ?? _config.TokenExpireSeconds
                                                        });

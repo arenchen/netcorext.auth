@@ -4,7 +4,7 @@ using Netcorext.Algorithms;
 using Netcorext.Auth.Authorization.Models;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Extensions;
-using Netcorext.Auth.Helpers;
+using Netcorext.Auth.Utilities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
@@ -19,13 +19,15 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
     private readonly DatabaseContext _context;
     private readonly HttpContext? _httpContext;
     private readonly ISnowflake _snowflake;
+    private readonly JwtGenerator _jwtGenerator;
     private readonly AuthOptions _config;
 
-    public ExternalSignInHandler(DatabaseContext context, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake, IOptions<AuthOptions> config)
+    public ExternalSignInHandler(DatabaseContext context, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake, JwtGenerator jwtGenerator, IOptions<AuthOptions> config)
     {
         _context = context;
         _httpContext = httpContextAccessor.HttpContext;
         _snowflake = snowflake;
+        _jwtGenerator = jwtGenerator;
         _config = config.Value;
     }
 
@@ -37,7 +39,8 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         var id = _snowflake.Generate();
         var creationDate = DateTimeOffset.UtcNow;
 
-        var entity = await dsUser.FirstOrDefaultAsync(t => t.NormalizedUsername == username!.ToUpper(), cancellationToken);
+        var entity = await dsUser.Include(t => t.Roles)
+                                 .FirstOrDefaultAsync(t => t.NormalizedUsername == username!.ToUpper(), cancellationToken);
 
         if (entity != null)
         {
@@ -98,7 +101,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                        RoleId = t.RoleId,
                                                        ExpireDate = t.ExpireDate
                                                    })
-                                      .ToArray() ?? Array.Empty<Domain.Entities.UserRole>(),
+                                      .ToArray() ?? Array.Empty<Domain.Entities.UserRole>()
                    };
 
         entity.AccessFailedCount = 0;
@@ -135,33 +138,13 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = TokenHelper.GenerateJwt(TokenType.AccessToken,
-                                                                                                 ResourceType.User,
-                                                                                                 DateTime.UtcNow.AddSeconds(entity.TokenExpireSeconds ?? _config.TokenExpireSeconds),
-                                                                                                 entity.Id.ToString(),
-                                                                                                 request.UniqueId,
-                                                                                                 scope,
-                                                                                                 _config.Issuer,
-                                                                                                 _config.Audience,
-                                                                                                 _config.SigningKey,
-                                                                                                 _config.NameClaimType,
-                                                                                                 _config.RoleClaimType
-                                                                                                ),
+                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
+                                                                                                entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope),
                                                            Scope = scope,
                                                            RefreshToken = _config.AllowPasswordRefreshToken
-                                                                              ? TokenHelper.GenerateJwt(TokenType.RefreshToken,
-                                                                                                        ResourceType.User,
-                                                                                                        DateTime.UtcNow.AddSeconds(entity.RefreshTokenExpireSeconds ?? _config.RefreshTokenExpireSeconds),
-                                                                                                        entity.Id.ToString(),
-                                                                                                        request.UniqueId,
-                                                                                                        scope,
-                                                                                                        _config.Issuer,
-                                                                                                        _config.Audience,
-                                                                                                        _config.SigningKey,
-                                                                                                        _config.NameClaimType,
-                                                                                                        _config.RoleClaimType,
-                                                                                                        scope
-                                                                                                       )
+                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
+                                                                                                       entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope
+                                                                                                      )
                                                                               : null,
                                                            ExpiresIn = entity.TokenExpireSeconds ?? _config.TokenExpireSeconds,
                                                            NameId = entity.Id.ToString()
