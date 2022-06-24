@@ -22,12 +22,12 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnu
         _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
         _config = config.Value;
     }
-    
+
     public async Task<Result<IEnumerable<long>>?> InvokeAsync(CreateRole request, PipelineDelegate<Result<IEnumerable<long>>> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
-        
-        if (result == Result.Success && result.Content != null)
+
+        if (result == Result.SuccessCreated && result.Content != null)
             await NotifyAsync(result.Content.ToArray());
 
         return result;
@@ -36,8 +36,8 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnu
     public async Task<Result?> InvokeAsync(UpdateRole request, PipelineDelegate<Result> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
-        
-        if (result == Result.Success)
+
+        if (result == Result.SuccessNoContent)
             await NotifyAsync(request.Id);
 
         return result;
@@ -46,8 +46,8 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnu
     public async Task<Result?> InvokeAsync(DeleteRole request, PipelineDelegate<Result> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
-        
-        if (result == Result.Success)
+
+        if (result == Result.SuccessNoContent)
             await NotifyAsync(request.Ids);
 
         return result;
@@ -56,7 +56,7 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnu
     private Task NotifyAsync(params long[] ids)
     {
         var value = JsonSerializer.Serialize(ids, _jsonOptions);
-        
+
         _redis.Publish(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], value);
 
         return Task.CompletedTask;
