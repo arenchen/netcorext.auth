@@ -24,38 +24,34 @@ jobs:
           COMMIT_COUNT=`git rev-list --count HEAD`
           COMMIT_TIME=`git show -s --format=%ct HEAD`
           ADDITIONAL_ARGUMENTS="-c Debug --version-suffix ${BRANCH}.${COMMIT_TIME}+${COMMIT_SHORT_SHA}"
-          IMAGE_NAME_AUTHENTICATION="netcorext/netcorext-auth-authentication"
-          IMAGE_NAME_AUTHORIZATION="netcorext/netcorext-auth-authorization"
-          IMAGE_NAME_API="netcorext/netcorext-auth-api"
-          
+          IMAGE_NAME_PREFIX="netcorext"
+
           TAG_LATEST="${BRANCH}-latest"
 
           if [ "$BRANCH" = "main" ]; then
             ADDITIONAL_ARGUMENTS="-c Release"
             TAG_LATEST="latest"
           fi
-    
+
           dotnet build src/Netcorext.Auth.Authentication/Netcorext.Auth.Authentication.csproj -o ./dist
-          
+
           ASSEMBLY_VERSION=`asm-info ./dist/Netcorext.Auth.Authentication.dll --simple --version`
-          
+
           rm -rf ./dist
-          
+
           IMAGE_VERSION="${ASSEMBLY_VERSION}-${BRANCH}.${COMMIT_TIME}"
-          
+
           if [ "$BRANCH" = "main" ]; then
             IMAGE_VERSION="${ASSEMBLY_VERSION}"
           fi
-          
+
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "COMMIT_SHORT_SHA=$COMMIT_SHORT_SHA" >> $GITHUB_ENV
           echo "COMMIT_COUNT=$COMMIT_COUNT" >> $GITHUB_ENV
           echo "COMMIT_TIME=$COMMIT_TIME" >> $GITHUB_ENV
           echo "ADDITIONAL_ARGUMENTS=$ADDITIONAL_ARGUMENTS" >> $GITHUB_ENV
           echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_ENV
-          echo "IMAGE_NAME_AUTHENTICATION=$IMAGE_NAME_AUTHENTICATION" >> $GITHUB_ENV
-          echo "IMAGE_NAME_AUTHORIZATION=$IMAGE_NAME_AUTHORIZATION" >> $GITHUB_ENV
-          echo "IMAGE_NAME_API=$IMAGE_NAME_API" >> $GITHUB_ENV
+          echo "IMAGE_NAME_PREFIX=$IMAGE_NAME_PREFIX" >> $GITHUB_ENV
           echo "IMAGE_VERSION=$IMAGE_VERSION" >> $GITHUB_ENV
           echo "TAG_LATEST=$TAG_LATEST" >> $GITHUB_ENV
       - name: Create Dockerfile
@@ -73,7 +69,7 @@ jobs:
           COPY . /sources
           WORKDIR src/\${APP}
           RUN dotnet restore --no-cache
-          RUN dotnet publish ${{ env.ADDITIONAL_ARGUMENTS }} -o /dist 
+          RUN dotnet publish ${{ env.ADDITIONAL_ARGUMENTS }} -o /dist
 
           FROM base AS final
           WORKDIR /app
@@ -92,9 +88,9 @@ jobs:
           push: true
           build-args: APP=Netcorext.Auth.Authentication
           tags: |
-            ${{ env.IMAGE_NAME_AUTHENTICATION }}:${{ env.COMMIT_SHORT_SHA }}
-            ${{ env.IMAGE_NAME_AUTHENTICATION }}:${{ env.IMAGE_VERSION }}
-            ${{ env.IMAGE_NAME_AUTHENTICATION }}:${{ env.TAG_LATEST }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authentication:${{ env.COMMIT_SHORT_SHA }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authentication:${{ env.IMAGE_VERSION }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authentication:${{ env.TAG_LATEST }}
       - name: Build and push Netcorext.Auth.Authorization image
         uses: docker/build-push-action@v3
         with:
@@ -102,9 +98,9 @@ jobs:
           push: true
           build-args: APP=Netcorext.Auth.Authorization
           tags: |
-            ${{ env.IMAGE_NAME_AUTHORIZATION }}:${{ env.COMMIT_SHORT_SHA }}
-            ${{ env.IMAGE_NAME_AUTHORIZATION }}:${{ env.IMAGE_VERSION }}
-            ${{ env.IMAGE_NAME_AUTHORIZATION }}:${{ env.TAG_LATEST }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authorization:${{ env.COMMIT_SHORT_SHA }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authorization:${{ env.IMAGE_VERSION }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authorization:${{ env.TAG_LATEST }}
       - name: Build and push Netcorext.Auth.API image
         uses: docker/build-push-action@v3
         with:
@@ -112,6 +108,6 @@ jobs:
           push: true
           build-args: APP=Netcorext.Auth.API
           tags: |
-            ${{ env.IMAGE_NAME_API }}:${{ env.COMMIT_SHORT_SHA }}
-            ${{ env.IMAGE_NAME_API }}:${{ env.IMAGE_VERSION }}
-            ${{ env.IMAGE_NAME_API }}:${{ env.TAG_LATEST }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-api:${{ env.COMMIT_SHORT_SHA }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-api:${{ env.IMAGE_VERSION }}
+            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-api:${{ env.TAG_LATEST }}

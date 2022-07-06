@@ -16,6 +16,7 @@ public class HostConfig
                                                .AddJsonFile("appsettings.json", false, true)
                                                .AddJsonFile($"appsettings.{host.EnvironmentName}.json", true, true)
                                                .AddJsonFile($"appsettings.override.json", true, true)
+                                               .AddJsonGzipCompressFile($"appsettings.secret", true, true)
                                                .AddEnvironmentVariables();
                                           })
                .ConfigureLogging(loggingBuilder =>
