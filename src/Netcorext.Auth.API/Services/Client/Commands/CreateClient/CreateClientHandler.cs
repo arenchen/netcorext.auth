@@ -39,18 +39,18 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
                                 CodeExpireSeconds = request.CodeExpireSeconds,
                                 Disabled = request.Disabled,
                                 Roles = request.Roles?
-                                                     .Select(t => new ClientRole
-                                                                         {
-                                                                             Id = id,
-                                                                             RoleId = t.RoleId,
-                                                                             ExpireDate = t.ExpireDate
-                                                                         })
-                                                     .ToArray() ?? Array.Empty<ClientRole>(),
+                                               .Select(t => new ClientRole
+                                                            {
+                                                                Id = id,
+                                                                RoleId = t.RoleId,
+                                                                ExpireDate = t.ExpireDate
+                                                            })
+                                               .ToArray() ?? Array.Empty<ClientRole>(),
                                 ExtendData = request.ExtendData?
                                                     .Select(t => new ClientExtendData
                                                                  {
                                                                      Id = id,
-                                                                     Key = t.Key!,
+                                                                     Key = t.Key.ToUpper(),
                                                                      Value = t.Value
                                                                  })
                                                     .ToArray() ?? Array.Empty<ClientExtendData>()

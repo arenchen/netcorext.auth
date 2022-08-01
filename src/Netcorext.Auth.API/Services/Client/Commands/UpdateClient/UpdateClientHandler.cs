@@ -50,16 +50,16 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
         {
             var gRoles = request.Roles
                                 .GroupBy(t => t.CRUD, (mode, roles) => new
-                                                                                {
-                                                                                    Mode = mode,
-                                                                                    Data = roles.Select(t => new ClientRole
-                                                                                                             {
-                                                                                                                 Id = entity.Id,
-                                                                                                                 RoleId = t.RoleId,
-                                                                                                                 ExpireDate = t.ExpireDate
-                                                                                                             })
-                                                                                                .ToArray()
-                                                                                })
+                                                                       {
+                                                                           Mode = mode,
+                                                                           Data = roles.Select(t => new ClientRole
+                                                                                                    {
+                                                                                                        Id = entity.Id,
+                                                                                                        RoleId = t.RoleId,
+                                                                                                        ExpireDate = t.ExpireDate
+                                                                                                    })
+                                                                                       .ToArray()
+                                                                       })
                                 .ToArray();
 
             var createRoles = gRoles.FirstOrDefault(t => t.Mode == CRUD.C)?.Data ?? Array.Empty<ClientRole>();
@@ -96,7 +96,7 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
                                                                                      Data = extendData.Select(t => new ClientExtendData
                                                                                                                    {
                                                                                                                        Id = entity.Id,
-                                                                                                                       Key = t.Key,
+                                                                                                                       Key = t.Key.ToUpper(),
                                                                                                                        Value = t.Value
                                                                                                                    })
                                                                                                       .ToArray()

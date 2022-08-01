@@ -14,12 +14,10 @@ namespace Netcorext.Auth.API.Services.User;
 public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
 {
     private readonly DatabaseContext _context;
-    private readonly ISnowflake _snowflake;
 
-    public UpdateUserHandler(DatabaseContext context, ISnowflake snowflake)
+    public UpdateUserHandler(DatabaseContext context)
     {
         _context = context;
-        _snowflake = snowflake;
     }
 
     public async Task<Result> Handle(UpdateUser request, CancellationToken cancellationToken = default)
@@ -112,7 +110,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                                                Data = data.Select(t => new UserExtendData
                                                                                                        {
                                                                                                            Id = entity.Id,
-                                                                                                           Key = t.Key,
+                                                                                                           Key = t.Key.ToUpper(),
                                                                                                            Value = t.Value
                                                                                                        })
                                                                                           .ToArray()

@@ -58,7 +58,7 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                     .Select(t => new UserExtendData
                                                                  {
                                                                      Id = id,
-                                                                     Key = t.Key,
+                                                                     Key = t.Key.ToUpper(),
                                                                      Value = t.Value
                                                                  })
                                                     .ToArray() ?? Array.Empty<UserExtendData>(),

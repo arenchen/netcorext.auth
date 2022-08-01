@@ -45,7 +45,7 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
 
         if (request.ExtendData != null && request.ExtendData.Any())
         {
-            predicate = request.ExtendData.Aggregate(predicate, (expression, extendData) => expression.And(t => t.ExtendData.Any(t2 => t2.Key == extendData.Key && t2.Value == extendData.Value)));
+            predicate = request.ExtendData.Aggregate(predicate, (expression, extendData) => expression.And(t => t.ExtendData.Any(t2 => t2.Key == extendData.Key.ToUpper() && t2.Value == extendData.Value)));
         }
 
         var queryEntities = ds.Include(t => t.ExtendData)
