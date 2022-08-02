@@ -6,6 +6,7 @@ public class ExternalSignInValidator : AbstractValidator<ExternalSignIn>
 {
     public ExternalSignInValidator()
     {
+        RuleFor(t => t.Username).NotEmpty();
         RuleFor(t => t.Provider).NotEmpty();
         RuleFor(t => t.UniqueId).NotEmpty();
     }

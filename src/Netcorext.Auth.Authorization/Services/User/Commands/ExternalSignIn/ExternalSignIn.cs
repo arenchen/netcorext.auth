@@ -6,6 +6,7 @@ namespace Netcorext.Auth.Authorization.Services.User;
 
 public class ExternalSignIn : IRequest<Result<TokenResult>>
 {
+    public string Username { get; set; } = null!;
     public string Provider { get; set; } = null!;
     public string UniqueId { get; set; } = null!;
     public string? Email { get; set; }
