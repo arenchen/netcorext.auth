@@ -101,20 +101,26 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
                                                           });
 
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope);
+
+        var refreshToken = _authOptions.AllowClientCredentialsRefreshToken
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
+                               : (null, null);
+
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client,
-                                                                                                client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope),
+                                                           AccessToken = accessToken.Token,
                                                            Scope = request.Scope ?? clientScope,
-                                                           RefreshToken = _authOptions.AllowClientCredentialsRefreshToken
-                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client,
-                                                                                                       client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
-                                                                              : null,
+                                                           RefreshToken = refreshToken.Token,
                                                            ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
+
+        DateTimeOffset? expiryDate = (refreshToken.Jwt?.Payload.Exp ?? 0) + (accessToken.Jwt.Payload.Exp ?? 0) == 0
+                                         ? null
+                                         : DateTimeOffset.FromUnixTimeSeconds((refreshToken.Jwt?.Payload.Exp ?? 0) > (accessToken.Jwt.Payload.Exp ?? 0) ? refreshToken.Jwt?.Payload.Exp ?? 0 : accessToken.Jwt.Payload.Exp ?? 0);
 
         dsToken.Add(new Domain.Entities.Token
                     {
@@ -125,7 +131,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         AccessToken = result.Content?.AccessToken!,
                         ExpiresIn = result.Content?.ExpiresIn,
                         Scope = result.Content?.Scope,
-                        RefreshToken = result.Content?.RefreshToken
+                        RefreshToken = result.Content?.RefreshToken,
+                        ExpiryDate = expiryDate
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -213,22 +220,26 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               ErrorDescription = Constants.OAuth.UNAUTHORIZED_USER_MESSAGE
                                                           });
 
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope);
+
+        var refreshToken = _authOptions.AllowPasswordRefreshToken
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope)
+                               : (null, null);
+
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
-                                                                                                user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope),
+                                                           AccessToken = accessToken.Token,
                                                            Scope = request.Scope ?? userScope,
-                                                           RefreshToken = _authOptions.AllowPasswordRefreshToken
-                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken,
-                                                                                                       ResourceType.User,
-                                                                                                       user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope
-                                                                                                      )
-                                                                              : null,
+                                                           RefreshToken = refreshToken.Token,
                                                            ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
+
+        DateTimeOffset? expiryDate = (refreshToken.Jwt?.Payload.Exp ?? 0) + (accessToken.Jwt.Payload.Exp ?? 0) == 0
+                                         ? null
+                                         : DateTimeOffset.FromUnixTimeSeconds((refreshToken.Jwt?.Payload.Exp ?? 0) > (accessToken.Jwt.Payload.Exp ?? 0) ? refreshToken.Jwt?.Payload.Exp ?? 0 : accessToken.Jwt.Payload.Exp ?? 0);
 
         dsToken.Add(new Domain.Entities.Token
                     {
@@ -239,7 +250,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         AccessToken = result.Content?.AccessToken!,
                         ExpiresIn = result.Content?.ExpiresIn,
                         Scope = result.Content?.Scope,
-                        RefreshToken = result.Content?.RefreshToken
+                        RefreshToken = result.Content?.RefreshToken,
+                        ExpiryDate = expiryDate
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -327,7 +339,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         {
             if (string.IsNullOrWhiteSpace(rt)) throw new ArgumentNullException(TokenHelper.CLAIM_TYPES_RESOURCE_TYPE);
 
-            if (!Enum.TryParse(rt, out resourceType) || resourceType != ResourceType.Client && resourceType != ResourceType.User) throw new NotSupportedException("ResourceType not supported");
+            if (!Enum.TryParse(rt, out resourceType) || (resourceType != ResourceType.Client && resourceType != ResourceType.User)) throw new NotSupportedException("ResourceType not supported");
 
             if (tt == null || !Enum.TryParse(tt, out TokenType tokenType) || tokenType != TokenType.RefreshToken) throw new NotSupportedException("TokenType not supported");
         }
@@ -351,17 +363,19 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         {
             var (tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
 
+            var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType, resourceId!, uid, tokenExpireSeconds, request.Scope ?? role);
+
+            var refreshToken = (resourceType == ResourceType.Client && _authOptions.AllowClientCredentialsRefreshToken)
+                            || (resourceType == ResourceType.User && _authOptions.AllowPasswordRefreshToken)
+                                   ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType, resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
+                                   : (null, null);
+
             var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                            {
                                                                TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                               AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType,
-                                                                                                    resourceId!, uid, tokenExpireSeconds, request.Scope ?? role),
+                                                               AccessToken = accessToken.Token,
                                                                Scope = request.Scope ?? role,
-                                                               RefreshToken = resourceType == ResourceType.Client && _authOptions.AllowClientCredentialsRefreshToken
-                                                                           || resourceType == ResourceType.User && _authOptions.AllowPasswordRefreshToken
-                                                                                  ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType,
-                                                                                                           resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
-                                                                                  : null,
+                                                               RefreshToken = refreshToken.Token,
                                                                ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                            });
 
@@ -374,6 +388,10 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                 _context.Entry(token).Property(t => t.Disabled).IsModified = true;
             }
 
+            DateTimeOffset? expiryDate = (refreshToken.Jwt?.Payload.Exp ?? 0) + (accessToken.Jwt.Payload.Exp ?? 0) == 0
+                                             ? null
+                                             : DateTimeOffset.FromUnixTimeSeconds((refreshToken.Jwt?.Payload.Exp ?? 0) > (accessToken.Jwt.Payload.Exp ?? 0) ? refreshToken.Jwt?.Payload.Exp ?? 0 : accessToken.Jwt.Payload.Exp ?? 0);
+
             dsToken.Add(new Domain.Entities.Token
                         {
                             Id = _snowflake.Generate(),
@@ -383,7 +401,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                             AccessToken = result.Content?.AccessToken!,
                             ExpiresIn = result.Content?.ExpiresIn,
                             Scope = result.Content?.Scope,
-                            RefreshToken = result.Content?.RefreshToken
+                            RefreshToken = result.Content?.RefreshToken,
+                            ExpiryDate = expiryDate
                         });
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -391,9 +410,9 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
             if (token == null) return result;
 
             var lsToken = new List<string> { token.AccessToken };
-                
+
             if (!string.IsNullOrWhiteSpace(token.RefreshToken)) lsToken.Add(token.RefreshToken);
-                
+
             _redis.Publish(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], JsonSerializer.Serialize(lsToken.ToArray(), _jsonOptions));
 
             return result;

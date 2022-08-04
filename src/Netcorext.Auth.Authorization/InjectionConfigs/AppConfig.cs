@@ -5,7 +5,6 @@ using Netcorext.Auth.Authorization.Services.Authorization;
 using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Extensions;
 using Netcorext.Auth.Protobufs;
-using Netcorext.EntityFramework.UserIdentityPattern.AspNetCore;
 using Netcorext.Extensions.AspNetCore.Middlewares;
 using Netcorext.Extensions.DependencyInjection;
 
@@ -17,8 +16,6 @@ public class AppConfig
     public AppConfig(WebApplication app)
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
-
-        app.EnsureCreateDatabase<Domain.Entities.Route>();
 
         app.UseCors(b =>
                     {

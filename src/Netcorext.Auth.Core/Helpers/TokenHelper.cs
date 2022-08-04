@@ -22,14 +22,24 @@ public static class TokenHelper
                                      string signingKey,
                                      string nameClaimType = ClaimTypes.NameIdentifier,
                                      string roleClaimType = ClaimTypes.Role,
-                                     string? originScope = null)
+                                     string? originScope = null) =>
+        Generate(type, resourceType, expires, resourceId, uniqueId, scope, issuer, audience, signingKey, nameClaimType, roleClaimType, originScope).Token;
+
+    public static (string Token, JwtSecurityToken Jwt) Generate(TokenType type, ResourceType resourceType,
+                                                                DateTime? expires, string resourceId, string? uniqueId, string? scope,
+                                                                string? issuer,
+                                                                string? audience,
+                                                                string signingKey,
+                                                                string nameClaimType = ClaimTypes.NameIdentifier,
+                                                                string roleClaimType = ClaimTypes.Role,
+                                                                string? originScope = null)
     {
         var claims = new List<Claim>
                      {
-                         new Claim(JwtRegisteredClaimNames.Jti, GenerateCode(signingKey)),
-                         new Claim(CLAIM_TYPES_TOKEN_TYPE, ((int)type).ToString()),
-                         new Claim(CLAIM_TYPES_RESOURCE_TYPE, ((int)resourceType).ToString()),
-                         new Claim(nameClaimType, resourceId)
+                         new(JwtRegisteredClaimNames.Jti, GenerateCode(signingKey)),
+                         new(CLAIM_TYPES_TOKEN_TYPE, ((int)type).ToString()),
+                         new(CLAIM_TYPES_RESOURCE_TYPE, ((int)resourceType).ToString()),
+                         new(nameClaimType, resourceId)
                      };
 
         if (!string.IsNullOrWhiteSpace(uniqueId)) claims.Add(new Claim(CLAIM_UNIQUE_ID, uniqueId));
@@ -52,10 +62,12 @@ public static class TokenHelper
                               };
 
         var jwtHandler = new JwtSecurityTokenHandler { SetDefaultTimesOnTokenCreation = false };
-        var securityToken = jwtHandler.CreateToken(tokenDescriptor);
-        var token = jwtHandler.WriteToken(securityToken);
 
-        return token;
+        var jwt = jwtHandler.CreateJwtSecurityToken(tokenDescriptor);
+
+        var token = jwtHandler.WriteToken(jwt);
+
+        return (token, jwt);
     }
 
     public static string GenerateCode(string signingKey)
