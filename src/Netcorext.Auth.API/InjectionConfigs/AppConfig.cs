@@ -92,7 +92,14 @@ public class AppConfig
 
                                             var routeService = provider.GetRequiredService<RouteService.RouteServiceClient>();
 
-                                            routeService.RegisterRoute(request);
+                                            try
+                                            {
+                                                routeService.RegisterRoute(request);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Console.Error.WriteLine(e);
+                                            }
                                         });
 
         app.Run();

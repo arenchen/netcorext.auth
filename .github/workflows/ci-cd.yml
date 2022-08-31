@@ -15,15 +15,15 @@ jobs:
       - name: Check Change
         id: detect
         run: |
-          CHANGE_FILE=`git diff-tree --no-commit-id --name-only HEAD | grep 'src' || true`
-          if [ "$CHANGE_FILE" = "src" ]; then
+          CHANGE_FILE=`git diff-tree --no-commit-id --name-only HEAD | grep -Em 1 'src|.github' || true`
+          if [ "$CHANGE_FILE" = "src" ] || [ "$CHANGE_FILE" = ".github" ]; then
             echo "::set-output name=status::Y"
           else
             echo "::set-output name=status::N"
           fi
   Build:
     needs: Detect
-    if: needs.Detect.outputs.status == 'Y' 
+    if: needs.Detect.outputs.status == 'Y'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
