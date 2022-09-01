@@ -131,8 +131,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         AccessToken = result.Content?.AccessToken!,
                         ExpiresIn = result.Content?.ExpiresIn,
                         Scope = result.Content?.Scope,
-                        RefreshToken = result.Content?.RefreshToken,
-                        ExpiryDate = expiryDate
+                        RefreshToken = result.Content?.RefreshToken
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -250,8 +249,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         AccessToken = result.Content?.AccessToken!,
                         ExpiresIn = result.Content?.ExpiresIn,
                         Scope = result.Content?.Scope,
-                        RefreshToken = result.Content?.RefreshToken,
-                        ExpiryDate = expiryDate
+                        RefreshToken = result.Content?.RefreshToken
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -401,8 +399,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                             AccessToken = result.Content?.AccessToken!,
                             ExpiresIn = result.Content?.ExpiresIn,
                             Scope = result.Content?.Scope,
-                            RefreshToken = result.Content?.RefreshToken,
-                            ExpiryDate = expiryDate
+                            RefreshToken = result.Content?.RefreshToken
                         });
 
             await _context.SaveChangesAsync(cancellationToken);

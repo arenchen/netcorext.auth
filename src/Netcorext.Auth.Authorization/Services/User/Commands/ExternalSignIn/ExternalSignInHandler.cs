@@ -139,12 +139,14 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
                                                            AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
-                                                                                                entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope),
+                                                                                                entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope)
+                                                                                      .Token,
                                                            Scope = scope,
                                                            RefreshToken = _config.AllowPasswordRefreshToken
                                                                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
                                                                                                        entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope
                                                                                                       )
+                                                                                             .Token
                                                                               : null,
                                                            ExpiresIn = entity.TokenExpireSeconds ?? _config.TokenExpireSeconds,
                                                            NameId = entity.Id.ToString()
