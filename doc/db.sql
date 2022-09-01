@@ -389,26 +389,33 @@ CREATE INDEX "IX_UserRole_RoleId" ON "UserRole" ("RoleId");
 
 
 /* Functions */
-CREATE OR REPLACE FUNCTION fn_token_partition_table(_customDate timestamptz DEFAULT NULL, _months INT8 DEFAULT NULL)
-  RETURNS INT8 
-  LANGUAGE PLPGSQL
-AS $$
-DECLARE tableName text; currentDate timestamptz; beginDate timestamptz; endDate timestamptz; months int8;
+CREATE OR REPLACE FUNCTION public.fn_token_partition_table(_customdate timestamp with time zone DEFAULT NULL::timestamp with time zone, _months bigint DEFAULT NULL::bigint)
+  RETURNS bigint
+  LANGUAGE plpgsql
+AS $function$
+DECLARE tableName text; cmd text; currentDate timestamptz; beginDate timestamptz; endDate timestamptz; months int8;
 BEGIN
   currentDate = COALESCE(_customDate, now());
-  months = COALESCE(_months, 1);
+  beginDate.  = to_char(currentDate, 'YYYY-MM-01')::timestamptz;
+  months.     = COALESCE(_months, 1);
 
-  FOR i IN 0..months LOOP  
-    beginDate = 	to_char(currentDate, 'YYYY-MM-01"T"00:00:00"Z"')::timestamptz + (i     || ' month')::interval;
-	  endDate =   	to_char(currentDate, 'YYYY-MM-01"T"00:00:00"Z"')::timestamptz + (i + 1 || ' month')::interval;
-    tableName = 	'Token_'||to_char(currentDate, 'YYYYMM');
+  FOR i IN 0..months LOOP
+    endDate   = to_char(beginDate, 'YYYY-MM-01')::timestamptz + (1 || ' month')::interval;
+    tableName = 'Token_'||to_char(beginDate, 'YYYYMM');
 
-    EXECUTE 'CREATE TABLE IF NOT EXISTS "'||tableName||'" PARTITION OF "Token" FOR VALUES FROM ('''||to_char(beginDate, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')||''') TO ('''||to_char(endDate, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')||''')';
-    EXECUTE 'ALTER TABLE "'||tableName||'" ADD CONSTRAINT "PK_'||tableName||'" PRIMARY KEY ("Id")';
+    CONTINUE WHEN EXISTS (SELECT 1 FROM information_schema."tables" WHERE "table_name" = tableName);
 
-    currentDate = endDate;
+    cmd = 'CREATE TABLE IF NOT EXISTS "'||tableName||'" PARTITION OF "Token" FOR VALUES FROM ('''||to_char(beginDate, 'YYYY-MM-DD')||''') TO ('''||to_char(endDate, 'YYYY-MM-DD')||''')';
+    EXECUTE cmd;
+    --RAISE NOTICE '%', cmd;
+
+    cmd = 'ALTER TABLE "'||tableName||'" ADD CONSTRAINT "PK_'||tableName||'" PRIMARY KEY ("Id")';
+    EXECUTE cmd;
+	--RAISE NOTICE '%', cmd;
+
+    beginDate = endDate;
   END LOOP;
 
   RETURN 1;
 END;
-$$
+$function$
