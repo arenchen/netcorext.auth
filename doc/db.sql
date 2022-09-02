@@ -396,8 +396,8 @@ AS $function$
 DECLARE tableName text; cmd text; currentDate timestamptz; beginDate timestamptz; endDate timestamptz; months int8;
 BEGIN
   currentDate = COALESCE(_customDate, now());
-  beginDate.  = to_char(currentDate, 'YYYY-MM-01')::timestamptz;
-  months.     = COALESCE(_months, 1);
+  beginDate   = to_char(currentDate, 'YYYY-MM-01')::timestamptz;
+  months      = COALESCE(_months, 1);
 
   FOR i IN 0..months LOOP
     endDate   = to_char(beginDate, 'YYYY-MM-01')::timestamptz + (1 || ' month')::interval;
