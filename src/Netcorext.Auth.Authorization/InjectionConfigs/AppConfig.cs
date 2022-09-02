@@ -32,7 +32,7 @@ public class AppConfig
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseJwtAuthentication();
 
-        if (app.Environment.IsDevelopment() || app.Environment.IsLocalhost())
+        if (app.Environment.IsDevelopment())
         {
             var docRoute = config.DocumentUrl.Replace("$id", config.Id).ToLower();
 
