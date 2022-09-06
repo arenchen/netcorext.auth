@@ -5,6 +5,7 @@ using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Enums;
 using Netcorext.Extensions.AspNetCore.Middlewares;
 using Netcorext.Extensions.DependencyInjection;
+using Netcorext.Extensions.Swagger.Extensions;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
@@ -36,13 +37,7 @@ public class AppConfig
         {
             var docRoute = config.DocumentUrl.Replace("$id", config.Id).ToLower();
 
-            app.MapSwagger(docRoute + "/{documentName}/swagger.json");
-
-            app.UseSwaggerUI(options =>
-                             {
-                                 options.SwaggerEndpoint("v1/swagger.json", typeof(ConfigSettings).Assembly.GetName().Name);
-                                 options.RoutePrefix = docRoute;
-                             });
+            app.UseSwagger(typeof(ConfigSettings).Assembly.GetName().Name!, docRoute);
         }
 
         app.UseSimpleHealthChecks(provider =>
@@ -74,8 +69,8 @@ public class AppConfig
                                                                           Protocol = HttpProtocols.Http1.ToString(),
                                                                           HttpMethod = "GET",
                                                                           BaseUrl = config.AppSettings.HttpBaseUrl.TrimEnd(char.Parse("/")),
-                                                                          RelativePath = config.DocumentUrl.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
-                                                                          Template = config.DocumentUrl.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
+                                                                          RelativePath = config.DocumentUrl.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")) + "{*remainder}",
+                                                                          Template = config.DocumentUrl.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")) + "{*remainder}",
                                                                           RouteValues = new Dictionary<string, string?>(),
                                                                           FunctionId = "DOC",
                                                                           NativePermission = PermissionType.All,

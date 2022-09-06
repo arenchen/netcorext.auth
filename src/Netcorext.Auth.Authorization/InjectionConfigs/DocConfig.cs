@@ -1,12 +1,16 @@
 using Netcorext.Extensions.DependencyInjection;
+using Netcorext.Extensions.Swagger.Extensions;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
 [Injection]
 public class DocConfig
 {
-    public DocConfig(IServiceCollection services)
+    public DocConfig(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSwaggerGen();
+        var id = configuration["Id"];
+        var tokenUrl = configuration["AppSettings:TokenUrl"];
+        tokenUrl = tokenUrl.Replace("$id", id).ToLower();
+        services.AddSwaggerGenWithAuth(new Uri(tokenUrl));
     }
 }

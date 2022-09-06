@@ -4,6 +4,7 @@ using Netcorext.Auth.Authentication.Middlewares;
 using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Services.Route;
 using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Auth.Enums;
 using Netcorext.Extensions.DependencyInjection;
 using Netcorext.Mediator;
 
@@ -60,7 +61,24 @@ public class AppConfig
                                            {
                                                var request = new RegisterRoute
                                                              {
-                                                                 Groups = endpoints.GroupBy(t => t.Protocol)
+                                                                 Groups = endpoints.Union(new[]
+                                                                                          {
+                                                                                              new PermissionEndpoint
+                                                                                              {
+                                                                                                  Group = config.Id,
+                                                                                                  Protocol = HttpProtocols.Http1.ToString(),
+                                                                                                  HttpMethod = "GET",
+                                                                                                  BaseUrl = config.AppSettings.HttpBaseUrl.TrimEnd(char.Parse("/")),
+                                                                                                  RelativePath = config.AppSettings.HealthRoute!.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
+                                                                                                  Template = config.AppSettings.HealthRoute.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
+                                                                                                  RouteValues = new Dictionary<string, string?>(),
+                                                                                                  FunctionId = "HEALTH",
+                                                                                                  NativePermission = PermissionType.All,
+                                                                                                  AllowAnonymous = true,
+                                                                                                  Tag = null
+                                                                                              }
+                                                                                          })
+                                                                                   .GroupBy(t => t.Protocol)
                                                                                    .Select(t => new RegisterRoute.RouteGroup
                                                                                                 {
                                                                                                     Name = config.Id + " - " + t.Key,
