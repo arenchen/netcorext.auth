@@ -2,7 +2,16 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+      - stg
+    workflow_dispatch:
+      inputs:
+        skipDetect:
+          description: 'Skip Detect'
+          type: boolean
+          required: true
 jobs:
   Detect:
     runs-on: ubuntu-latest
@@ -15,8 +24,8 @@ jobs:
       - name: Check Change
         id: detect
         run: |
-          CHANGE_FILE=`git diff-tree --no-commit-id --name-only HEAD | grep -Em 1 'src|.github' || true`
-          if [ "$CHANGE_FILE" = "src" ] || [ "$CHANGE_FILE" = ".github" ]; then
+          CHANGE_FILE=`git diff-tree --no-commit-id --name-only HEAD | grep -Em 1 'src' || true`
+          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.skipDetect }} ]; then
             echo "::set-output name=status::Y"
           else
             echo "::set-output name=status::N"

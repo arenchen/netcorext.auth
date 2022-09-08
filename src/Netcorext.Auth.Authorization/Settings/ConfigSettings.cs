@@ -20,5 +20,4 @@ public class AppSettings
     public HttpVersionPolicy? ForwarderHttpVersionPolicy { get; set; }
     public TimeSpan? ForwarderActivityTimeout { get; set; }
     public bool? ForwarderAllowResponseBuffering { get; set; }
-    public string? TokenUrl { get; set; }
 }

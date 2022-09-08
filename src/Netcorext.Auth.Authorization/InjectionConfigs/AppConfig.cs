@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authorization.Services.Authorization;
 using Netcorext.Auth.Authorization.Settings;
-using Netcorext.Auth.Enums;
 using Netcorext.Extensions.AspNetCore.Middlewares;
 using Netcorext.Extensions.DependencyInjection;
 using Netcorext.Extensions.Swagger.Extensions;
@@ -37,7 +35,10 @@ public class AppConfig
         {
             var docRoute = config.DocumentUrl.Replace("$id", config.Id).ToLower();
 
-            app.UseSwagger(typeof(ConfigSettings).Assembly.GetName().Name!, docRoute);
+            app.UseSwagger(typeof(ConfigSettings).Assembly.GetName().Name!,
+                           docRoute,
+                           docRoute + "/{*remainder}",
+                           docRoute + "/{documentName}/swagger.json");
         }
 
         app.UseSimpleHealthChecks(provider =>
@@ -60,38 +61,7 @@ public class AppConfig
                                             registerConfig.ForwarderHttpVersionPolicy = config.AppSettings.ForwarderHttpVersionPolicy;
                                             registerConfig.ForwarderActivityTimeout = config.AppSettings.ForwarderActivityTimeout;
                                             registerConfig.ForwarderAllowResponseBuffering = config.AppSettings.ForwarderAllowResponseBuffering;
-                                        },
-                                        otherPermissionEndpoints: new[]
-                                                                  {
-                                                                      new PermissionEndpoint
-                                                                      {
-                                                                          Group = config.Id,
-                                                                          Protocol = HttpProtocols.Http1.ToString(),
-                                                                          HttpMethod = "GET",
-                                                                          BaseUrl = config.AppSettings.HttpBaseUrl.TrimEnd(char.Parse("/")),
-                                                                          RelativePath = config.DocumentUrl.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")) + "{*remainder}",
-                                                                          Template = config.DocumentUrl.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")) + "{*remainder}",
-                                                                          RouteValues = new Dictionary<string, string?>(),
-                                                                          FunctionId = "DOC",
-                                                                          NativePermission = PermissionType.All,
-                                                                          AllowAnonymous = true,
-                                                                          Tag = null
-                                                                      },
-                                                                      new PermissionEndpoint
-                                                                      {
-                                                                          Group = config.Id,
-                                                                          Protocol = HttpProtocols.Http1.ToString(),
-                                                                          HttpMethod = "GET",
-                                                                          BaseUrl = config.AppSettings.HttpBaseUrl.TrimEnd(char.Parse("/")),
-                                                                          RelativePath = config.AppSettings.HealthRoute!.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
-                                                                          Template = config.AppSettings.HealthRoute.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
-                                                                          RouteValues = new Dictionary<string, string?>(),
-                                                                          FunctionId = "HEALTH",
-                                                                          NativePermission = PermissionType.All,
-                                                                          AllowAnonymous = true,
-                                                                          Tag = null
-                                                                      }
-                                                                  });
+                                        });
 
         app.Run();
     }

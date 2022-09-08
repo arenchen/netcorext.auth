@@ -1,10 +1,8 @@
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Client;
 using Netcorext.Auth.API.Services.Role;
 using Netcorext.Auth.API.Services.User;
 using Netcorext.Auth.API.Settings;
-using Netcorext.Auth.Enums;
 using Netcorext.Extensions.AspNetCore.Middlewares;
 using Netcorext.Extensions.DependencyInjection;
 
@@ -55,24 +53,7 @@ public class AppConfig
                                             registerConfig.ForwarderHttpVersionPolicy = config.AppSettings.ForwarderHttpVersionPolicy;
                                             registerConfig.ForwarderActivityTimeout = config.AppSettings.ForwarderActivityTimeout;
                                             registerConfig.ForwarderAllowResponseBuffering = config.AppSettings.ForwarderAllowResponseBuffering;
-                                        },
-                                        otherPermissionEndpoints: new[]
-                                                                  {
-                                                                      new PermissionEndpoint
-                                                                      {
-                                                                          Group = config.Id,
-                                                                          Protocol = HttpProtocols.Http1.ToString(),
-                                                                          HttpMethod = "GET",
-                                                                          BaseUrl = config.AppSettings.HttpBaseUrl.TrimEnd(char.Parse("/")),
-                                                                          RelativePath = config.AppSettings.HealthRoute!.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
-                                                                          Template = config.AppSettings.HealthRoute.Replace("$id", config.Id).ToLower().Trim(char.Parse("/")),
-                                                                          RouteValues = new Dictionary<string, string?>(),
-                                                                          FunctionId = "HEALTH",
-                                                                          NativePermission = PermissionType.All,
-                                                                          AllowAnonymous = true,
-                                                                          Tag = null
-                                                                      }
-                                                                  });
+                                        });
 
         app.Run();
     }
