@@ -11,6 +11,6 @@ public class DocConfig
         var id = configuration["Id"];
         var tokenUrl = configuration["OAuth:Document:AccessTokenUrl"];
         tokenUrl = tokenUrl.Replace("$id", id).ToLower();
-        services.AddSwaggerGenWithAuth(new Uri(tokenUrl));
+        services.AddSwaggerGenWithAuth(new Uri(tokenUrl, UriKind.RelativeOrAbsolute), options => options.CustomSchemaIds(t => t.FullName));
     }
 }

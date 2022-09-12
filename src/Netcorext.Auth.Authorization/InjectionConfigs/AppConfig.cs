@@ -35,10 +35,7 @@ public class AppConfig
         {
             var docRoute = config.DocumentUrl.Replace("$id", config.Id).ToLower();
 
-            app.UseSwagger(typeof(ConfigSettings).Assembly.GetName().Name!,
-                           docRoute,
-                           docRoute + "/{*remainder}",
-                           docRoute + "/{documentName}/swagger.json");
+            app.UseSwagger(docRoute);
         }
 
         app.UseSimpleHealthChecks(provider =>
