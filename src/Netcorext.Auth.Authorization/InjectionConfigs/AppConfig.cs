@@ -33,9 +33,7 @@ public class AppConfig
 
         if (app.Environment.IsDevelopment())
         {
-            var docRoute = config.DocumentUrl.Replace("$id", config.Id).ToLower();
-
-            app.UseSwagger(docRoute);
+            app.UseSwagger(config.DocumentUrl.Replace("$id", config.Id).ToLower());
         }
 
         app.UseSimpleHealthChecks(provider =>

@@ -1,140 +1,114 @@
 name: Build and Deploy
 
+env:
+  IMAGE_PREFIX: "netcorext"
+
 on:
   push:
     branches:
       - main
       - dev
       - stg
-    workflow_dispatch:
-      inputs:
-        skipDetect:
-          description: 'Skip Detect'
-          type: boolean
-          required: true
+
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force exec'
+        type: boolean
+        required: true
+
 jobs:
   Detect:
     runs-on: ubuntu-latest
     outputs:
-      status: ${{ join(steps.detect.outputs.status) }}
+      api: ${{ join(steps.detect.outputs.api) }}
+      authentication: ${{ join(steps.detect.outputs.authentication) }}
+      authorization: ${{ join(steps.detect.outputs.authorization) }}
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Check Change
+      - name: Detect Change
         id: detect
         run: |
-          CHANGE_FILE=`git diff-tree --no-commit-id --name-only HEAD | grep -Em 1 'src' || true`
-          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.skipDetect }} ]; then
-            echo "::set-output name=status::Y"
+          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.API' || true`
+          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
+            echo "::set-output name=api::Y"
           else
-            echo "::set-output name=status::N"
+            echo "::set-output name=api::N"
           fi
-  Build:
+          
+          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.Authentication' || true`
+          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
+            echo "::set-output name=authentication::Y"
+          else
+            echo "::set-output name=authentication::N"
+          fi
+          
+          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.Authorization' || true`
+          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
+            echo "::set-output name=authorization::Y"
+          else
+            echo "::set-output name=authorization::N"
+          fi
+                    
+          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.Core' || true`
+          if [ ! -z "$CHANGE_FILE" ]; then
+            echo "::set-output name=api::Y"
+            echo "::set-output name=authentication::Y"
+            echo "::set-output name=authorization::Y"
+          fi
+  BuildApi:
     needs: Detect
-    if: needs.Detect.outputs.status == 'Y'
+    if: needs.Detect.outputs.api == 'Y'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - id: build
+        uses: netcorext/dotnet-build-image-action@dev
         with:
-          fetch-depth: 0
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 6.0.x
-      - name: Install dotnet tool
-        run: dotnet tool install -g --prerelease netcorext.tools.assemblyinfo
-      - name: Set Environments
-        run: |
-          BRANCH="${GITHUB_REF##*/}"
-          COMMIT_SHORT_SHA=`git rev-parse --short ${GITHUB_SHA}`
-          COMMIT_COUNT=`git rev-list --count HEAD`
-          COMMIT_TIME=`git show -s --format=%ct HEAD`
-          ADDITIONAL_ARGUMENTS="-c Debug --version-suffix ${BRANCH}.${COMMIT_TIME}+${COMMIT_SHORT_SHA}"
-          IMAGE_NAME_PREFIX="netcorext"
-
-          TAG_LATEST="${BRANCH}-latest"
-
-          if [ "$BRANCH" = "main" ]; then
-            ADDITIONAL_ARGUMENTS="-c Release"
-            TAG_LATEST="latest"
-          fi
-
-          dotnet build src/Netcorext.Auth.Authentication/Netcorext.Auth.Authentication.csproj -o ./dist
-
-          ASSEMBLY_VERSION=`asm-info ./dist/Netcorext.Auth.Authentication.dll --simple --version`
-
-          rm -rf ./dist
-
-          IMAGE_VERSION="${ASSEMBLY_VERSION}-${BRANCH}.${COMMIT_TIME}"
-
-          if [ "$BRANCH" = "main" ]; then
-            IMAGE_VERSION="${ASSEMBLY_VERSION}"
-          fi
-
-          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
-          echo "COMMIT_SHORT_SHA=$COMMIT_SHORT_SHA" >> $GITHUB_ENV
-          echo "COMMIT_COUNT=$COMMIT_COUNT" >> $GITHUB_ENV
-          echo "COMMIT_TIME=$COMMIT_TIME" >> $GITHUB_ENV
-          echo "ADDITIONAL_ARGUMENTS=$ADDITIONAL_ARGUMENTS" >> $GITHUB_ENV
-          echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_ENV
-          echo "IMAGE_NAME_PREFIX=$IMAGE_NAME_PREFIX" >> $GITHUB_ENV
-          echo "IMAGE_VERSION=$IMAGE_VERSION" >> $GITHUB_ENV
-          echo "TAG_LATEST=$TAG_LATEST" >> $GITHUB_ENV
-      - name: Create Dockerfile
-        run: |
-          cat > dockerfile << EOF
-          FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine AS base
-          ENV ASPNETCORE_ENVIRONMENT=Production
-          WORKDIR /app
-          VOLUME [ "/app" ]
-          EXPOSE 80 443
-
-          FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
-          ARG APP=
-          WORKDIR /sources
-          COPY . /sources
-          WORKDIR src/\${APP}
-          RUN dotnet restore --no-cache
-          RUN dotnet publish ${{ env.ADDITIONAL_ARGUMENTS }} -o /dist
-
-          FROM base AS final
-          WORKDIR /app
-          COPY --from=build /dist .
-          ENTRYPOINT export APP=\$(basename *.runtimeconfig.json .runtimeconfig.json) && dotnet \$APP.dll
-          EOF
+          app: "Netcorext.Auth.API"
+          image-prefix: ${{ env.IMAGE_PREFIX }}
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push Netcorext.Auth.Authentication image
-        uses: docker/build-push-action@v3
+      - name: Push to DockerHub
+        run: |
+          docker push -a ${{ steps.build.outputs.image }}
+  BuildAuthentication:
+    needs: Detect
+    if: needs.Detect.outputs.authentication == 'Y'
+    runs-on: ubuntu-latest
+    steps:
+      - id: build
+        uses: netcorext/dotnet-build-image-action@dev
         with:
-          context: .
-          push: true
-          build-args: APP=Netcorext.Auth.Authentication
-          tags: |
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authentication:${{ env.COMMIT_SHORT_SHA }}
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authentication:${{ env.IMAGE_VERSION }}
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authentication:${{ env.TAG_LATEST }}
-      - name: Build and push Netcorext.Auth.Authorization image
-        uses: docker/build-push-action@v3
+          app: "Netcorext.Auth.Authentication"
+          image-prefix: ${{ env.IMAGE_PREFIX }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
         with:
-          context: .
-          push: true
-          build-args: APP=Netcorext.Auth.Authorization
-          tags: |
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authorization:${{ env.COMMIT_SHORT_SHA }}
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authorization:${{ env.IMAGE_VERSION }}
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-authorization:${{ env.TAG_LATEST }}
-      - name: Build and push Netcorext.Auth.API image
-        uses: docker/build-push-action@v3
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push to DockerHub
+        run: |
+          docker push -a ${{ steps.build.outputs.image }}
+  BuildAuthorization:
+    needs: Detect
+    if: needs.Detect.outputs.authorization == 'Y'
+    runs-on: ubuntu-latest
+    steps:
+      - id: build
+        uses: netcorext/dotnet-build-image-action@dev
         with:
-          context: .
-          push: true
-          build-args: APP=Netcorext.Auth.API
-          tags: |
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-api:${{ env.COMMIT_SHORT_SHA }}
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-api:${{ env.IMAGE_VERSION }}
-            ${{ env.IMAGE_NAME_PREFIX }}/netcorext-auth-api:${{ env.TAG_LATEST }}
+          app: "Netcorext.Auth.Authorization"
+          image-prefix: ${{ env.IMAGE_PREFIX }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push to DockerHub
+        run: |
+          docker push -a ${{ steps.build.outputs.image }}
