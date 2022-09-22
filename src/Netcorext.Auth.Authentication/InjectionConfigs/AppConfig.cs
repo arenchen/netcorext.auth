@@ -1,10 +1,10 @@
+using Mapster;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Middlewares;
 using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Services.Route;
 using Netcorext.Auth.Authentication.Settings;
-using Netcorext.Extensions.DependencyInjection;
 using Netcorext.Mediator;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
@@ -36,26 +36,16 @@ public class AppConfig
 
         app.MapReverseProxy();
 
-        app.UseSimpleHealthChecks(provider =>
-                                  {
-                                      var routePrefixValue = config.AppSettings.HealthRoute?.Replace("$id", config.Id).ToLower() ?? "";
-
-                                      return routePrefixValue;
-                                  });
+        app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
 
         app.MapGrpcService<RouteServiceFacade>();
         app.MapGrpcService<PermissionServiceFacade>();
 
         app.RegisterPermissionEndpoints((_, registerConfig) =>
                                         {
+                                            config.AppSettings.RegisterConfig?.Adapt(registerConfig);
                                             registerConfig.RouteGroupName = config.Id;
-                                            registerConfig.RouteServiceUrl = config.AppSettings.Http2BaseUrl;
-                                            registerConfig.HttpBaseUrl = config.AppSettings.HttpBaseUrl;
-                                            registerConfig.Http2BaseUrl = config.AppSettings.Http2BaseUrl;
-                                            registerConfig.ForwarderRequestVersion = config.AppSettings.ForwarderRequestVersion;
-                                            registerConfig.ForwarderHttpVersionPolicy = config.AppSettings.ForwarderHttpVersionPolicy;
-                                            registerConfig.ForwarderActivityTimeout = config.AppSettings.ForwarderActivityTimeout;
-                                            registerConfig.ForwarderAllowResponseBuffering = config.AppSettings.ForwarderAllowResponseBuffering;
+                                            registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Authentication"].Url;
                                         }, (provider, registerConfig, endpoints) =>
                                            {
                                                var request = new RegisterRoute

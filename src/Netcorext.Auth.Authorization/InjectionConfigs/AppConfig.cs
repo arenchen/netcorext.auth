@@ -1,9 +1,8 @@
+using Mapster;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authorization.Services.Authorization;
 using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Extensions.AspNetCore.Middlewares;
-using Netcorext.Extensions.DependencyInjection;
-using Netcorext.Extensions.Swagger.Extensions;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
@@ -13,6 +12,9 @@ public class AppConfig
     public AppConfig(WebApplication app)
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
+
+        app.UseMiddleware<CustomExceptionMiddleware>();
+        app.UseJwtAuthentication();
 
         app.UseCors(b =>
                     {
@@ -28,34 +30,22 @@ public class AppConfig
                          .AllowCredentials();
                     });
 
-        app.UseMiddleware<CustomExceptionMiddleware>();
-        app.UseJwtAuthentication();
 
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger(config.DocumentUrl.Replace("$id", config.Id).ToLower());
+            app.UseSwagger((config.Route.RoutePrefix + config.Document.Url).ToLower());
         }
 
-        app.UseSimpleHealthChecks(provider =>
-                                  {
-                                      var routePrefixValue = config.AppSettings.HealthRoute?.Replace("$id", config.Id).ToLower() ?? "";
+        app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
 
-                                      return routePrefixValue;
-                                  });
-
-        app.MapGrpcService<AuthorizationServiceFacade>();
         app.MapControllers();
+        app.MapGrpcService<AuthorizationServiceFacade>();
 
         app.RegisterPermissionEndpoints((_, registerConfig) =>
                                         {
+                                            config.AppSettings.RegisterConfig?.Adapt(registerConfig);
                                             registerConfig.RouteGroupName = config.Id;
-                                            registerConfig.RouteServiceUrl = config.Services["Authentication"].Url;
-                                            registerConfig.HttpBaseUrl = config.AppSettings.HttpBaseUrl;
-                                            registerConfig.Http2BaseUrl = config.AppSettings.Http2BaseUrl;
-                                            registerConfig.ForwarderRequestVersion = config.AppSettings.ForwarderRequestVersion;
-                                            registerConfig.ForwarderHttpVersionPolicy = config.AppSettings.ForwarderHttpVersionPolicy;
-                                            registerConfig.ForwarderActivityTimeout = config.AppSettings.ForwarderActivityTimeout;
-                                            registerConfig.ForwarderAllowResponseBuffering = config.AppSettings.ForwarderAllowResponseBuffering;
+                                            registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Authentication"].Url;
                                         });
 
         app.Run();

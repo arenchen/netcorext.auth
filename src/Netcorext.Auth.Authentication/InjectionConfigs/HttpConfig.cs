@@ -1,4 +1,3 @@
-using Netcorext.Extensions.DependencyInjection;
 using Netcorext.Logging.HttpClientLogger;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;

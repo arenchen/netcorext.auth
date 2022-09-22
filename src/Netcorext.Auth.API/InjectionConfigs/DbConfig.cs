@@ -5,9 +5,7 @@ using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Settings;
 using Netcorext.Auth.Utilities;
 using Netcorext.Configuration.Extensions;
-using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.AspNetCore;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.API.InjectionConfigs;
 
@@ -19,7 +17,7 @@ public class DbConfig
         services.AddIdentityDbContext((provider, builder) =>
                                       {
                                           var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
-                                          
+
                                           builder.UseNpgsql(config.Connections.RelationalDb.GetDefault()!.Connection);
                                       });
 

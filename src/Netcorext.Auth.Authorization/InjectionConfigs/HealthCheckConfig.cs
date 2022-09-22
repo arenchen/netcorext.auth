@@ -3,7 +3,6 @@ using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Configuration.Extensions;
 using Netcorext.Diagnostics.HealthChecks.PostgreSql;
 using Netcorext.Diagnostics.HealthChecks.Redis;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 

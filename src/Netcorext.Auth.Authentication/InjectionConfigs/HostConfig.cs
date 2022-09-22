@@ -1,4 +1,3 @@
-using Netcorext.Extensions.DependencyInjection;
 using Serilog;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;

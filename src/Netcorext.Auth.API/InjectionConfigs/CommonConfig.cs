@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.API.Settings;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.API.InjectionConfigs;
 

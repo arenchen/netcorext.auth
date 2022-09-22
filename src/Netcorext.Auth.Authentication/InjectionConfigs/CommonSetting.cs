@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Authentication.Settings;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
 
@@ -12,6 +11,7 @@ public class CommonSetting
     {
         services.Configure<ConfigSettings>(configuration);
         services.Configure<AuthOptions>(configuration.GetSection("AuthOptions"));
+
         services.AddSingleton<ISnowflake>(provider =>
                                           {
                                               var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;

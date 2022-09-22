@@ -5,7 +5,6 @@ using Netcorext.Auth.API.Services.Role.Pipelines;
 using Netcorext.Auth.API.Services.User;
 using Netcorext.Auth.API.Services.User.Pipelines;
 using Netcorext.Contracts;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.API.InjectionConfigs;
 

@@ -1,5 +1,4 @@
 using Netcorext.Auth.Authentication.Workers;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
 

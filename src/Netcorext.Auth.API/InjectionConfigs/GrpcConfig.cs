@@ -1,4 +1,3 @@
-using Netcorext.Extensions.DependencyInjection;
 using Netcorext.Extensions.Grpc.Interceptors;
 
 namespace Netcorext.Auth.API.InjectionConfigs;

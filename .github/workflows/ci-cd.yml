@@ -1,7 +1,9 @@
 name: Build and Deploy
 
 env:
-  IMAGE_PREFIX: "netcorext"
+  APP: 'Netcorext.Auth.API'
+  APP_AUTHENTICATION: 'Netcorext.Auth.Authentication'
+  APP_AUTHORIZATION: 'Netcorext.Auth.Authorization'
 
 on:
   push:
@@ -31,21 +33,21 @@ jobs:
       - name: Detect Change
         id: detect
         run: |
-          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.API' || true`
+          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 "${{ env.APP }}" || true`
           if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
             echo "::set-output name=api::Y"
           else
             echo "::set-output name=api::N"
           fi
           
-          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.Authentication' || true`
+          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 "${{ env.APP_AUTHENTICATION }}" || true`
           if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
             echo "::set-output name=authentication::Y"
           else
             echo "::set-output name=authentication::N"
           fi
           
-          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.Authorization' || true`
+          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 "${{ env.APP_AUTHORIZATION }}" || true`
           if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
             echo "::set-output name=authorization::Y"
           else
@@ -66,8 +68,8 @@ jobs:
       - id: build
         uses: netcorext/dotnet-build-image-action@dev
         with:
-          app: "Netcorext.Auth.API"
-          image-prefix: ${{ env.IMAGE_PREFIX }}
+          app: ${{ env.APP }}
+          image-prefix: ${{ secrets.IMAGE_PREFIX }}
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
@@ -84,8 +86,8 @@ jobs:
       - id: build
         uses: netcorext/dotnet-build-image-action@dev
         with:
-          app: "Netcorext.Auth.Authentication"
-          image-prefix: ${{ env.IMAGE_PREFIX }}
+          app: ${{ env.APP_AUTHENTICATION }}
+          image-prefix: ${{ secrets.IMAGE_PREFIX }}
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
@@ -102,8 +104,8 @@ jobs:
       - id: build
         uses: netcorext/dotnet-build-image-action@dev
         with:
-          app: "Netcorext.Auth.Authorization"
-          image-prefix: ${{ env.IMAGE_PREFIX }}
+          app: ${{ env.APP_AUTHORIZATION }}
+          image-prefix: ${{ secrets.IMAGE_PREFIX }}
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:

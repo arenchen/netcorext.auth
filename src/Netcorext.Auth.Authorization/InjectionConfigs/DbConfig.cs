@@ -6,7 +6,6 @@ using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Utilities;
 using Netcorext.Configuration.Extensions;
 using Netcorext.EntityFramework.UserIdentityPattern.AspNetCore;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 

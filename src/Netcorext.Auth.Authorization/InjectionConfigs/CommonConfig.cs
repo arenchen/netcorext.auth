@@ -3,7 +3,6 @@ using Microsoft.IdentityModel.Logging;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Utilities;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
@@ -19,7 +18,7 @@ public class CommonSetting
         services.Configure<AuthOptions>(configuration.GetSection("AuthOptions"));
 
         services.AddSingleton<JwtGenerator>();
-        
+
         services.AddSingleton<ISnowflake>(provider =>
                                           {
                                               var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
@@ -25,13 +24,10 @@ public class MvcConfig
 
         services.AddControllers(options =>
                                 {
-                                    var id = configuration.GetValue("Id", "");
-                                    var routePrefix = configuration.GetValue("AppSettings:RoutePrefix", "");
-                                    var routePrefixValue = routePrefix.Replace("$id", id).ToLower();
-                                    var versionRoute = configuration.GetValue("AppSettings:VersionRoute", "");
-                                    var routePattern = routePrefixValue + versionRoute;
+                                    var routePrefix = configuration.GetValue("Route:RoutePrefix", "");
+                                    var versionRoute = configuration.GetValue("Route:VersionRoute", "");
+                                    var routePattern = routePrefix + versionRoute;
                                     if (!string.IsNullOrWhiteSpace(routePattern)) options.UseRoutePrefix(routePattern);
-                                    options.AddFromFormOrBodyBinderProvider();
                                 })
                 .AddJsonOptions(options =>
                                 {

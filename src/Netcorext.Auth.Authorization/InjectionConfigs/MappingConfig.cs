@@ -1,5 +1,4 @@
 using Mapster;
-using Netcorext.Extensions.DependencyInjection;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
