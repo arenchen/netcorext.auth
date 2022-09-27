@@ -28,6 +28,7 @@ public class MvcConfig
                                     var versionRoute = configuration.GetValue("Route:VersionRoute", "");
                                     var routePattern = routePrefix + versionRoute;
                                     if (!string.IsNullOrWhiteSpace(routePattern)) options.UseRoutePrefix(routePattern);
+                                    options.AddFromFormOrBodyBinderProvider();
                                 })
                 .AddJsonOptions(options =>
                                 {
