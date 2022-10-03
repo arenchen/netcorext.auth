@@ -1,7 +1,7 @@
 using FluentValidation;
 using Netcorext.Extensions.Commons;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Queries;
 
 public class GetUserValidator : AbstractValidator<GetUser>
 {

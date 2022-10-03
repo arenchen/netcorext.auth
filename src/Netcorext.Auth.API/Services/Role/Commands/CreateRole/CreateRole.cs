@@ -1,8 +1,7 @@
-using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Role;
+namespace Netcorext.Auth.API.Services.Role.Commands;
 
 public class CreateRole : IRequest<Result<IEnumerable<long>>>
 {
@@ -11,10 +10,10 @@ public class CreateRole : IRequest<Result<IEnumerable<long>>>
     public class Role
     {
         public string Name { get; set; } = null!;
-        public int Priority { get; set; }
         public bool Disabled { get; set; }
         public RoleExtendData[]? ExtendData { get; set; }
-        public Permission[]? Permissions { get; set; }    
+        public RolePermission[]? Permissions { get; set; }
+        public RolePermissionCondition[]? PermissionConditions { get; set; }
     }
 
     public class RoleExtendData
@@ -23,23 +22,17 @@ public class CreateRole : IRequest<Result<IEnumerable<long>>>
         public string? Value { get; set; }
     }
 
-    public class Permission
+    public class RolePermission
     {
-        public string FunctionId { get; set; } = null!;
-        public PermissionType PermissionType { get; set; }
-        public bool Allowed { get; set; }
-        public int Priority { get; set; }
-        public bool ReplaceExtendData { get; set; }
-        public DateTimeOffset? ExpireDate { get; set; }
-        public PermissionExtendData[]? ExtendData { get; set; }
+        public long PermissionId { get; set; }
     }
 
-    public class PermissionExtendData
+    public class RolePermissionCondition
     {
+        public long PermissionId { get; set; }
+        public int Priority { get; set; }
         public string Key { get; set; } = null!;
         public string Value { get; set; } = null!;
-        public PermissionType PermissionType { get; set; }
         public bool Allowed { get; set; }
-        
     }
 }

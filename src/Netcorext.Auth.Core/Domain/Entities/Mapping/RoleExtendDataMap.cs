@@ -21,7 +21,7 @@ public class RoleExtendDataMap : EntityMap<RoleExtendData>
 
         Builder.Property(t => t.Value)
                .HasColumnName(nameof(RoleExtendData.Value))
-               .HasMaxLength(1000);
+               .HasMaxLength(200);
 
         // Relationships
         Builder.HasOne(t => t.Role)

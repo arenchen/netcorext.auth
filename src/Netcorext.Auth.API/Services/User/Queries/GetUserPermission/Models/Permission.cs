@@ -1,13 +1,9 @@
-using Netcorext.Auth.Enums;
-
-namespace Netcorext.Auth.API.Services.User.Models;
+namespace Netcorext.Auth.API.Services.User.Queries.Models;
 
 public class Permission
 {
-    public string FunctionId { get; set; } = null!;
-    public PermissionType PermissionType { get; set; }
-    public bool Allowed { get; set; }
+    public long Id { get; set; }
+    public string Name { get; set; } = null!;
     public int Priority { get; set; }
-    public bool ReplaceExtendData { get; set; }
-    public IEnumerable<PermissionExtendData>? ExtendData { get; set; }
+    public IEnumerable<Rule> Rules { get; set; } = null!;
 }

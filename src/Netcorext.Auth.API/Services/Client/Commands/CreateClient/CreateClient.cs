@@ -1,12 +1,12 @@
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Client;
+namespace Netcorext.Auth.API.Services.Client.Commands;
 
 public class CreateClient : IRequest<Result<long?>>
 {
-    public string? Secret { get; set; }
-    public string? Name { get; set; }
+    public string Secret { get; set; } = null!;
+    public string Name { get; set; } = null!;
     public string? CallbackUrl { get; set; }
     public int? TokenExpireSeconds { get; set; }
     public int? RefreshTokenExpireSeconds { get; set; }

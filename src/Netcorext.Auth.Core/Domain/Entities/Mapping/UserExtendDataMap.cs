@@ -21,7 +21,7 @@ public class UserExtendDataMap : EntityMap<UserExtendData>
 
         Builder.Property(t => t.Value)
                .HasColumnName(nameof(UserExtendData.Value))
-               .HasMaxLength(1000);
+               .HasMaxLength(200);
 
         // Relationships
         Builder.HasOne(t => t.User)

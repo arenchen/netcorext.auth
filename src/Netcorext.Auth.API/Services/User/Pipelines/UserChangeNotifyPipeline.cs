@@ -2,6 +2,7 @@ using System.Text.Json;
 using FreeRedis;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Services.User.Commands;
 using Netcorext.Auth.API.Settings;
 using Netcorext.Contracts;
 using Netcorext.Mediator.Pipelines;

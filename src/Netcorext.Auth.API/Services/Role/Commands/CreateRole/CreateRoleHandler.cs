@@ -4,7 +4,7 @@ using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Role;
+namespace Netcorext.Auth.API.Services.Role.Commands;
 
 public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<long>>>
 {
@@ -20,6 +20,25 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
     public async Task<Result<IEnumerable<long>>> Handle(CreateRole request, CancellationToken cancellationToken = default)
     {
         var ds = _context.Set<Domain.Entities.Role>();
+        var dsPermission = _context.Set<Domain.Entities.Permission>();
+
+        if (request.Roles.SelectMany(t => t.Permissions ?? Array.Empty<CreateRole.RolePermission>()).Any())
+        {
+            var names = request.Roles.Select(t => t.Name.ToUpper());
+
+            if (ds.Any(t => names.Contains(t.Name.ToUpper())))
+                return Result<IEnumerable<long>>.Conflict;
+
+            var permissionIds = request.Roles.SelectMany(t => t.Permissions ?? Array.Empty<CreateRole.RolePermission>()).Select(t => t.PermissionId).ToArray();
+
+            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+                return Result<IEnumerable<long>>.DependencyNotFound;
+
+            permissionIds = request.Roles.SelectMany(t => t.PermissionConditions ?? Array.Empty<CreateRole.RolePermissionCondition>()).Select(t => t.PermissionId).ToArray();
+
+            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+                return Result<IEnumerable<long>>.DependencyNotFound;
+        }
 
         var entities = request.Roles.Select(t =>
                                             {
@@ -29,7 +48,6 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
                                                        {
                                                            Id = id,
                                                            Name = t.Name,
-                                                           Priority = t.Priority,
                                                            Disabled = t.Disabled,
                                                            ExtendData = t.ExtendData?
                                                                          .Select(t2 => new RoleExtendData
@@ -40,33 +58,24 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
                                                                                        })
                                                                          .ToArray() ?? Array.Empty<RoleExtendData>(),
                                                            Permissions = t.Permissions?
-                                                                          .Select(t2 =>
-                                                                                  {
-                                                                                      var pid = _snowflake.Generate();
-
-                                                                                      return new Permission
-                                                                                             {
-                                                                                                 Id = pid,
-                                                                                                 RoleId = id,
-                                                                                                 FunctionId = t2.FunctionId,
-                                                                                                 PermissionType = t2.PermissionType,
-                                                                                                 Allowed = t2.Allowed,
-                                                                                                 Priority = t2.Priority,
-                                                                                                 ReplaceExtendData = t2.ReplaceExtendData,
-                                                                                                 ExpireDate = t2.ExpireDate,
-                                                                                                 ExtendData = t2.ExtendData?
-                                                                                                                .Select(t3 => new PermissionExtendData
-                                                                                                                              {
-                                                                                                                                  Id = pid,
-                                                                                                                                  Key = t3.Key,
-                                                                                                                                  Value = t3.Value,
-                                                                                                                                  PermissionType = t3.PermissionType,
-                                                                                                                                  Allowed = t3.Allowed
-                                                                                                                              })
-                                                                                                                .ToArray() ?? Array.Empty<PermissionExtendData>()
-                                                                                             };
-                                                                                  })
-                                                                          .ToArray() ?? Array.Empty<Permission>()
+                                                                          .Select(t2 => new RolePermission
+                                                                                        {
+                                                                                            Id = id,
+                                                                                            PermissionId = t2.PermissionId
+                                                                                        })
+                                                                          .ToArray() ?? Array.Empty<RolePermission>(),
+                                                           PermissionConditions = t.PermissionConditions?
+                                                                                   .Select(t => new RolePermissionCondition
+                                                                                                {
+                                                                                                    Id = _snowflake.Generate(),
+                                                                                                    RoleId = id,
+                                                                                                    PermissionId = t.PermissionId,
+                                                                                                    Priority = t.Priority,
+                                                                                                    Key = t.Key,
+                                                                                                    Value = t.Value,
+                                                                                                    Allowed = t.Allowed
+                                                                                                })
+                                                                                   .ToArray() ?? Array.Empty<RolePermissionCondition>()
                                                        };
                                             })
                               .ToArray();

@@ -1,8 +1,8 @@
-using Netcorext.Auth.API.Services.Client;
+using Netcorext.Auth.API.Services.Client.Commands;
 using Netcorext.Auth.API.Services.Client.Pipelines;
-using Netcorext.Auth.API.Services.Role;
+using Netcorext.Auth.API.Services.Role.Commands;
 using Netcorext.Auth.API.Services.Role.Pipelines;
-using Netcorext.Auth.API.Services.User;
+using Netcorext.Auth.API.Services.User.Commands;
 using Netcorext.Auth.API.Services.User.Pipelines;
 using Netcorext.Contracts;
 

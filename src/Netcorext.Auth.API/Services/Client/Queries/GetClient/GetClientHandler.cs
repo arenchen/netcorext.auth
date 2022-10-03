@@ -6,7 +6,7 @@ using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Client;
+namespace Netcorext.Auth.API.Services.Client.Queries;
 
 public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Models.Client>>>
 {
@@ -37,7 +37,6 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
 
             if (request.Role.RoleId.HasValue) predicateRole = predicateRole.And(p => p.RoleId == request.Role.RoleId);
             if (!request.Role.Name.IsEmpty()) predicateRole = predicateRole.And(p => p.Role.Name.Contains(request.Role.Name));
-            if (request.Role.Priority.HasValue) predicateRole = predicateRole.And(p => p.Role.Priority == request.Role.Priority);
             if (request.Role.ExpireDate.HasValue) predicateRole = predicateRole.And(p => p.ExpireDate == request.Role.ExpireDate);
 
             predicate = predicate.And(t => t.Roles.Any(predicateRole.Compile()));
@@ -82,7 +81,6 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
                                                                                     {
                                                                                         RoleId = t2.RoleId,
                                                                                         Name = t2.Role.Name,
-                                                                                        Priority = t2.Role.Priority,
                                                                                         ExpireDate = t2.ExpireDate,
                                                                                         CreationDate = t2.CreationDate,
                                                                                         CreatorId = t2.CreatorId,

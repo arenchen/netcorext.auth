@@ -6,7 +6,7 @@ using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authorization.Services.User;
+namespace Netcorext.Auth.Authorization.Services.User.Commands;
 
 public class ResetPasswordHandler : IRequestHandler<ResetPassword, Result>
 {

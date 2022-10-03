@@ -11,7 +11,7 @@ using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authentication.Services.Route;
+namespace Netcorext.Auth.Authentication.Services.Route.Commands;
 
 public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 {

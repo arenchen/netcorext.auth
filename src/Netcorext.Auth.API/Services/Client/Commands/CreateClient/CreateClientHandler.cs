@@ -1,12 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Netcorext.Algorithms;
-using Netcorext.Auth.Domain.Entities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Client;
+namespace Netcorext.Auth.API.Services.Client.Commands;
 
 public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
 {
@@ -23,7 +22,7 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
     {
         var ds = _context.Set<Domain.Entities.Client>();
 
-        if (await ds.AnyAsync(t => t.Name == request.Name, cancellationToken)) return Result<long?>.Conflict;
+        if (await ds.AnyAsync(t => t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken)) return Result<long?>.Conflict;
 
         var id = _snowflake.Generate();
         var creationDate = DateTimeOffset.UtcNow;
@@ -39,21 +38,21 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
                                 CodeExpireSeconds = request.CodeExpireSeconds,
                                 Disabled = request.Disabled,
                                 Roles = request.Roles?
-                                               .Select(t => new ClientRole
+                                               .Select(t => new Domain.Entities.ClientRole
                                                             {
                                                                 Id = id,
                                                                 RoleId = t.RoleId,
                                                                 ExpireDate = t.ExpireDate
                                                             })
-                                               .ToArray() ?? Array.Empty<ClientRole>(),
+                                               .ToArray() ?? Array.Empty<Domain.Entities.ClientRole>(),
                                 ExtendData = request.ExtendData?
-                                                    .Select(t => new ClientExtendData
+                                                    .Select(t => new Domain.Entities.ClientExtendData
                                                                  {
                                                                      Id = id,
                                                                      Key = t.Key.ToUpper(),
                                                                      Value = t.Value
                                                                  })
-                                                    .ToArray() ?? Array.Empty<ClientExtendData>()
+                                                    .ToArray() ?? Array.Empty<Domain.Entities.ClientExtendData>()
                             });
 
         await _context.SaveChangesAsync(e =>

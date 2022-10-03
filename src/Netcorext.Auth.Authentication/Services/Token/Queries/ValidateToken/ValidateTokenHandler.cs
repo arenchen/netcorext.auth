@@ -4,7 +4,7 @@ using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authentication.Services.Token;
+namespace Netcorext.Auth.Authentication.Services.Token.Queries;
 
 public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
 {

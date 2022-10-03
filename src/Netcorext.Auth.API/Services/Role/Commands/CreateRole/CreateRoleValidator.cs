@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Netcorext.Auth.API.Services.Role;
+namespace Netcorext.Auth.API.Services.Role.Commands;
 
 public class CreateRoleValidator : AbstractValidator<CreateRole>
 {
@@ -12,12 +12,16 @@ public class CreateRoleValidator : AbstractValidator<CreateRole>
                                              {
                                                  c.RuleFor(t => t.Name).NotEmpty();
 
-                                                 c.RuleForEach(t2 => t2.Permissions).ChildRules(c2 =>
-                                                                                                {
-                                                                                                    c2.RuleFor(t => t.FunctionId).NotEmpty();
-                                                                                                    c2.RuleFor(t => t.PermissionType).IsInEnum().NotEmpty();
-                                                                                                    c2.RuleFor(t => t.ExpireDate).GreaterThan(t => DateTimeOffset.UtcNow).When(t => t.ExpireDate.HasValue);
-                                                                                                });
+                                                 c.RuleForEach(t2 => t2.ExtendData).ChildRules(c2 =>
+                                                                                               {
+                                                                                                   c2.RuleFor(t => t.Key).NotEmpty();
+                                                                                               });
+
+                                                 c.RuleForEach(t2 => t2.PermissionConditions).ChildRules(c2 =>
+                                                                                                         {
+                                                                                                             c2.RuleFor(t => t.Key).NotEmpty();
+                                                                                                             c2.RuleFor(t => t.Value).NotEmpty();
+                                                                                                         });
                                              });
     }
 }

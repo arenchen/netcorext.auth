@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Routing.Template;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Extensions;
-using Netcorext.Auth.Authentication.Services.Permission;
+using Netcorext.Auth.Authentication.Services.Permission.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Extensions;
 using Netcorext.Contracts;
@@ -29,7 +29,16 @@ internal class PermissionMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (_config.AppSettings.InternalHost.Equals(context.Request.Host.Host, StringComparison.OrdinalIgnoreCase))
+        if (_config.AppSettings.InternalHost?.Any(t => t.Equals(context.Request.Host.Host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
+        {
+            await _next(context);
+
+            return;
+        }
+
+        var claimName = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Name)?.Value;
+
+        if (long.TryParse(claimName, out var id) && (_config.AppSettings.Owner?.Any(t => t == id) ?? false))
         {
             await _next(context);
 
@@ -38,9 +47,10 @@ internal class PermissionMiddleware
 
         _dispatcher = context.RequestServices.GetRequiredService<IDispatcher>();
 
-        var permissionEndpoints = _cache.Get<Dictionary<long, Services.Route.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Models.RouteGroup>();
+        var permissionEndpoints = _cache.Get<Dictionary<long, Services.Route.Queries.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Queries.Models.RouteGroup>();
         var allowAnonymous = false;
         var functionId = string.Empty;
+
         var role = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Role)?.Value;
         var path = context.Request.GetPath();
         var method = context.Request.GetMethod();
@@ -97,12 +107,12 @@ internal class PermissionMiddleware
                                                      RoleId = roleIds,
                                                      FunctionId = functionId,
                                                      PermissionType = httpMethod.ToPermissionType(),
-                                                     ExtendData = routeValues.Select(t => new ValidatePermission.PermissionExtendData
-                                                                                          {
-                                                                                              Key = t.Key,
-                                                                                              Value = t.Value?.ToString()!
-                                                                                          })
-                                                                             .ToArray()
+                                                     PermissionConditions = routeValues.Select(t => new ValidatePermission.PermissionCondition
+                                                                                                    {
+                                                                                                        Key = t.Key,
+                                                                                                        Value = t.Value?.ToString()!
+                                                                                                    })
+                                                                                       .ToArray()
                                                  });
 
         return result == Result.Success;

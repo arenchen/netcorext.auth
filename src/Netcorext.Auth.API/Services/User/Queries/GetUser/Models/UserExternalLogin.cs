@@ -1,4 +1,4 @@
-namespace Netcorext.Auth.API.Services.User.Models;
+namespace Netcorext.Auth.API.Services.User.Queries.Models;
 
 public class UserExternalLogin
 {

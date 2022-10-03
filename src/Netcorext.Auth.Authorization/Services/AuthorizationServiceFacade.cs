@@ -1,8 +1,9 @@
 using Grpc.Core;
 using Mapster;
 using Netcorext.Auth.Attributes;
-using Netcorext.Auth.Authorization.Services.Token;
-using Netcorext.Auth.Authorization.Services.User;
+using Netcorext.Auth.Authorization.Services.Token.Commands;
+using Netcorext.Auth.Authorization.Services.User.Commands;
+using Netcorext.Auth.Authorization.Services.User.Queries;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Protobufs;
 using Netcorext.Contracts.Protobufs;

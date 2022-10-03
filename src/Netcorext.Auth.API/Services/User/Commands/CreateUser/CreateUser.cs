@@ -1,7 +1,7 @@
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Commands;
 
 public class CreateUser : IRequest<Result<long?>>
 {
@@ -21,9 +21,7 @@ public class CreateUser : IRequest<Result<long?>>
     public class UserRole
     {
         public long RoleId { get; set; }
-        public bool IsMain { get; set; }
         public DateTimeOffset? ExpireDate { get; set; }
-        public long? ExpiredReverseRoleId { get; set; }
     }
 
     public class UserExtendData

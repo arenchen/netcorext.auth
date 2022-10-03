@@ -12,7 +12,7 @@ using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authorization.Services.User;
+namespace Netcorext.Auth.Authorization.Services.User.Commands;
 
 public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<TokenResult>>
 {

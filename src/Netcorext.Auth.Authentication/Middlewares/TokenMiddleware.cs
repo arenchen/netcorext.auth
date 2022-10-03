@@ -4,8 +4,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Netcorext.Auth.Authentication.Extensions;
-using Netcorext.Auth.Authentication.Services.Client;
-using Netcorext.Auth.Authentication.Services.Token;
+using Netcorext.Auth.Authentication.Services.Client.Queries;
+using Netcorext.Auth.Authentication.Services.Token.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Extensions;
 using Netcorext.Auth.Helpers;
@@ -39,8 +39,8 @@ internal class TokenMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         _dispatcher = context.RequestServices.GetRequiredService<IDispatcher>();
-        
-        if (_config.AppSettings.InternalHost.Equals(context.Request.Host.Host, StringComparison.OrdinalIgnoreCase))
+
+        if (_config.AppSettings.InternalHost?.Any(t => t.Equals(context.Request.Host.Host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
         {
             await _next(context);
 
@@ -97,11 +97,11 @@ internal class TokenMiddleware
     private async Task<bool> IsBearerValid(string token)
     {
         var cachePermissions = _cache.Get<Dictionary<string, bool>>(ConfigSettings.CACHE_TOKEN) ?? new Dictionary<string, bool>();
-        
+
         try
         {
             TokenHelper.ValidateJwt(token, _tokenValidationParameters);
-            
+
             if (cachePermissions.TryGetValue(token, out var cacheResult)) return cacheResult;
 
             var result = await _dispatcher.SendAsync(new ValidateToken
@@ -113,13 +113,13 @@ internal class TokenMiddleware
             {
                 cachePermissions[token] = result != null && result.Code == Result.Success;
             }
-            
+
             return result != null && result.Code == Result.Success;
         }
         catch (SecurityTokenExpiredException e)
         {
             cachePermissions.Remove(token);
-            
+
             return false;
         }
         catch

@@ -1,4 +1,4 @@
-namespace Netcorext.Auth.API.Services.Client.Models;
+namespace Netcorext.Auth.API.Services.Client.Queries.Models;
 
 public class Client
 {

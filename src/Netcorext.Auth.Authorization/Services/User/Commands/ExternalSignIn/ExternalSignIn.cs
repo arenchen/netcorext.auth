@@ -2,7 +2,7 @@ using Netcorext.Auth.Authorization.Models;
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authorization.Services.User;
+namespace Netcorext.Auth.Authorization.Services.User.Commands;
 
 public class ExternalSignIn : IRequest<Result<TokenResult>>
 {

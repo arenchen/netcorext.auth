@@ -4,7 +4,7 @@ using Netcorext.Auth.Authorization.Models;
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authorization.Services.Token;
+namespace Netcorext.Auth.Authorization.Services.Token.Commands;
 
 public class CreateToken : IRequest<Result<TokenResult>>
 {

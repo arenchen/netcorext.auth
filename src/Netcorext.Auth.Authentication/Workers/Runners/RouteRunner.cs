@@ -2,7 +2,7 @@ using System.Text.Json;
 using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using Netcorext.Auth.Authentication.Services.Route;
+using Netcorext.Auth.Authentication.Services.Route.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
@@ -52,7 +52,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
             var reqIds = ids == null ? null : JsonSerializer.Deserialize<long[]>(ids);
-            
+
             var request = new GetRoute
                           {
                               GroupIds = reqIds
@@ -65,17 +65,17 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             if (result?.Content == null || result.Code != Result.Success)
                 return;
 
-            var cacheRouteGroups = _cache.Get<Dictionary<long, Services.Route.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Models.RouteGroup>();
+            var cacheRouteGroups = _cache.Get<Dictionary<long, Services.Route.Queries.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Queries.Models.RouteGroup>();
 
             if (reqIds != null && reqIds.Any())
             {
                 var repIds = result.Content.Select(t => t.Id);
 
                 var diffIds = reqIds.Except(repIds);
-                
+
                 diffIds.ForEach(t => cacheRouteGroups.Remove(t));
             }
-            
+
             foreach (var group in result.Content)
             {
                 if (cacheRouteGroups.TryAdd(group.Id, group))
@@ -97,37 +97,37 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             _cache.Set(ConfigSettings.CACHE_ROUTE, cacheRouteGroups);
 
             var clusters = cacheRouteGroups.Values
-                                       .Select(t => new ClusterConfig
-                                                    {
-                                                        ClusterId = $"{t.Id}-{t.Name}",
-                                                        HttpRequest = t.ForwarderRequestConfig,
-                                                        Destinations = new Dictionary<string, DestinationConfig>
-                                                                       {
+                                           .Select(t => new ClusterConfig
+                                                        {
+                                                            ClusterId = $"{t.Id}-{t.Name}",
+                                                            HttpRequest = t.ForwarderRequestConfig,
+                                                            Destinations = new Dictionary<string, DestinationConfig>
                                                                            {
-                                                                               $"{t.Name}-{t.BaseUrl}",
-                                                                               new DestinationConfig
                                                                                {
-                                                                                   Address = t.BaseUrl
+                                                                                   $"{t.Name}-{t.BaseUrl}",
+                                                                                   new DestinationConfig
+                                                                                   {
+                                                                                       Address = t.BaseUrl
+                                                                                   }
                                                                                }
                                                                            }
-                                                                       }
-                                                    })
-                                       .ToArray();
+                                                        })
+                                           .ToArray();
 
             var routes = cacheRouteGroups.Values
-                                     .SelectMany(t => t.Routes
-                                                       .Select(t2 => new { t2.Protocol, t2.RelativePath })
-                                                       .Distinct()
-                                                       .Select(t2 => new RouteConfig
-                                                                     {
-                                                                         ClusterId = $"{t.Id}-{t.Name}",
-                                                                         RouteId = $"{t2.Protocol} - {t.BaseUrl}/{t2.RelativePath}",
-                                                                         Match = new RouteMatch
-                                                                                 {
-                                                                                     Path = t2.RelativePath
-                                                                                 }
-                                                                     }))
-                                     .ToArray();
+                                         .SelectMany(t => t.Routes
+                                                           .Select(t2 => new { t2.Protocol, t2.RelativePath })
+                                                           .Distinct()
+                                                           .Select(t2 => new RouteConfig
+                                                                         {
+                                                                             ClusterId = $"{t.Id}-{t.Name}",
+                                                                             RouteId = $"{t2.Protocol} - {t.BaseUrl}/{t2.RelativePath}",
+                                                                             Match = new RouteMatch
+                                                                                     {
+                                                                                         Path = t2.RelativePath
+                                                                                     }
+                                                                         }))
+                                         .ToArray();
 
             _memoryConfigProvider.Update(routes, clusters);
         }

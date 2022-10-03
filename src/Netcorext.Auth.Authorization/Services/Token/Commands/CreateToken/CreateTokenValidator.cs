@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Netcorext.Auth.Authorization.Services.Token;
+namespace Netcorext.Auth.Authorization.Services.Token.Commands;
 
 public class CreateTokenValidator : AbstractValidator<CreateToken>
 {

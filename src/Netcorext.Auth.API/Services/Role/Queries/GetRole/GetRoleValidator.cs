@@ -1,7 +1,7 @@
 using FluentValidation;
 using Netcorext.Extensions.Commons;
 
-namespace Netcorext.Auth.API.Services.Role;
+namespace Netcorext.Auth.API.Services.Role.Queries;
 
 public class GetRoleValidator : AbstractValidator<GetRole>
 {

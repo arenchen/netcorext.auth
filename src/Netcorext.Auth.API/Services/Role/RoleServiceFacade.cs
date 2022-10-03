@@ -1,5 +1,7 @@
 using Grpc.Core;
 using Mapster;
+using Netcorext.Auth.API.Services.Role.Commands;
+using Netcorext.Auth.API.Services.Role.Queries;
 using Netcorext.Auth.Attributes;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Protobufs;
@@ -19,7 +21,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         _dispatcher = dispatcher;
         _httpContextAccessor = httpContextAccessor;
     }
-    
+
     [Permission("AUTH", PermissionType.Write)]
     public override async Task<CreateRoleRequest.Types.Result> CreateRole(CreateRoleRequest request, ServerCallContext context)
     {
@@ -30,7 +32,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
 
         return rep!.Adapt<CreateRoleRequest.Types.Result>();
     }
-    
+
     [Permission("AUTH", PermissionType.Delete)]
     public override async Task<Result> DeleteRole(DeleteRoleRequest request, ServerCallContext context)
     {

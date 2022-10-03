@@ -7,7 +7,7 @@ using Netcorext.Extensions.Hash;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authorization.Services.User;
+namespace Netcorext.Auth.Authorization.Services.User.Queries;
 
 public class ValidateUserHandler : IRequestHandler<ValidateUser, Result>
 {

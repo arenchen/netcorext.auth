@@ -9,15 +9,17 @@ using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Commands;
 
 public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
 {
     private readonly DatabaseContext _context;
+    private readonly ISnowflake _snowflake;
 
-    public UpdateUserHandler(DatabaseContext context)
+    public UpdateUserHandler(DatabaseContext context, ISnowflake snowflake)
     {
         _context = context;
+        _snowflake = snowflake;
     }
 
     public async Task<Result> Handle(UpdateUser request, CancellationToken cancellationToken = default)
@@ -63,7 +65,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         if (request.Roles != null && request.Roles.Any())
         {
             var gRoles = request.Roles
-                                .GroupBy(t => t.CRUD, (mode, data) => new
+                                .GroupBy(t => t.Crud, (mode, data) => new
                                                                       {
                                                                           Mode = mode,
                                                                           Data = data.Select(t => new UserRole
@@ -104,7 +106,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         if (request.ExtendData != null && request.ExtendData.Any())
         {
             var gExtendData = request.ExtendData
-                                     .GroupBy(t => t.CRUD, (mode, data) => new
+                                     .GroupBy(t => t.Crud, (mode, data) => new
                                                                            {
                                                                                Mode = mode,
                                                                                Data = data.Select(t => new UserExtendData
@@ -146,7 +148,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         if (request.ExternalLogins != null && request.ExternalLogins.Any())
         {
             var gExternalLogins = request.ExternalLogins
-                                         .GroupBy(t => t.CRUD, (mode, data) => new
+                                         .GroupBy(t => t.Crud, (mode, data) => new
                                                                                {
                                                                                    Mode = mode,
                                                                                    Data = data.Select(t => new UserExternalLogin

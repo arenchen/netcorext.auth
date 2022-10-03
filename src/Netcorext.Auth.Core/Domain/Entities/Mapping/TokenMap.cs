@@ -45,6 +45,6 @@ public class TokenMap : EntityMap<Token>
                .HasMaxLength(2048);
 
         Builder.Property(t => t.Disabled)
-               .HasColumnName(nameof(Role.Disabled));
+               .HasColumnName(nameof(Token.Disabled));
     }
 }

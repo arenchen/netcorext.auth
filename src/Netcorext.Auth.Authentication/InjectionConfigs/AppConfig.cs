@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Middlewares;
 using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Services.Route;
+using Netcorext.Auth.Authentication.Services.Route.Commands;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Mediator;
 
@@ -39,7 +40,7 @@ public class AppConfig
         app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
 
         app.MapGrpcService<RouteServiceFacade>();
-        app.MapGrpcService<PermissionServiceFacade>();
+        app.MapGrpcService<PermissionValidationServiceFacade>();
 
         app.RegisterPermissionEndpoints((_, registerConfig) =>
                                         {

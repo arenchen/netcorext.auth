@@ -1,7 +1,7 @@
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Client;
+namespace Netcorext.Auth.API.Services.Client.Queries;
 
 public class GetClient : IRequest<Result<IEnumerable<Models.Client>>>
 {
@@ -17,7 +17,6 @@ public class GetClient : IRequest<Result<IEnumerable<Models.Client>>>
     {
         public long? RoleId { get; set; }
         public string? Name { get; set; }
-        public int? Priority { get; set; }
         public DateTimeOffset? ExpireDate { get; set; }
     }
 

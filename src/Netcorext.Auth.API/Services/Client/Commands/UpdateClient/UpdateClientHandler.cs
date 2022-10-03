@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Netcorext.Algorithms;
-using Netcorext.Auth.Domain.Entities;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
@@ -9,7 +8,7 @@ using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Client;
+namespace Netcorext.Auth.API.Services.Client.Commands;
 
 public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
 {
@@ -25,8 +24,8 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
     public async Task<Result> Handle(UpdateClient request, CancellationToken cancellationToken = default)
     {
         var ds = _context.Set<Domain.Entities.Client>();
-        var dsRole = _context.Set<ClientRole>();
-        var dsExtendData = _context.Set<ClientExtendData>();
+        var dsRole = _context.Set<Domain.Entities.ClientRole>();
+        var dsExtendData = _context.Set<Domain.Entities.ClientExtendData>();
 
         if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
         if (!request.Name.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.Name == request.Name, cancellationToken)) return Result.Conflict;
@@ -41,6 +40,7 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
         if (!string.IsNullOrWhiteSpace(request.Secret)) secret = request.Secret.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds());
 
         _context.Entry(entity).UpdateProperty(t => t.Secret, secret);
+        _context.Entry(entity).UpdateProperty(t => t.CallbackUrl, request.CallbackUrl);
         _context.Entry(entity).UpdateProperty(t => t.TokenExpireSeconds, request.TokenExpireSeconds);
         _context.Entry(entity).UpdateProperty(t => t.RefreshTokenExpireSeconds, request.RefreshTokenExpireSeconds);
         _context.Entry(entity).UpdateProperty(t => t.CodeExpireSeconds, request.CodeExpireSeconds);
@@ -49,10 +49,10 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
         if (request.Roles != null && request.Roles.Any())
         {
             var gRoles = request.Roles
-                                .GroupBy(t => t.CRUD, (mode, roles) => new
+                                .GroupBy(t => t.Crud, (mode, roles) => new
                                                                        {
                                                                            Mode = mode,
-                                                                           Data = roles.Select(t => new ClientRole
+                                                                           Data = roles.Select(t => new Domain.Entities.ClientRole
                                                                                                     {
                                                                                                         Id = entity.Id,
                                                                                                         RoleId = t.RoleId,
@@ -62,9 +62,9 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
                                                                        })
                                 .ToArray();
 
-            var createRoles = gRoles.FirstOrDefault(t => t.Mode == CRUD.C)?.Data ?? Array.Empty<ClientRole>();
-            var updateRoles = gRoles.FirstOrDefault(t => t.Mode == CRUD.U)?.Data ?? Array.Empty<ClientRole>();
-            var deleteRoles = gRoles.FirstOrDefault(t => t.Mode == CRUD.D)?.Data ?? Array.Empty<ClientRole>();
+            var createRoles = gRoles.FirstOrDefault(t => t.Mode == CRUD.C)?.Data ?? Array.Empty<Domain.Entities.ClientRole>();
+            var updateRoles = gRoles.FirstOrDefault(t => t.Mode == CRUD.U)?.Data ?? Array.Empty<Domain.Entities.ClientRole>();
+            var deleteRoles = gRoles.FirstOrDefault(t => t.Mode == CRUD.D)?.Data ?? Array.Empty<Domain.Entities.ClientRole>();
 
             var roles = entity.Roles
                               .Join(deleteRoles, t => new { t.Id, t.RoleId }, t => new { t.Id, t.RoleId }, (src, desc) => src)
@@ -90,10 +90,10 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
         if (request.ExtendData != null && request.ExtendData.Any())
         {
             var gExtendData = request.ExtendData
-                                     .GroupBy(t => t.CRUD, (mode, extendData) => new
+                                     .GroupBy(t => t.Crud, (mode, extendData) => new
                                                                                  {
                                                                                      Mode = mode,
-                                                                                     Data = extendData.Select(t => new ClientExtendData
+                                                                                     Data = extendData.Select(t => new Domain.Entities.ClientExtendData
                                                                                                                    {
                                                                                                                        Id = entity.Id,
                                                                                                                        Key = t.Key.ToUpper(),
@@ -103,9 +103,9 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
                                                                                  })
                                      .ToArray();
 
-            var createExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.C)?.Data ?? Array.Empty<ClientExtendData>();
-            var updateExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.U)?.Data ?? Array.Empty<ClientExtendData>();
-            var deleteExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.D)?.Data ?? Array.Empty<ClientExtendData>();
+            var createExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.C)?.Data ?? Array.Empty<Domain.Entities.ClientExtendData>();
+            var updateExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.U)?.Data ?? Array.Empty<Domain.Entities.ClientExtendData>();
+            var deleteExtendData = gExtendData.FirstOrDefault(t => t.Mode == CRUD.D)?.Data ?? Array.Empty<Domain.Entities.ClientExtendData>();
 
             var extendData = entity.ExtendData
                                    .Join(deleteExtendData, t => new { t.Id, t.Key }, t => new { t.Id, t.Key }, (src, desc) => src)

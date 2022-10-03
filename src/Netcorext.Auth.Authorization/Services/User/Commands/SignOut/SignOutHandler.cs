@@ -9,7 +9,7 @@ using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authorization.Services.User;
+namespace Netcorext.Auth.Authorization.Services.User.Commands;
 
 public class SignOutHandler : IRequestHandler<SignOut, Result>
 {

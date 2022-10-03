@@ -1,11 +1,9 @@
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
-using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Queries;
 
 public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerable<Models.SimpleUserRole>>>
 {
@@ -16,16 +14,12 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
         _context = context;
     }
 
-    public async Task<Result<IEnumerable<Models.SimpleUserRole>>> Handle(GetUserRole request, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<Result<IEnumerable<Models.SimpleUserRole>>> Handle(GetUserRole request, CancellationToken cancellationToken = new())
     {
         var ds = _context.Set<Domain.Entities.UserRole>();
 
-        Expression<Func<Domain.Entities.UserRole, bool>> predicate = p => false;
-
-        predicate = request.Ids.Aggregate(predicate, (current, id) => current.Or(t => t.Id == id));
-        
-        var queryEntities = ds.Include(t => t.Role)
-                              .Where(predicate)
+        var queryEntities = ds.Where(t => request.Ids.Contains(t.Id) && !t.Role.Disabled)
+                              .Include(t => t.Role)
                               .AsNoTracking();
 
         var content = queryEntities.Select(t => new Models.SimpleUserRole

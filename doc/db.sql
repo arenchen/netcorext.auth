@@ -1,258 +1,283 @@
-/* Tables */
 CREATE TABLE "Client" (
-    "Id" bigint NOT NULL,
-    "Secret" character varying(200) NOT NULL,
-    "Name" character varying(50) NOT NULL,
-    "CallbackUrl" character varying(500) NULL,
-    "TokenExpireSeconds" integer NULL,
-    "RefreshTokenExpireSeconds" integer NULL,
-    "CodeExpireSeconds" integer NULL,
-    "Disabled" boolean NOT NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_Client" PRIMARY KEY ("Id")
-);
-
-
-CREATE TABLE "ClientExtendData" (
-    "Id" bigint NOT NULL,
-    "Key" character varying(50) NOT NULL,
-    "Value" character varying(1000) NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_ClientExtendData" PRIMARY KEY ("Id", "Key"),
-    CONSTRAINT "FK_ClientExtendData_Client_Id" FOREIGN KEY ("Id") REFERENCES "Client" ("Id") ON DELETE CASCADE
-);
-
-
-CREATE TABLE "ClientRole" (
-    "Id" bigint NOT NULL,
-    "RoleId" bigint NOT NULL,
-    "ExpireDate" timestamp with time zone NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_ClientRole" PRIMARY KEY ("Id", "RoleId"),
-    CONSTRAINT "FK_ClientRole_Client_Id" FOREIGN KEY ("Id") REFERENCES "Client" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_ClientRole_Role_RoleId" FOREIGN KEY ("RoleId") REFERENCES "Role" ("Id") ON DELETE CASCADE
+  "Id" bigint NOT NULL,
+  "Secret" character varying(200) NOT NULL,
+  "Name" character varying(50) NOT NULL,
+  "CallbackUrl" character varying(500) NULL,
+  "TokenExpireSeconds" integer NULL,
+  "RefreshTokenExpireSeconds" integer NULL,
+  "CodeExpireSeconds" integer NULL,
+  "Disabled" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_Client" PRIMARY KEY ("Id")
 );
 
 
 CREATE TABLE "Permission" (
-    "Id" bigint NOT NULL,
-    "RoleId" bigint NOT NULL,
-    "FunctionId" character varying(50) NOT NULL,
-    "PermissionType" integer NOT NULL,
-    "Allowed" boolean NOT NULL,
-    "Priority" integer NOT NULL,
-    "ReplaceExtendData" boolean NOT NULL,
-    "ExpireDate" timestamp with time zone NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_Permission" PRIMARY KEY ("Id"),
-    CONSTRAINT "FK_Permission_Role_RoleId" FOREIGN KEY ("RoleId") REFERENCES "Role" ("Id") ON DELETE CASCADE
-);
-
-
-CREATE TABLE "PermissionExtendData" (
-    "Id" bigint NOT NULL,
-    "Key" character varying(50) NOT NULL,
-    "Value" character varying(200) NOT NULL,
-    "PermissionType" integer NOT NULL,
-    "Allowed" boolean NOT NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_PermissionExtendData" PRIMARY KEY ("Id", "Key", "Value"),
-    CONSTRAINT "FK_PermissionExtendData_Permission_Id" FOREIGN KEY ("Id") REFERENCES "Permission" ("Id") ON DELETE CASCADE
+  "Id" bigint NOT NULL,
+  "Name" character varying(50) NOT NULL,
+  "Priority" integer NOT NULL,
+  "Disabled" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_Permission" PRIMARY KEY ("Id")
 );
 
 
 CREATE TABLE "Role" (
-    "Id" bigint NOT NULL,
-    "Name" character varying(50) NOT NULL,
-    "Priority" integer NOT NULL,
-    "Disabled" boolean NOT NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_Role" PRIMARY KEY ("Id")
-);
-
-
-CREATE TABLE "RoleExtendData" (
-    "Id" bigint NOT NULL,
-    "Key" character varying(50) NOT NULL,
-    "Value" character varying(1000) NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_RoleExtendData" PRIMARY KEY ("Id", "Key"),
-    CONSTRAINT "FK_RoleExtendData_Role_Id" FOREIGN KEY ("Id") REFERENCES "Role" ("Id") ON DELETE CASCADE
-);
-
-
-CREATE TABLE "Route" (
-    "Id" bigint NOT NULL,
-    "GroupId" bigint NOT NULL,
-    "Protocol" character varying(10) NOT NULL,
-    "HttpMethod" character varying(10) NOT NULL,
-    "RelativePath" character varying(200) NOT NULL,
-    "Template" character varying(200) NOT NULL,
-    "FunctionId" character varying(50) NOT NULL,
-    "NativePermission" integer NOT NULL,
-    "AllowAnonymous" boolean NOT NULL,
-    "Tag" character varying(200) NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_Route" PRIMARY KEY ("Id"),
-    CONSTRAINT "FK_Route_RouteGroup_GroupId" FOREIGN KEY ("GroupId") REFERENCES "RouteGroup" ("Id") ON DELETE CASCADE
+  "Id" bigint NOT NULL,
+  "Name" character varying(50) NOT NULL,
+  "Disabled" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_Role" PRIMARY KEY ("Id")
 );
 
 
 CREATE TABLE "RouteGroup" (
-    "Id" bigint NOT NULL,
-    "Name" character varying(100) NOT NULL,
-    "BaseUrl" character varying(200) NOT NULL,
-    "ForwarderRequestVersion" character varying(10) NULL,
-    "ForwarderHttpVersionPolicy" integer NULL,
-    "ForwarderActivityTimeout" interval NULL,
-    "ForwarderAllowResponseBuffering" boolean NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_RouteGroup" PRIMARY KEY ("Id")
-);
-
-
-CREATE TABLE "RouteValue" (
-    "Id" bigint NOT NULL,
-    "Key" character varying(50) NOT NULL,
-    "Value" character varying(1000) NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_RouteValue" PRIMARY KEY ("Id", "Key"),
-    CONSTRAINT "FK_RouteValue_Route_Id" FOREIGN KEY ("Id") REFERENCES "Route" ("Id") ON DELETE CASCADE
+  "Id" bigint NOT NULL,
+  "Name" character varying(100) NOT NULL,
+  "BaseUrl" character varying(200) NOT NULL,
+  "ForwarderRequestVersion" character varying(10) NULL,
+  "ForwarderHttpVersionPolicy" integer NULL,
+  "ForwarderActivityTimeout" interval NULL,
+  "ForwarderAllowResponseBuffering" boolean NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_RouteGroup" PRIMARY KEY ("Id")
 );
 
 
 CREATE TABLE "Token" (
-    "Id" bigint NOT NULL,
-    "ResourceType" integer NOT NULL,
-    "ResourceId" character varying(50) NOT NULL,
-    "TokenType" character varying(50) NOT NULL,
-    "AccessToken" character varying(2048) NOT NULL,
-    "ExpiresIn" integer NULL,
-    "Scope" character varying(2048) NULL,
-    "RefreshToken" character varying(2048) NULL,
-    "Disabled" boolean NOT NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL
+  "Id" bigint NOT NULL,
+  "ResourceType" integer NOT NULL,
+  "ResourceId" character varying(50) NOT NULL,
+  "TokenType" character varying(50) NOT NULL,
+  "AccessToken" character varying(2048) NOT NULL,
+  "ExpiresIn" integer NULL,
+  "Scope" character varying(2048) NULL,
+  "RefreshToken" character varying(2048) NULL,
+  "Disabled" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL
 ) PARTITION BY RANGE ("CreationDate");
 
 
 CREATE TABLE "User" (
-    "Id" bigint NOT NULL,
-    "Username" character varying(50) NOT NULL,
-    "NormalizedUsername" character varying(50) NOT NULL,
-    "Password" character varying(200) NOT NULL,
-    "Email" character varying(100) NULL,
-    "NormalizedEmail" character varying(100) NULL,
-    "EmailConfirmed" boolean NOT NULL,
-    "PhoneNumber" character varying(50) NULL,
-    "PhoneNumberConfirmed" boolean NOT NULL,
-    "Otp" character varying(50) NULL,
-    "OtpBound" boolean NOT NULL,
-    "TwoFactorEnabled" boolean NOT NULL,
-    "RequiredChangePassword" boolean NOT NULL,
-    "TokenExpireSeconds" integer NULL,
-    "RefreshTokenExpireSeconds" integer NULL,
-    "CodeExpireSeconds" integer NULL,
-    "AccessFailedCount" integer NOT NULL,
-    "LastSignInDate" timestamp with time zone NULL,
-    "LastSignInIp" character varying(50) NULL,
-    "Disabled" boolean NOT NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_User" PRIMARY KEY ("Id")
+  "Id" bigint NOT NULL,
+  "Username" character varying(50) NOT NULL,
+  "NormalizedUsername" character varying(50) NOT NULL,
+  "Password" character varying(200) NOT NULL,
+  "Email" character varying(100) NULL,
+  "NormalizedEmail" character varying(100) NULL,
+  "EmailConfirmed" boolean NOT NULL,
+  "PhoneNumber" character varying(50) NULL,
+  "PhoneNumberConfirmed" boolean NOT NULL,
+  "Otp" character varying(50) NULL,
+  "OtpBound" boolean NOT NULL,
+  "TwoFactorEnabled" boolean NOT NULL,
+  "RequiredChangePassword" boolean NOT NULL,
+  "TokenExpireSeconds" integer NULL,
+  "RefreshTokenExpireSeconds" integer NULL,
+  "CodeExpireSeconds" integer NULL,
+  "AccessFailedCount" integer NOT NULL,
+  "LastSignInDate" timestamp with time zone NULL,
+  "LastSignInIp" character varying(50) NULL,
+  "Disabled" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_User" PRIMARY KEY ("Id")
+);
+
+
+CREATE TABLE "ClientExtendData" (
+  "Id" bigint NOT NULL,
+  "Key" character varying(50) NOT NULL,
+  "Value" character varying(200) NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_ClientExtendData" PRIMARY KEY ("Id", "Key"),
+  CONSTRAINT "FK_ClientExtendData_Client_Id" FOREIGN KEY ("Id") REFERENCES "Client" ("Id") ON DELETE CASCADE
+);
+
+
+CREATE TABLE "Rule" (
+  "Id" bigint NOT NULL,
+  "PermissionId" bigint NOT NULL,
+  "FunctionId" character varying(50) NOT NULL,
+  "PermissionType" integer NOT NULL,
+  "Allowed" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_Rule" PRIMARY KEY ("Id"),
+  CONSTRAINT "FK_Rule_Permission_PermissionId" FOREIGN KEY ("PermissionId") REFERENCES "Permission" ("Id") ON DELETE CASCADE
+);
+
+
+CREATE TABLE "ClientRole" (
+  "Id" bigint NOT NULL,
+  "RoleId" bigint NOT NULL,
+  "ExpireDate" timestamp with time zone NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_ClientRole" PRIMARY KEY ("Id", "RoleId"),
+  CONSTRAINT "FK_ClientRole_Client_Id" FOREIGN KEY ("Id") REFERENCES "Client" ("Id") ON DELETE CASCADE,
+  CONSTRAINT "FK_ClientRole_Role_RoleId" FOREIGN KEY ("RoleId") REFERENCES "Role" ("Id") ON DELETE CASCADE
+);
+
+
+CREATE TABLE "RoleExtendData" (
+  "Id" bigint NOT NULL,
+  "Key" character varying(50) NOT NULL,
+  "Value" character varying(200) NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_RoleExtendData" PRIMARY KEY ("Id", "Key"),
+  CONSTRAINT "FK_RoleExtendData_Role_Id" FOREIGN KEY ("Id") REFERENCES "Role" ("Id") ON DELETE CASCADE
+);
+
+
+CREATE TABLE "RolePermission" (
+  "Id" bigint NOT NULL,
+  "PermissionId" bigint NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_RolePermission" PRIMARY KEY ("Id", "PermissionId"),
+  CONSTRAINT "FK_RolePermission_Permission_PermissionId" FOREIGN KEY ("PermissionId") REFERENCES "Permission" ("Id") ON DELETE CASCADE,
+  CONSTRAINT "FK_RolePermission_Role_Id" FOREIGN KEY ("Id") REFERENCES "Role" ("Id") ON DELETE CASCADE
+);
+
+
+CREATE TABLE "RolePermissionCondition" (
+  "Id" bigint NOT NULL,
+  "RoleId" bigint NOT NULL,
+  "PermissionId" bigint NOT NULL,
+  "Priority" integer NOT NULL,
+  "Key" character varying(50) NOT NULL,
+  "Value" character varying(200) NOT NULL,
+  "Allowed" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_RolePermissionCondition" PRIMARY KEY ("Id"),
+  CONSTRAINT "FK_RolePermissionCondition_Permission_PermissionId" FOREIGN KEY ("PermissionId") REFERENCES "Permission" ("Id") ON DELETE CASCADE,
+  CONSTRAINT "FK_RolePermissionCondition_Role_RoleId" FOREIGN KEY ("RoleId") REFERENCES "Role" ("Id") ON DELETE CASCADE
+);
+
+
+CREATE TABLE "Route" (
+  "Id" bigint NOT NULL,
+  "GroupId" bigint NOT NULL,
+  "Protocol" character varying(10) NOT NULL,
+  "HttpMethod" character varying(10) NOT NULL,
+  "RelativePath" character varying(200) NOT NULL,
+  "Template" character varying(200) NOT NULL,
+  "FunctionId" character varying(50) NOT NULL,
+  "NativePermission" integer NOT NULL,
+  "AllowAnonymous" boolean NOT NULL,
+  "Tag" character varying(200) NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_Route" PRIMARY KEY ("Id"),
+  CONSTRAINT "FK_Route_RouteGroup_GroupId" FOREIGN KEY ("GroupId") REFERENCES "RouteGroup" ("Id") ON DELETE CASCADE
 );
 
 
 CREATE TABLE "UserExtendData" (
-    "Id" bigint NOT NULL,
-    "Key" character varying(50) NOT NULL,
-    "Value" character varying(1000) NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_UserExtendData" PRIMARY KEY ("Id", "Key"),
-    CONSTRAINT "FK_UserExtendData_User_Id" FOREIGN KEY ("Id") REFERENCES "User" ("Id") ON DELETE CASCADE
+  "Id" bigint NOT NULL,
+  "Key" character varying(50) NOT NULL,
+  "Value" character varying(200) NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_UserExtendData" PRIMARY KEY ("Id", "Key"),
+  CONSTRAINT "FK_UserExtendData_User_Id" FOREIGN KEY ("Id") REFERENCES "User" ("Id") ON DELETE CASCADE
 );
 
 
 CREATE TABLE "UserExternalLogin" (
-    "Id" bigint NOT NULL,
-    "Provider" character varying(50) NOT NULL,
-    "UniqueId" character varying(100) NOT NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_UserExternalLogin" PRIMARY KEY ("Id", "Provider"),
-    CONSTRAINT "FK_UserExternalLogin_User_Id" FOREIGN KEY ("Id") REFERENCES "User" ("Id") ON DELETE CASCADE
+  "Id" bigint NOT NULL,
+  "Provider" character varying(50) NOT NULL,
+  "UniqueId" character varying(100) NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_UserExternalLogin" PRIMARY KEY ("Id", "Provider"),
+  CONSTRAINT "FK_UserExternalLogin_User_Id" FOREIGN KEY ("Id") REFERENCES "User" ("Id") ON DELETE CASCADE
 );
 
 
 CREATE TABLE "UserRole" (
-    "Id" bigint NOT NULL,
-    "RoleId" bigint NOT NULL,
-    "ExpireDate" timestamp with time zone NULL,
-    "CreationDate" timestamp with time zone NOT NULL,
-    "CreatorId" bigint NOT NULL,
-    "ModificationDate" timestamp with time zone NOT NULL,
-    "ModifierId" bigint NOT NULL,
-    "Version" bigint NOT NULL,
-    CONSTRAINT "PK_UserRole" PRIMARY KEY ("Id", "RoleId"),
-    CONSTRAINT "FK_UserRole_Role_RoleId" FOREIGN KEY ("RoleId") REFERENCES "Role" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_UserRole_User_Id" FOREIGN KEY ("Id") REFERENCES "User" ("Id") ON DELETE CASCADE
+  "Id" bigint NOT NULL,
+  "RoleId" bigint NOT NULL,
+  "ExpireDate" timestamp with time zone NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_UserRole" PRIMARY KEY ("Id", "RoleId"),
+  CONSTRAINT "FK_UserRole_Role_RoleId" FOREIGN KEY ("RoleId") REFERENCES "Role" ("Id") ON DELETE CASCADE,
+  CONSTRAINT "FK_UserRole_User_Id" FOREIGN KEY ("Id") REFERENCES "User" ("Id") ON DELETE CASCADE
 );
 
 
-/* Indexes */
+CREATE TABLE "RouteValue" (
+  "Id" bigint NOT NULL,
+  "Key" character varying(50) NOT NULL,
+  "Value" character varying(200) NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_RouteValue" PRIMARY KEY ("Id", "Key"),
+  CONSTRAINT "FK_RouteValue_Route_Id" FOREIGN KEY ("Id") REFERENCES "Route" ("Id") ON DELETE CASCADE
+);
+
+
 CREATE INDEX "IX_Client_Disabled" ON "Client" ("Disabled");
 
 
@@ -268,31 +293,31 @@ CREATE INDEX "IX_ClientExtendData_Value" ON "ClientExtendData" ("Value");
 CREATE INDEX "IX_ClientRole_RoleId" ON "ClientRole" ("RoleId");
 
 
-CREATE INDEX "IX_Permission_Allowed" ON "Permission" ("Allowed");
+CREATE INDEX "IX_Permission_Disabled" ON "Permission" ("Disabled");
 
 
-CREATE INDEX "IX_Permission_ExpireDate" ON "Permission" ("ExpireDate");
+CREATE UNIQUE INDEX "IX_Permission_Name" ON "Permission" ("Name");
 
 
-CREATE INDEX "IX_Permission_FunctionId" ON "Permission" ("FunctionId");
+CREATE INDEX "IX_Role_Disabled" ON "Role" ("Disabled");
 
 
-CREATE UNIQUE INDEX "IX_Permission_Id_FunctionId_PermissionType_Allowed" ON "Permission" ("Id", "FunctionId", "PermissionType", "Allowed");
-
-
-CREATE INDEX "IX_Permission_PermissionType" ON "Permission" ("PermissionType");
-
-
-CREATE INDEX "IX_Permission_RoleId" ON "Permission" ("RoleId");
-
-
-CREATE INDEX "IX_Role_Name" ON "Role" ("Name");
+CREATE UNIQUE INDEX "IX_Role_Name" ON "Role" ("Name");
 
 
 CREATE INDEX "IX_RoleExtendData_Key" ON "RoleExtendData" ("Key");
 
 
 CREATE INDEX "IX_RoleExtendData_Value" ON "RoleExtendData" ("Value");
+
+
+CREATE INDEX "IX_RolePermission_PermissionId" ON "RolePermission" ("PermissionId");
+
+
+CREATE INDEX "IX_RolePermissionCondition_PermissionId" ON "RolePermissionCondition" ("PermissionId");
+
+
+CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Key_Va~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Key", "Value");
 
 
 CREATE INDEX "IX_Route_AllowAnonymous" ON "Route" ("AllowAnonymous");
@@ -332,6 +357,21 @@ CREATE INDEX "IX_RouteValue_Key" ON "RouteValue" ("Key");
 
 
 CREATE INDEX "IX_RouteValue_Value" ON "RouteValue" ("Value");
+
+
+CREATE INDEX "IX_Rule_Allowed" ON "Rule" ("Allowed");
+
+
+CREATE INDEX "IX_Rule_FunctionId" ON "Rule" ("FunctionId");
+
+
+CREATE UNIQUE INDEX "IX_Rule_Id_FunctionId_PermissionType_Allowed" ON "Rule" ("Id", "FunctionId", "PermissionType", "Allowed");
+
+
+CREATE INDEX "IX_Rule_PermissionId" ON "Rule" ("PermissionId");
+
+
+CREATE INDEX "IX_Rule_PermissionType" ON "Rule" ("PermissionType");
 
 
 CREATE INDEX "IX_Token_AccessToken" ON "Token" ("AccessToken");
@@ -402,20 +442,37 @@ BEGIN
   FOR i IN 0..months LOOP
     endDate   = to_char(beginDate, 'YYYY-MM-01')::timestamptz + (1 || ' month')::interval;
     tableName = 'Token_'||to_char(beginDate, 'YYYYMM');
-
-    CONTINUE WHEN EXISTS (SELECT 1 FROM information_schema."tables" WHERE "table_name" = tableName);
-
+  
+    IF EXISTS (SELECT 1 FROM information_schema."tables" WHERE "table_name" = tableName) THEN
+      beginDate = endDate;
+      CONTINUE;
+    END IF;
+  
     cmd = 'CREATE TABLE IF NOT EXISTS "'||tableName||'" PARTITION OF "Token" FOR VALUES FROM ('''||to_char(beginDate, 'YYYY-MM-DD')||''') TO ('''||to_char(endDate, 'YYYY-MM-DD')||''')';
     EXECUTE cmd;
     --RAISE NOTICE '%', cmd;
-
+  
     cmd = 'ALTER TABLE "'||tableName||'" ADD CONSTRAINT "PK_'||tableName||'" PRIMARY KEY ("Id")';
     EXECUTE cmd;
-	--RAISE NOTICE '%', cmd;
-
+    --RAISE NOTICE '%', cmd;
+  
     beginDate = endDate;
   END LOOP;
 
   RETURN 1;
 END;
 $function$
+
+
+select public.fn_token_partition_table();
+
+
+SELECT cron.schedule('token_partition_table', '0 0 */1 * *', 'SELECT fn_token_partition_table(null, 1)');
+
+
+UPDATE cron.job SET
+database = 'lctech_auth',
+-- schedule = '0 0 */1 * *',
+-- command = 'SELECT fn_token_partition_table(null, 1)',
+-- jobname = '建立分表'
+WHERE jobname = 'token_partition_table';

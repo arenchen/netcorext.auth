@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Netcorext.Auth.Authorization.Services.User;
+namespace Netcorext.Auth.Authorization.Services.User.Commands;
 
 public class SignOutValidator : AbstractValidator<SignOut>
 {

@@ -9,7 +9,7 @@ public class ClientExtendDataMap : EntityMap<ClientExtendData>
     {
         // Key
         Builder.HasKey(t => new { t.Id, t.Key });
-        
+
         // Indexes
         Builder.HasIndex(t => t.Key);
         Builder.HasIndex(t => t.Value);
@@ -21,7 +21,7 @@ public class ClientExtendDataMap : EntityMap<ClientExtendData>
 
         Builder.Property(t => t.Value)
                .HasColumnName(nameof(ClientExtendData.Value))
-               .HasMaxLength(1000);
+               .HasMaxLength(200);
 
         // Relationships
         Builder.HasOne(t => t.Client)

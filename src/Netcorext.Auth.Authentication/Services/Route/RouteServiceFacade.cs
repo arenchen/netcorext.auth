@@ -2,6 +2,7 @@ using Grpc.Core;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Netcorext.Auth.Attributes;
+using Netcorext.Auth.Authentication.Services.Route.Commands;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Protobufs;
 using Netcorext.Contracts.Protobufs;

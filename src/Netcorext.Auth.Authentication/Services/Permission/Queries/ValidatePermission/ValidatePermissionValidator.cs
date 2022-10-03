@@ -1,7 +1,7 @@
 using FluentValidation;
 using Netcorext.Extensions.Commons;
 
-namespace Netcorext.Auth.Authentication.Services.Permission;
+namespace Netcorext.Auth.Authentication.Services.Permission.Queries;
 
 public class ValidatePermissionValidator : AbstractValidator<ValidatePermission>
 {
@@ -11,5 +11,5 @@ public class ValidatePermissionValidator : AbstractValidator<ValidatePermission>
         RuleFor(t => t.RoleId).NotEmpty().When(t => t.UserId.IsEmpty());
         RuleFor(t => t.FunctionId).NotEmpty();
         RuleFor(t => t.PermissionType).IsInEnum();
-    }    
+    }
 }

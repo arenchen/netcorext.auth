@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Netcorext.Auth.Authentication.Services.Client;
+namespace Netcorext.Auth.Authentication.Services.Client.Queries;
 
 public class ValidateClientValidator : AbstractValidator<ValidateClient>
 {

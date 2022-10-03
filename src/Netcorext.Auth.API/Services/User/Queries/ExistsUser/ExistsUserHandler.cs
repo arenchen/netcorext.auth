@@ -1,9 +1,11 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
+using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Queries;
 
 public class ExistsUserHandler : IRequestHandler<ExistsUser, Result>
 {
@@ -18,7 +20,12 @@ public class ExistsUserHandler : IRequestHandler<ExistsUser, Result>
     {
         var ds = _context.Set<Domain.Entities.User>();
 
-        if (await ds.AnyAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken)) return Result.Success;
+        Expression<Func<Domain.Entities.User, bool>> predicate = t => t.NormalizedUsername == request.Username.ToUpper();
+
+        if (request.Id.HasValue)
+            predicate = predicate.And(t => t.Id != request.Id.Value);
+
+        if (await ds.AnyAsync(predicate, cancellationToken)) return Result.Success;
 
         return Result.NotFound;
     }

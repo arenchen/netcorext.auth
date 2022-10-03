@@ -1,7 +1,7 @@
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authentication.Services.Client;
+namespace Netcorext.Auth.Authentication.Services.Client.Queries;
 
 public class ValidateClient : IRequest<Result>
 {

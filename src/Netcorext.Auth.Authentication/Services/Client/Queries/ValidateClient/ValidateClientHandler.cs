@@ -4,7 +4,7 @@ using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authentication.Services.Client;
+namespace Netcorext.Auth.Authentication.Services.Client.Queries;
 
 public class ValidateClientHandler : IRequestHandler<ValidateClient, Result>
 {

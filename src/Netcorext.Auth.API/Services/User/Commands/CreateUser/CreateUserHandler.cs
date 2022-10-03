@@ -7,7 +7,7 @@ using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Commands;
 
 public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
 {

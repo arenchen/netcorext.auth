@@ -2,7 +2,7 @@ using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authentication.Services.Route;
+namespace Netcorext.Auth.Authentication.Services.Route.Commands;
 
 public class RegisterRoute : IRequest<Result>
 {

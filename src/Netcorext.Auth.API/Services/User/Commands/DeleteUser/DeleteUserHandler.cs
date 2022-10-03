@@ -2,7 +2,7 @@ using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Commands;
 
 public class DeleteUserHandler : IRequestHandler<DeleteUser, Result>
 {

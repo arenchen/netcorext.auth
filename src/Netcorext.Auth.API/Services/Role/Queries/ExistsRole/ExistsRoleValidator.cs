@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Netcorext.Auth.API.Services.Role;
+namespace Netcorext.Auth.API.Services.Role.Queries;
 
 public class ExistsRoleValidator : AbstractValidator<ExistsRole>
 {

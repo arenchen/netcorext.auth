@@ -6,7 +6,7 @@ using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 using Yarp.ReverseProxy.Forwarder;
 
-namespace Netcorext.Auth.Authentication.Services.Route;
+namespace Netcorext.Auth.Authentication.Services.Route.Queries;
 
 public class GetRouteHandler : IRequestHandler<GetRoute, Result<IEnumerable<Models.RouteGroup>>>
 {

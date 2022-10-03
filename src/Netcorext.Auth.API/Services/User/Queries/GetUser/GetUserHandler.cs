@@ -6,7 +6,7 @@ using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Queries;
 
 public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models.User>>>
 {
@@ -50,7 +50,6 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
 
             if (request.Role.RoleId.HasValue) predicateRole = predicateRole.And(p => p.RoleId == request.Role.RoleId);
             if (!request.Role.Name.IsEmpty()) predicateRole = predicateRole.And(p => p.Role.Name.Contains(request.Role.Name));
-            if (request.Role.Priority.HasValue) predicateRole = predicateRole.And(p => p.Role.Priority == request.Role.Priority);
             if (request.Role.ExpireDate.HasValue) predicateRole = predicateRole.And(p => p.ExpireDate == request.Role.ExpireDate);
 
             predicate = predicate.And(t => t.Roles.Any(predicateRole.Compile()));
@@ -67,7 +66,7 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
 
             if (!request.ExternalLogin.Provider.IsEmpty()) predicateExternalLogin = predicateExternalLogin.And(p => p.Provider == request.ExternalLogin.Provider);
             if (!request.ExternalLogin.UniqueId.IsEmpty()) predicateExternalLogin = predicateExternalLogin.And(p => p.UniqueId == request.ExternalLogin.UniqueId);
-            
+
             predicate = predicate.And(t => t.ExternalLogins.Any(predicateExternalLogin.Compile()));
         }
 
@@ -126,7 +125,6 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                               {
                                                                                   RoleId = t2.RoleId,
                                                                                   Name = t2.Role.Name,
-                                                                                  Priority = t2.Role.Priority,
                                                                                   ExpireDate = t2.ExpireDate,
                                                                                   CreationDate = t2.CreationDate,
                                                                                   CreatorId = t2.CreatorId,

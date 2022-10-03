@@ -1,6 +1,7 @@
 using Mapster;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Client;
+using Netcorext.Auth.API.Services.Permission;
 using Netcorext.Auth.API.Services.Role;
 using Netcorext.Auth.API.Services.User;
 using Netcorext.Auth.API.Settings;
@@ -35,6 +36,7 @@ public class AppConfig
         app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
 
         app.MapGrpcService<ClientServiceFacade>();
+        app.MapGrpcService<PermissionServiceFacade>();
         app.MapGrpcService<RoleServiceFacade>();
         app.MapGrpcService<UserServiceFacade>();
 

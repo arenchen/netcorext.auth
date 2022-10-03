@@ -2,7 +2,7 @@ using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.Client;
+namespace Netcorext.Auth.API.Services.Client.Commands;
 
 public class DeleteClientHandler : IRequestHandler<DeleteClient, Result>
 {
@@ -20,7 +20,7 @@ public class DeleteClientHandler : IRequestHandler<DeleteClient, Result>
         var qClient = ds.Where(t => t.Id == request.Id);
 
         if (!qClient.Any()) return Result.SuccessNoContent;
-        
+
         ds.RemoveRange(qClient);
 
         await _context.SaveChangesAsync(cancellationToken);

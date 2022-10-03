@@ -2,7 +2,7 @@ using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User;
+namespace Netcorext.Auth.API.Services.User.Commands;
 
 public class UpdateUser : IRequest<Result>
 {
@@ -23,21 +23,21 @@ public class UpdateUser : IRequest<Result>
 
     public class UserRole
     {
-        public CRUD CRUD { get; set; }
+        public CRUD Crud { get; set; }
         public long RoleId { get; set; }
         public DateTimeOffset? ExpireDate { get; set; }
     }
 
     public class UserExtendData
     {
-        public CRUD CRUD { get; set; }
+        public CRUD Crud { get; set; }
         public string Key { get; set; } = null!;
         public string? Value { get; set; }
     }
 
     public class UserExternalLogin
     {
-        public CRUD CRUD { get; set; }
+        public CRUD Crud { get; set; }
         public string Provider { get; set; } = null!;
         public string UniqueId { get; set; } = null!;
     }

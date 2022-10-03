@@ -17,7 +17,7 @@ using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.Authorization.Services.Token;
+namespace Netcorext.Auth.Authorization.Services.Token.Commands;
 
 public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResult>>
 {

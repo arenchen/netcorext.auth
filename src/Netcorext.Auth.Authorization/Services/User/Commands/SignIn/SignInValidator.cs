@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using FluentValidation;
 using Netcorext.Extensions.Commons;
 
-namespace Netcorext.Auth.Authorization.Services.User;
+namespace Netcorext.Auth.Authorization.Services.User.Commands;
 
 public class SignInValidator : AbstractValidator<SignIn>
 {
