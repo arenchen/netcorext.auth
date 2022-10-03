@@ -59,7 +59,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
 
             if (result?.Content == null || result.Code != Result.Success) return;
 
-            var cacheRolePermissionRule = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<long, Services.Permission.Queries.Models.RolePermissionRule>();
+            var cacheRolePermissionRule = _cache.Get<Dictionary<string, Services.Permission.Queries.Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<string, Services.Permission.Queries.Models.RolePermissionRule>();
             var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>();
 
             if (reqIds != null && reqIds.Any())
@@ -85,9 +85,11 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
 
             foreach (var i in result.Content.PermissionRules)
             {
-                if (cacheRolePermissionRule.TryAdd(i.Id, i)) continue;
+                var id = $"{i.RoleId}-{i.PermissionId}-{i.Id}";
+                
+                if (cacheRolePermissionRule.TryAdd(id, i)) continue;
 
-                cacheRolePermissionRule[i.Id] = i;
+                cacheRolePermissionRule[id] = i;
             }
 
             _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_RULE, cacheRolePermissionRule);

@@ -41,12 +41,12 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
         if (!roleIds.Any()) return Task.FromResult(Result.Forbidden);
 
 
-        var cacheRolePermissionRule = _cache.Get<Dictionary<long, Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<long, Models.RolePermissionRule>();
+        var cacheRolePermissionRule = _cache.Get<Dictionary<string, Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<string, Models.RolePermissionRule>();
         var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Models.RolePermissionCondition>();
 
         if (!cacheRolePermissionRule.Any()) return Task.FromResult(Result.Forbidden);
 
-        Expression<Func<KeyValuePair<long, Models.RolePermissionRule>, bool>> predicatePermissionRule = t => roleIds.Contains(t.Value.RoleId) && t.Value.FunctionId == request.FunctionId;
+        Expression<Func<KeyValuePair<string, Models.RolePermissionRule>, bool>> predicatePermissionRule = t => roleIds.Contains(t.Value.RoleId) && t.Value.FunctionId == request.FunctionId;
         Expression<Func<KeyValuePair<long, Models.RolePermissionCondition>, bool>> predicatePermissionCondition = t => roleIds.Contains(t.Value.RoleId);
 
         var conditions = cacheRolePermissionCondition.Where(predicatePermissionCondition.Compile())

@@ -18,7 +18,7 @@ public class ConfigSettings : Config<AppSettings>
 public class AppSettings
 {
     public RegisterConfig? RegisterConfig { get; set; }
-    public string[]? InternalHost { get; set; } = { "localhost" };
+    public string[]? InternalHost { get; set; }
     public long[]? Owner { get; set; }
     public int HealthCheckInterval { get; set; } = 10 * 1000;
     public int HealthCheckTimeout { get; set; } = 15 * 1000;
