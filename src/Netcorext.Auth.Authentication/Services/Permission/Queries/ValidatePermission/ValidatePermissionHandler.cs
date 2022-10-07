@@ -28,7 +28,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
         if (request.UserId.HasValue)
         {
             var ds = _context.Set<Domain.Entities.UserRole>();
-            var userRoles = ds.Where(t => t.Id == request.UserId).Select(t => t.RoleId);
+            var userRoles = ds.Where(t => t.Id == request.UserId && !t.Role.Disabled).Select(t => t.RoleId);
 
             roleIds = userRoles.ToArray();
         }
