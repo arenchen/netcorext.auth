@@ -28,8 +28,7 @@ public class GetRouteHandler : IRequestHandler<GetRoute, Result<IEnumerable<Mode
             predicate = request.GroupIds.Aggregate(predicate, (current, id) => current.Or(p => p.Id == id));
         }
 
-        var queryEntities = ds.Include(t => t.Routes).ThenInclude(t => t.RouteValues)
-                              .Where(predicate)
+        var queryEntities = ds.Where(predicate)
                               .AsNoTracking();
 
         var content = queryEntities.Select(t => new Models.RouteGroup

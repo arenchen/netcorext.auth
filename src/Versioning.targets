@@ -18,7 +18,7 @@
     <PackageProjectUrl>https://github.com/NETCOREXT/Netcorext.Auth</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NETCOREXT/Netcorext.Auth.git</RepositoryUrl>
     <Description>ASP.NET Core Auth Microservice</Description>
-    <NoWarn>$(NoWarn);1591,NU1603</NoWarn>
+    <NoWarn>$(NoWarn);1591;NU1603</NoWarn>
   </PropertyGroup>
 
   <Target Name="IncludeProjectReferences" DependsOnTargets="ResolveReferences">

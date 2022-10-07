@@ -116,7 +116,7 @@ internal class TokenMiddleware
 
             return result != null && result.Code == Result.Success;
         }
-        catch (SecurityTokenExpiredException e)
+        catch (SecurityTokenExpiredException)
         {
             cachePermissions.Remove(token);
 

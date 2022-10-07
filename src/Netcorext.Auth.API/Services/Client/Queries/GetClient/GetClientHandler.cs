@@ -1,5 +1,8 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Settings;
+using Netcorext.Configuration.Extensions;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Commons;
@@ -11,10 +14,12 @@ namespace Netcorext.Auth.API.Services.Client.Queries;
 public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Models.Client>>>
 {
     private readonly DatabaseContext _context;
+    private readonly int _dataSizeLimit;
 
-    public GetClientHandler(DatabaseContext context)
+    public GetClientHandler(DatabaseContext context, IOptions<ConfigSettings> config)
     {
         _context = context;
+        _dataSizeLimit = config.Value.Connections.RelationalDb.GetDefault().DataSizeLimit;
     }
 
     public async Task<Result<IEnumerable<Models.Client>>> Handle(GetClient request, CancellationToken cancellationToken = default)
@@ -47,58 +52,57 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
             predicate = request.ExtendData.Aggregate(predicate, (expression, extendData) => expression.And(t => t.ExtendData.Any(t2 => t2.Key == extendData.Key.ToUpper() && t2.Value == extendData.Value)));
         }
 
-        var queryEntities = ds.Include(t => t.ExtendData)
-                              .Include(t => t.Roles).ThenInclude(t => t.Role)
-                              .Where(predicate)
+        var queryEntities = ds.Where(predicate)
+                              .OrderBy(t => t.Id)
+                              .Take(_dataSizeLimit)
                               .AsNoTracking();
 
         var pagination = await queryEntities.GroupBy(t => 0)
                                             .Select(t => new
                                                          {
                                                              Count = t.Count(),
-                                                             Rows = t.OrderBy(t2 => t2.Id)
-                                                                     .Skip(request.Paging.Offset)
+                                                             Rows = t.Skip(request.Paging.Offset)
                                                                      .Take(request.Paging.Limit)
+                                                                     .Select(t2 => new Models.Client
+                                                                                   {
+                                                                                       Id = t2.Id,
+                                                                                       Name = t2.Name,
+                                                                                       CallbackUrl = t2.CallbackUrl,
+                                                                                       TokenExpireSeconds = t2.TokenExpireSeconds,
+                                                                                       RefreshTokenExpireSeconds = t2.RefreshTokenExpireSeconds,
+                                                                                       CodeExpireSeconds = t2.CodeExpireSeconds,
+                                                                                       Disabled = t2.Disabled,
+                                                                                       CreationDate = t2.CreationDate,
+                                                                                       CreatorId = t2.CreatorId,
+                                                                                       ModificationDate = t2.ModificationDate,
+                                                                                       ModifierId = t2.ModifierId,
+                                                                                       Roles = t2.Roles.Select(t2 => new Models.ClientRole
+                                                                                                                     {
+                                                                                                                         RoleId = t2.RoleId,
+                                                                                                                         Name = t2.Role.Name,
+                                                                                                                         ExpireDate = t2.ExpireDate,
+                                                                                                                         CreationDate = t2.CreationDate,
+                                                                                                                         CreatorId = t2.CreatorId,
+                                                                                                                         ModificationDate = t2.ModificationDate,
+                                                                                                                         ModifierId = t2.ModifierId
+                                                                                                                     }),
+                                                                                       ExtendData = t2.ExtendData.Select(t3 => new Models.ClientExtendData
+                                                                                                                               {
+                                                                                                                                   Key = t3.Key,
+                                                                                                                                   Value = t3.Value,
+                                                                                                                                   CreationDate = t3.CreationDate,
+                                                                                                                                   CreatorId = t3.CreatorId,
+                                                                                                                                   ModificationDate = t3.ModificationDate,
+                                                                                                                                   ModifierId = t3.ModifierId
+                                                                                                                               })
+                                                                                   }
+                                                                            )
                                                          })
                                             .FirstOrDefaultAsync(cancellationToken);
 
         request.Paging.Count = pagination?.Count ?? 0;
 
-        var content = pagination?.Rows.Select(t => new Models.Client
-                                                   {
-                                                       Id = t.Id,
-                                                       Name = t.Name,
-                                                       CallbackUrl = t.CallbackUrl,
-                                                       TokenExpireSeconds = t.TokenExpireSeconds,
-                                                       RefreshTokenExpireSeconds = t.RefreshTokenExpireSeconds,
-                                                       CodeExpireSeconds = t.CodeExpireSeconds,
-                                                       Disabled = t.Disabled,
-                                                       CreationDate = t.CreationDate,
-                                                       CreatorId = t.CreatorId,
-                                                       ModificationDate = t.ModificationDate,
-                                                       ModifierId = t.ModifierId,
-                                                       Roles = t.Roles.Select(t2 => new Models.ClientRole
-                                                                                    {
-                                                                                        RoleId = t2.RoleId,
-                                                                                        Name = t2.Role.Name,
-                                                                                        ExpireDate = t2.ExpireDate,
-                                                                                        CreationDate = t2.CreationDate,
-                                                                                        CreatorId = t2.CreatorId,
-                                                                                        ModificationDate = t2.ModificationDate,
-                                                                                        ModifierId = t2.ModifierId
-                                                                                    }),
-                                                       ExtendData = t.ExtendData.Select(t2 => new Models.ClientExtendData
-                                                                                              {
-                                                                                                  Key = t2.Key,
-                                                                                                  Value = t2.Value,
-                                                                                                  CreationDate = t2.CreationDate,
-                                                                                                  CreatorId = t2.CreatorId,
-                                                                                                  ModificationDate = t2.ModificationDate,
-                                                                                                  ModifierId = t2.ModifierId
-                                                                                              })
-                                                   }
-                                             )
-                                 .ToArray();
+        var content = pagination?.Rows.ToArray();
 
         if (content != null && !content.Any()) content = null;
 

@@ -1,5 +1,8 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Settings;
+using Netcorext.Configuration.Extensions;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Commons;
@@ -11,10 +14,12 @@ namespace Netcorext.Auth.API.Services.Permission.Queries;
 public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnumerable<Models.Permission>>>
 {
     private readonly DatabaseContext _context;
+    private readonly int _dataSizeLimit;
 
-    public GetPermissionHandler(DatabaseContext context)
+    public GetPermissionHandler(DatabaseContext context, IOptions<ConfigSettings> config)
     {
         _context = context;
+        _dataSizeLimit = config.Value.Connections.RelationalDb.GetDefault().DataSizeLimit;
     }
 
     public async Task<Result<IEnumerable<Models.Permission>>> Handle(GetPermission request, CancellationToken cancellationToken = new())
@@ -45,8 +50,9 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
             predicate = predicate.And(p => p.Rules.Any(predicateRule.Compile()));
         }
 
-        var queryEntities = ds.Include(t => t.Rules)
-                              .Where(predicate)
+        var queryEntities = ds.Where(predicate)
+                              .OrderBy(t => t.Id)
+                              .Take(_dataSizeLimit)
                               .AsNoTracking();
 
         var pagination = await queryEntities.GroupBy(t => 0)
@@ -56,34 +62,34 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
                                                              Rows = t.OrderBy(t2 => t2.Id)
                                                                      .Skip(request.Paging.Offset)
                                                                      .Take(request.Paging.Limit)
+                                                                     .Select(t2 => new Models.Permission
+                                                                                   {
+                                                                                       Id = t2.Id,
+                                                                                       Name = t2.Name,
+                                                                                       Disabled = t2.Disabled,
+                                                                                       CreationDate = t2.CreationDate,
+                                                                                       CreatorId = t2.CreatorId,
+                                                                                       ModificationDate = t2.ModificationDate,
+                                                                                       ModifierId = t2.ModifierId,
+                                                                                       Rules = t2.Rules.Select(t3 => new Models.Rule
+                                                                                                                     {
+                                                                                                                         Id = t3.Id,
+                                                                                                                         FunctionId = t3.FunctionId,
+                                                                                                                         PermissionType = t3.PermissionType,
+                                                                                                                         Allowed = t3.Allowed,
+                                                                                                                         CreationDate = t3.CreationDate,
+                                                                                                                         CreatorId = t3.CreatorId,
+                                                                                                                         ModificationDate = t3.ModificationDate,
+                                                                                                                         ModifierId = t3.ModifierId
+                                                                                                                     })
+                                                                                   }
+                                                                            )
                                                          })
                                             .FirstOrDefaultAsync(cancellationToken);
 
         request.Paging.Count = pagination?.Count ?? 0;
 
-        var content = pagination?.Rows.Select(t => new Models.Permission
-                                                   {
-                                                       Id = t.Id,
-                                                       Name = t.Name,
-                                                       Disabled = t.Disabled,
-                                                       CreationDate = t.CreationDate,
-                                                       CreatorId = t.CreatorId,
-                                                       ModificationDate = t.ModificationDate,
-                                                       ModifierId = t.ModifierId,
-                                                       Rules = t.Rules.Select(t2 => new Models.Rule
-                                                                                    {
-                                                                                        Id = t2.Id,
-                                                                                        FunctionId = t2.FunctionId,
-                                                                                        PermissionType = t2.PermissionType,
-                                                                                        Allowed = t2.Allowed,
-                                                                                        CreationDate = t2.CreationDate,
-                                                                                        CreatorId = t2.CreatorId,
-                                                                                        ModificationDate = t2.ModificationDate,
-                                                                                        ModifierId = t2.ModifierId
-                                                                                    })
-                                                   }
-                                             )
-                                 .ToArray();
+        var content = pagination?.Rows.ToArray();
 
         if (content != null && !content.Any()) content = null;
 

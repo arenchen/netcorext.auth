@@ -1,5 +1,8 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Settings;
+using Netcorext.Configuration.Extensions;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
@@ -9,10 +12,12 @@ namespace Netcorext.Auth.API.Services.User.Queries;
 public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Result<IEnumerable<Models.Role>>>
 {
     private readonly DatabaseContext _context;
+    private readonly int _dataSizeLimit;
 
-    public GetUserPermissionHandler(DatabaseContext context)
+    public GetUserPermissionHandler(DatabaseContext context, IOptions<ConfigSettings> config)
     {
         _context = context;
+        _dataSizeLimit = config.Value.Connections.RelationalDb.GetDefault().DataSizeLimit;
     }
 
     public Task<Result<IEnumerable<Models.Role>>> Handle(GetUserPermission request, CancellationToken cancellationToken = default)
@@ -27,7 +32,8 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
         Expression<Func<Domain.Entities.Role, bool>> predicate = p => roleIds.Contains(p.Id);
 
         var qRole = ds.Where(predicate)
-                      .Include(t => t.Permissions).ThenInclude(t => t.Permission).ThenInclude(t => t.Rules).ThenInclude(t => t.Permission)
+                      .OrderBy(t => t.Id)
+                      .Take(_dataSizeLimit)
                       .AsNoTracking();
 
         var result = qRole.Select(t => new Models.Role

@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Settings;
+using Netcorext.Configuration.Extensions;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
@@ -8,10 +11,12 @@ namespace Netcorext.Auth.API.Services.User.Queries;
 public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerable<Models.SimpleUserRole>>>
 {
     private readonly DatabaseContext _context;
+    private readonly int _dataSizeLimit;
 
-    public GetUserRoleHandler(DatabaseContext context)
+    public GetUserRoleHandler(DatabaseContext context, IOptions<ConfigSettings> config)
     {
         _context = context;
+        _dataSizeLimit = config.Value.Connections.RelationalDb.GetDefault().DataSizeLimit;
     }
 
     public async Task<Result<IEnumerable<Models.SimpleUserRole>>> Handle(GetUserRole request, CancellationToken cancellationToken = new())
@@ -19,7 +24,8 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
         var ds = _context.Set<Domain.Entities.UserRole>();
 
         var queryEntities = ds.Where(t => request.Ids.Contains(t.Id) && !t.Role.Disabled)
-                              .Include(t => t.Role)
+                              .OrderBy(t => t.Id)
+                              .Take(_dataSizeLimit)
                               .AsNoTracking();
 
         var content = queryEntities.Select(t => new Models.SimpleUserRole

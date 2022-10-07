@@ -22,7 +22,7 @@ internal class HealthCheckRunner : IWorkerRunner<AuthWorker>
         _logger = logger;
     }
 
-    public async Task InvokeAsync(AuthWorker worker, CancellationToken cancellationToken = new CancellationToken())
+    public Task InvokeAsync(AuthWorker worker, CancellationToken cancellationToken = default)
     {
         _worker = worker;
 
@@ -32,7 +32,7 @@ internal class HealthCheckRunner : IWorkerRunner<AuthWorker>
 
         _subscription = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_HEALTH_CHECK_EVENT], (s, o) => HealthCheckHandleAsync(cancellationToken).GetAwaiter().GetResult());
 
-        Task.Run(async () => await HealthCheckAsync(cancellationToken), cancellationToken);
+        return HealthCheckAsync(cancellationToken);
     }
 
     private Task HealthCheckHandleAsync(CancellationToken cancellationToken = default)

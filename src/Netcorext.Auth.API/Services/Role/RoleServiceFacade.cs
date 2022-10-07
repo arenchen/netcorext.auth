@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Grpc.Core;
 using Mapster;
 using Netcorext.Auth.API.Services.Role.Commands;
@@ -20,6 +21,16 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
     {
         _dispatcher = dispatcher;
         _httpContextAccessor = httpContextAccessor;
+    }
+
+    public override async Task<CloneRoleRequest.Types.Result> CloneRole(CloneRoleRequest request, ServerCallContext context)
+    {
+        _httpContextAccessor.HttpContext = context.GetHttpContext();
+
+        var req = request.Adapt<CloneRole>();
+        var rep = await _dispatcher.SendAsync(req);
+
+        return rep!.Adapt<CloneRoleRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Write)]
@@ -58,12 +69,22 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetRoleRequest.Types.Result> GetRole(GetRoleRequest request, ServerCallContext context)
     {
+        var time = new Stopwatch();
+        
+        time.Start();
+        
         _httpContextAccessor.HttpContext = context.GetHttpContext();
 
         var req = request.Adapt<GetRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<GetRoleRequest.Types.Result>();
+        var r =rep!.Adapt<GetRoleRequest.Types.Result>();
+
+        time.Stop();
+        
+        Console.WriteLine(time.Elapsed.ToString());
+        
+        return r;
     }
 
     [Permission("AUTH", PermissionType.Write)]

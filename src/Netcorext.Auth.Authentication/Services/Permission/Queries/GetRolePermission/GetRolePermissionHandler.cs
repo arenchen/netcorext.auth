@@ -17,7 +17,7 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
         _context = context;
     }
 
-    public async Task<Result<Models.RolePermission>> Handle(GetRolePermission request, CancellationToken cancellationToken = default)
+    public Task<Result<Models.RolePermission>> Handle(GetRolePermission request, CancellationToken cancellationToken = default)
     {
         var ds = _context.Set<Domain.Entities.Role>();
 
@@ -27,8 +27,6 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
             predicate = predicate.And(t => request.Ids.Contains(t.Id));
 
         var qRole = ds.Where(predicate)
-                      .Include(t => t.Permissions).ThenInclude(t => t.Permission).ThenInclude(t => t.Rules).ThenInclude(t => t.Permission)
-                      .Include(t => t.PermissionConditions)
                       .AsNoTracking();
 
         var conditions = qRole.SelectMany(t => t.PermissionConditions
@@ -65,6 +63,6 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
                          PermissionRules = rules.ToArray()
                      };
 
-        return Result<Models.RolePermission>.Success.Clone(result);
+        return Task.FromResult(Result<Models.RolePermission>.Success.Clone(result));
     }
 }
