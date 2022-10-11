@@ -17,7 +17,7 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
     private readonly RedisClient _redis;
     private readonly ConfigSettings _config;
     private readonly JsonSerializerOptions _jsonOptions;
-    
+
     public SignOutHandler(DatabaseContext context, RedisClient redis, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
     {
         _context = context;
@@ -42,9 +42,9 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
         if (token == null) return Result.Success;
 
         var lsToken = new List<string> { token.AccessToken };
-                
+
         if (!string.IsNullOrWhiteSpace(token.RefreshToken)) lsToken.Add(token.RefreshToken);
-                
+
         _redis.Publish(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], JsonSerializer.Serialize(lsToken.ToArray(), _jsonOptions));
 
         return Result.Success;

@@ -86,7 +86,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
             foreach (var i in result.Content.PermissionRules)
             {
                 var id = $"{i.RoleId}-{i.PermissionId}-{i.Id}";
-                
+
                 if (cacheRolePermissionRule.TryAdd(id, i)) continue;
 
                 cacheRolePermissionRule[id] = i;

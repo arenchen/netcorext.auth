@@ -21,15 +21,15 @@ public class UserMap : EntityMap<User>
         Builder.HasIndex(t => t.Email)
                .HasMethod("gist")
                .HasOperators("gist_trgm_ops");
-        
+
         Builder.HasIndex(t => t.NormalizedEmail)
                .HasMethod("gist")
                .HasOperators("gist_trgm_ops");
-        
+
         Builder.HasIndex(t => t.PhoneNumber)
                .HasMethod("gist")
                .HasOperators("gist_trgm_ops");
-        
+
         Builder.HasIndex(t => t.Disabled);
 
         // Properties

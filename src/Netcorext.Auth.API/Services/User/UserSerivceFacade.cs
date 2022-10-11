@@ -14,19 +14,15 @@ namespace Netcorext.Auth.API.Services.User;
 public class UserServiceFacade : UserService.UserServiceBase
 {
     private readonly IDispatcher _dispatcher;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserServiceFacade(IDispatcher dispatcher, IHttpContextAccessor httpContextAccessor)
+    public UserServiceFacade(IDispatcher dispatcher)
     {
         _dispatcher = dispatcher;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     [Permission("AUTH", PermissionType.Write)]
     public override async Task<CreateUserRequest.Types.Result> CreateUser(CreateUserRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<CreateUser>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -36,8 +32,6 @@ public class UserServiceFacade : UserService.UserServiceBase
     [Permission("AUTH", PermissionType.Delete)]
     public override async Task<Result> DeleteUser(DeleteUserRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<DeleteUser>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -47,8 +41,6 @@ public class UserServiceFacade : UserService.UserServiceBase
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<Result> ExistsUser(ExistsUserRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<ExistsUser>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -58,8 +50,6 @@ public class UserServiceFacade : UserService.UserServiceBase
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetUserRequest.Types.Result> GetUser(GetUserRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<GetUser>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -69,7 +59,7 @@ public class UserServiceFacade : UserService.UserServiceBase
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetUserPermissionRequest.Types.Result> GetUserPermission(GetUserPermissionRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
+        //
 
         var req = request.Adapt<GetUserPermission>();
         var rep = await _dispatcher.SendAsync(req);
@@ -80,8 +70,6 @@ public class UserServiceFacade : UserService.UserServiceBase
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetUserRoleRequest.Types.Result> GetUserRole(GetUserRoleRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<GetUserRole>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -91,8 +79,6 @@ public class UserServiceFacade : UserService.UserServiceBase
     [Permission("AUTH", PermissionType.Write)]
     public override async Task<Result> UpdateUser(UpdateUserRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<UpdateUser>();
         var rep = await _dispatcher.SendAsync(req);
 

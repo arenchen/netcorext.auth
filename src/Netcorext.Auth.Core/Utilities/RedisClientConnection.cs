@@ -5,7 +5,7 @@ namespace Netcorext.Auth.Utilities;
 public class RedisClientConnection
 {
     private static Lazy<RedisClient>? _lazyRedisClient;
-    private static readonly object Locker = new object();
+    private static readonly object Locker = new();
 
     public RedisClientConnection(string connectionString)
     {

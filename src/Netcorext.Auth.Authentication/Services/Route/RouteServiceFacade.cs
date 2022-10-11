@@ -15,18 +15,14 @@ namespace Netcorext.Auth.Authentication.Services.Route;
 public class RouteServiceFacade : RouteService.RouteServiceBase
 {
     private readonly IDispatcher _dispatcher;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public RouteServiceFacade(IDispatcher dispatcher, IHttpContextAccessor httpContextAccessor)
+    public RouteServiceFacade(IDispatcher dispatcher)
     {
         _dispatcher = dispatcher;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public override async Task<Result> RegisterRoute(RegisterRouteRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<RegisterRoute>();
         var rep = await _dispatcher.SendAsync(req);
 

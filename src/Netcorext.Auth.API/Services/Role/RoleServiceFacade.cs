@@ -15,18 +15,14 @@ namespace Netcorext.Auth.API.Services.Role;
 public class RoleServiceFacade : RoleService.RoleServiceBase
 {
     private readonly IDispatcher _dispatcher;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public RoleServiceFacade(IDispatcher dispatcher, IHttpContextAccessor httpContextAccessor)
+    public RoleServiceFacade(IDispatcher dispatcher)
     {
         _dispatcher = dispatcher;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public override async Task<CloneRoleRequest.Types.Result> CloneRole(CloneRoleRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<CloneRole>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -36,8 +32,6 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
     [Permission("AUTH", PermissionType.Write)]
     public override async Task<CreateRoleRequest.Types.Result> CreateRole(CreateRoleRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<CreateRole>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -47,8 +41,6 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
     [Permission("AUTH", PermissionType.Delete)]
     public override async Task<Result> DeleteRole(DeleteRoleRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<DeleteRole>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -58,8 +50,6 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<Result> RoleExists(RoleExistsRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<ExistsRole>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -70,28 +60,25 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
     public override async Task<GetRoleRequest.Types.Result> GetRole(GetRoleRequest request, ServerCallContext context)
     {
         var time = new Stopwatch();
-        
+
         time.Start();
-        
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
+
 
         var req = request.Adapt<GetRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        var r =rep!.Adapt<GetRoleRequest.Types.Result>();
+        var r = rep!.Adapt<GetRoleRequest.Types.Result>();
 
         time.Stop();
-        
+
         Console.WriteLine(time.Elapsed.ToString());
-        
+
         return r;
     }
 
     [Permission("AUTH", PermissionType.Write)]
     public override async Task<Result> UpdateRole(UpdateRoleRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<UpdateRole>();
         var rep = await _dispatcher.SendAsync(req);
 

@@ -27,7 +27,7 @@ public class CreateToken : IRequest<Result<TokenResult>>
     [FromForm(Name = "password")]
     [JsonPropertyName("password")]
     public string? Password { get; set; }
-    
+
     [FromForm(Name = "unique_id")]
     [JsonPropertyName("unique_id")]
     public string? UniqueId { get; set; }

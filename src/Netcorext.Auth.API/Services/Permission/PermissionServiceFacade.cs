@@ -11,18 +11,14 @@ namespace Netcorext.Auth.API.Services.Permission;
 public class PermissionServiceFacade : PermissionService.PermissionServiceBase
 {
     private readonly IDispatcher _dispatcher;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public PermissionServiceFacade(IDispatcher dispatcher, IHttpContextAccessor httpContextAccessor)
+    public PermissionServiceFacade(IDispatcher dispatcher)
     {
         _dispatcher = dispatcher;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public override async Task<CreatePermissionRequest.Types.Result> CreatePermission(CreatePermissionRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<CreatePermission>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -31,8 +27,6 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
 
     public override async Task<Result> DeletePermission(DeletePermissionRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<DeletePermission>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -41,8 +35,6 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
 
     public override async Task<GetPermissionRequest.Types.Result> GetPermission(GetPermissionRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<GetPermission>();
         var rep = await _dispatcher.SendAsync(req);
 
@@ -51,8 +43,6 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
 
     public override async Task<Result> UpdatePermission(UpdatePermissionRequest request, ServerCallContext context)
     {
-        _httpContextAccessor.HttpContext = context.GetHttpContext();
-
         var req = request.Adapt<UpdatePermission>();
         var rep = await _dispatcher.SendAsync(req);
 

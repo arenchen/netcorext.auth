@@ -24,7 +24,7 @@ internal class InMemoryConfigProvider : IProxyConfigProvider
 
     private class InMemoryConfig : IProxyConfig
     {
-        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cts = new();
 
         public InMemoryConfig(IReadOnlyList<RouteConfig> routes, IReadOnlyList<ClusterConfig> clusters)
         {

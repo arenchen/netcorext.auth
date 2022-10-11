@@ -7,7 +7,7 @@ namespace Netcorext.Auth.Extensions;
 public static class HttpContextExtension
 {
     private static readonly string[] DefaultIpHeaderName = { "X-Origin-Forwarded-For", "X-Forwarded-For", "X-Real-Ip" };
-    private static readonly Regex RegexIp = new Regex(@"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}[^,]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex RegexIp = new(@"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}[^,]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static string? GetIp(this HttpContext context, params string[]? headerNames)
     {

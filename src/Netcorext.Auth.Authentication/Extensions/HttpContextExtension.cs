@@ -7,12 +7,12 @@ public static class HttpContextExtension
 {
     private const string ERROR_MESSAGE_UNAUTHORIZED = "{ \"code\": \"401000\", \"message\": \"Unauthorized.\"}";
     private const string ERROR_MESSAGE_FORBIDDEN = "{ \"code\": \"403000\", \"message\": \"Forbidden.\"}";
-    
+
     public static bool IsGrpc(this HttpContext context)
     {
         return context.Request.Protocol == "HTTP/2" && context.Request.Headers.ContentType == "application/grpc";
     }
-    
+
     public static async Task UnauthorizedAsync(this HttpContext context, bool useNativeStatus = true)
     {
         if (context.IsGrpc())

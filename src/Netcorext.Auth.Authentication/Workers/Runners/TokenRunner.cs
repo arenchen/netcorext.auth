@@ -23,20 +23,20 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
         _config = config.Value;
         _logger = logger;
     }
-    
-    public Task InvokeAsync(AuthWorker worker, CancellationToken cancellationToken = new CancellationToken())
+
+    public Task InvokeAsync(AuthWorker worker, CancellationToken cancellationToken = default)
     {
         _subscription?.Dispose();
-        
+
         _subscription = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], (s, o) => UpdateTokenAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
 
         return Task.CompletedTask;
     }
-    
+
     private async Task UpdateTokenAsync(string? data, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(data)) return;
-        
+
         try
         {
             await TokenUpdateLocker.WaitAsync(cancellationToken);
@@ -44,7 +44,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
             _logger.LogInformation(nameof(UpdateTokenAsync));
 
             var cachePermissions = _cache.Get<Dictionary<string, bool>>(ConfigSettings.CACHE_TOKEN) ?? new Dictionary<string, bool>();
-            
+
             var tokens = JsonSerializer.Deserialize<string[]>(data);
 
             if (tokens == null) return;
