@@ -102,7 +102,8 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                                             PermissionType = r.PermissionType & f.PermissionType
                                                         })
                                         .Where(t => t.PermissionType != PermissionType.None)
-                                        .Select(t => t.PermissionId);
+                                        .Select(t => t.PermissionId)
+                                        .Distinct();
 
         return Task.FromResult(Result<IEnumerable<long>>.Success.Clone(result));
     }
