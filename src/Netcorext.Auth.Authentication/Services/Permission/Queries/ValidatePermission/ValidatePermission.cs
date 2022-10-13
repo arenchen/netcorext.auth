@@ -9,6 +9,7 @@ public class ValidatePermission : IRequest<Result>
     public long? UserId { get; set; }
     public long[]? RoleId { get; set; }
     public string FunctionId { get; set; } = null!;
+    public string? Group { get; set; }
     public PermissionType PermissionType { get; set; }
     public PermissionCondition[]? PermissionConditions { get; set; }
 

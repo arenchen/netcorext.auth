@@ -78,6 +78,7 @@ public class GetRoleHandler : IRequestHandler<GetRole, Result<IEnumerable<Models
                                                                                                                                                        Id = t3.Id,
                                                                                                                                                        PermissionId = t3.PermissionId,
                                                                                                                                                        Priority = t3.Priority,
+                                                                                                                                                       Group = t3.Group,
                                                                                                                                                        Key = t3.Key,
                                                                                                                                                        Value = t3.Value,
                                                                                                                                                        Allowed = t3.Allowed,

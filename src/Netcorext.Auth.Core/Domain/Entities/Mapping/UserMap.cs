@@ -9,26 +9,16 @@ public class UserMap : EntityMap<User>
     {
         // Indexes
         Builder.HasIndex(t => t.Username)
-               .HasMethod("gist")
-               .HasOperators("gist_trgm_ops")
                .IsUnique();
 
         Builder.HasIndex(t => t.NormalizedUsername)
-               .HasMethod("gist")
-               .HasOperators("gist_trgm_ops")
                .IsUnique();
 
-        Builder.HasIndex(t => t.Email)
-               .HasMethod("gist")
-               .HasOperators("gist_trgm_ops");
+        Builder.HasIndex(t => t.Email);
 
-        Builder.HasIndex(t => t.NormalizedEmail)
-               .HasMethod("gist")
-               .HasOperators("gist_trgm_ops");
+        Builder.HasIndex(t => t.NormalizedEmail);
 
-        Builder.HasIndex(t => t.PhoneNumber)
-               .HasMethod("gist")
-               .HasOperators("gist_trgm_ops");
+        Builder.HasIndex(t => t.PhoneNumber);
 
         Builder.HasIndex(t => t.Disabled);
 

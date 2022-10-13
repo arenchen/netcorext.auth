@@ -7,6 +7,7 @@ public class RolePermissionCondition : Entity
     public long RoleId { get; set; }
     public long PermissionId { get; set; }
     public int Priority { get; set; }
+    public string? Group { get; set; }
     public string Key { get; set; } = null!;
     public string Value { get; set; } = null!;
     public bool Allowed { get; set; }

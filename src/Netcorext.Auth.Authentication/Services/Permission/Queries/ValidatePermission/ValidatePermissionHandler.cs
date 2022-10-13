@@ -49,6 +49,10 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
         Expression<Func<KeyValuePair<string, Models.RolePermissionRule>, bool>> predicatePermissionRule = t => roleIds.Contains(t.Value.RoleId) && t.Value.FunctionId == request.FunctionId;
         Expression<Func<KeyValuePair<long, Models.RolePermissionCondition>, bool>> predicatePermissionCondition = t => roleIds.Contains(t.Value.RoleId);
 
+        predicatePermissionCondition = request.Group.IsEmpty()
+                                           ? predicatePermissionCondition.And(t => t.Value.Group.IsEmpty())
+                                           : predicatePermissionCondition.And(t => t.Value.Group == request.Group);
+
         var conditions = cacheRolePermissionCondition.Where(predicatePermissionCondition.Compile())
                                                      .Select(t => t.Value)
                                                      .ToArray();
@@ -74,7 +78,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
                 keyCount++;
 
-                Expression<Func<Models.RolePermissionCondition, bool>> predicateKey = t => t.Key == i.Key && i.Values.Contains(t.Value);
+                Expression<Func<Models.RolePermissionCondition, bool>> predicateKey = t => t.Key == i.Key && (i.Values.Contains(t.Value) || t.Value == "*");
 
                 predicateCondition = predicateCondition.Or(predicateKey);
             }
@@ -82,7 +86,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             if (keyCount > 0)
             {
                 validatorCondition = conditions.Where(predicateCondition.Compile())
-                                               .GroupBy(t => new { t.PermissionId, t.Priority, t.Key, t.Value }, t => t.Allowed)
+                                               .GroupBy(t => new { t.PermissionId, t.Priority }, t => t.Allowed)
                                                .Select(t =>
                                                        {
                                                            // 先將同權重的權限最大化
@@ -92,13 +96,11 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                                                   {
                                                                       t.Key.PermissionId,
                                                                       t.Key.Priority,
-                                                                      t.Key.Key,
-                                                                      t.Key.Value,
                                                                       Allowed = p
                                                                   };
                                                        })
                                                .OrderBy(t => t.PermissionId).ThenBy(t => t.Priority)
-                                               .GroupBy(t => new { t.PermissionId, t.Key, t.Value },
+                                               .GroupBy(t => new { t.PermissionId },
                                                         t => t.Allowed)
                                                .Select(t =>
                                                        {
@@ -108,8 +110,6 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                                            return new
                                                                   {
                                                                       PermissionId = t.Key.PermissionId,
-                                                                      Key = t.Key.Key,
-                                                                      Value = t.Key.Value,
                                                                       Allowed = p
                                                                   };
                                                        })
@@ -208,7 +208,8 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                                          FunctionId = t.Key,
                                                          p.PermissionType
                                                      };
-                                          });
+                                          })
+                                  .ToArray();
 
         if (validatorRules.Any(t => (t.PermissionType & request.PermissionType) == request.PermissionType))
             return Task.FromResult(Result.Success);

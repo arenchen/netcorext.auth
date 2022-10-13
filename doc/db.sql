@@ -186,6 +186,7 @@ CREATE TABLE "RolePermissionCondition" (
   "RoleId" bigint NOT NULL,
   "PermissionId" bigint NOT NULL,
   "Priority" integer NOT NULL,
+  "Group" character varying(50) NULL,
   "Key" character varying(50) NOT NULL,
   "Value" character varying(200) NOT NULL,
   "Allowed" boolean NOT NULL,
@@ -317,7 +318,7 @@ CREATE INDEX "IX_RolePermission_PermissionId" ON "RolePermission" ("PermissionId
 CREATE INDEX "IX_RolePermissionCondition_PermissionId" ON "RolePermissionCondition" ("PermissionId");
 
 
-CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Key_Va~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Key", "Value");
+CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Group_~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Group", "Key", "Value");
 
 
 CREATE INDEX "IX_Route_AllowAnonymous" ON "Route" ("AllowAnonymous");
@@ -398,19 +399,19 @@ CREATE INDEX "IX_Token_TokenType" ON "Token" ("TokenType");
 CREATE INDEX "IX_User_Disabled" ON "User" ("Disabled");
 
 
-CREATE INDEX "IX_User_Email" ON "User" ("Email");
+CREATE INDEX "IX_User_Email" ON "User" USING gist ("Email" gist_trgm_ops);
 
 
-CREATE INDEX "IX_User_NormalizedEmail" ON "User" ("NormalizedEmail");
+CREATE INDEX "IX_User_NormalizedEmail" ON "User" USING gist ("NormalizedEmail" gist_trgm_ops);
 
 
-CREATE UNIQUE INDEX "IX_User_NormalizedUsername" ON "User" ("NormalizedUsername");
+CREATE UNIQUE INDEX "IX_User_NormalizedUsername" ON "User" USING gist ("NormalizedUsername" gist_trgm_ops);
 
 
-CREATE INDEX "IX_User_PhoneNumber" ON "User" ("PhoneNumber");
+CREATE INDEX "IX_User_PhoneNumber" ON "User" USING gist ("PhoneNumber" gist_trgm_ops);
 
 
-CREATE UNIQUE INDEX "IX_User_Username" ON "User" ("Username");
+CREATE UNIQUE INDEX "IX_User_Username" ON "User" USING gist ("Username" gist_trgm_ops);
 
 
 CREATE INDEX "IX_UserExtendData_Key" ON "UserExtendData" ("Key");

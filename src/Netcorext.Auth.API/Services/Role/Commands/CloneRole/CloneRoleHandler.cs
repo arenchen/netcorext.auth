@@ -71,12 +71,13 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
                                                                                        RoleId = entity.Id,
                                                                                        PermissionId = t.PermissionId,
                                                                                        Priority = t.Priority,
+                                                                                       Group = t.Group?.ToUpper(),
                                                                                        Key = t.Key,
                                                                                        Value = t.Value,
                                                                                        Allowed = t.Allowed
                                                                                    })
                                                  .Union(entity.PermissionConditions)
-                                                 .DistinctBy(t => new { t.PermissionId, t.Priority, t.Key, t.Value, t.Allowed })
+                                                 .DistinctBy(t => new { t.PermissionId, t.Priority, t.Group, t.Key, t.Value, t.Allowed })
                                                  .ToArray();
         }
 

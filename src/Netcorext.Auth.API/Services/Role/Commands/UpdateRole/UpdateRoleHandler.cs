@@ -153,6 +153,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                                                                                                                                   RoleId = entity.Id,
                                                                                                                                                   PermissionId = t.PermissionId,
                                                                                                                                                   Priority = t.Priority,
+                                                                                                                                                  Group = t.Group?.ToUpper(),
                                                                                                                                                   Key = t.Key.ToUpper(),
                                                                                                                                                   Value = t.Value,
                                                                                                                                                   Allowed = t.Allowed
@@ -175,14 +176,15 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
 
             permissionCondition = entity.PermissionConditions
                                         .Join(updatePermissionCondition, t => t.Id, t => t.Id,
-                                              (src, desc) =>
+                                              (o, i) =>
                                               {
-                                                  src.PermissionId = desc.PermissionId;
-                                                  src.Priority = desc.Priority;
-                                                  src.Value = desc.Value;
-                                                  src.Allowed = desc.Allowed;
+                                                  o.PermissionId = i.PermissionId;
+                                                  o.Priority = i.Priority;
+                                                  o.Group = i.Group;
+                                                  o.Value = i.Value;
+                                                  o.Allowed = i.Allowed;
 
-                                                  return src;
+                                                  return o;
                                               })
                                         .ToArray();
 

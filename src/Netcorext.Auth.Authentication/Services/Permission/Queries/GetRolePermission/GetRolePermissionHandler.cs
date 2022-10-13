@@ -36,9 +36,10 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
                                                                   Id = t2.Id,
                                                                   RoleId = t2.RoleId,
                                                                   PermissionId = t2.PermissionId,
+                                                                  Priority = t2.Priority,
+                                                                  Group = t2.Group,
                                                                   Key = t2.Key,
                                                                   Value = t2.Value,
-                                                                  Priority = t2.Priority,
                                                                   Allowed = t2.Allowed
                                                               }));
 

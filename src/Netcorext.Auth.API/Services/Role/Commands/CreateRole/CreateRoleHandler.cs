@@ -71,6 +71,7 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
                                                                                                     RoleId = id,
                                                                                                     PermissionId = t.PermissionId,
                                                                                                     Priority = t.Priority,
+                                                                                                    Group = t.Group?.ToUpper(),
                                                                                                     Key = t.Key,
                                                                                                     Value = t.Value,
                                                                                                     Allowed = t.Allowed

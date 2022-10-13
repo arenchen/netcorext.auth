@@ -8,7 +8,7 @@ public class RolePermissionConditionMap : EntityMap<RolePermissionCondition>
     public RolePermissionConditionMap(ModelBuilder modelBuilder) : base(modelBuilder)
     {
         // Indexes
-        Builder.HasIndex(t => new { t.RoleId, t.PermissionId, t.Priority, t.Key, t.Value })
+        Builder.HasIndex(t => new { t.RoleId, t.PermissionId, t.Priority, t.Group, t.Key, t.Value })
                .IsUnique();
 
         // Columns
@@ -20,6 +20,10 @@ public class RolePermissionConditionMap : EntityMap<RolePermissionCondition>
 
         Builder.Property(t => t.Priority)
                .HasColumnName(nameof(RolePermissionCondition.Priority));
+
+        Builder.Property(t => t.Group)
+               .HasColumnName(nameof(RolePermissionCondition.Group))
+               .HasMaxLength(50);
 
         Builder.Property(t => t.Key)
                .HasColumnName(nameof(RolePermissionCondition.Key))
