@@ -63,6 +63,30 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
                                         .ToArray();
         }
 
+        if (request.DefaultPermissionConditions?.Any() == true)
+        {
+            var defaultPermissionConditions = new List<CloneRole.RolePermissionCondition>();
+
+            foreach (var permission in entity.Permissions)
+            {
+                defaultPermissionConditions.AddRange(request.DefaultPermissionConditions.Select(t => new CloneRole.RolePermissionCondition
+                                                                                                     {
+                                                                                                         PermissionId = permission.PermissionId,
+                                                                                                         Priority = t.Priority,
+                                                                                                         Group = t.Group,
+                                                                                                         Key = t.Key,
+                                                                                                         Value = t.Value,
+                                                                                                         Allowed = t.Allowed
+                                                                                                     }));
+            }
+
+            var permissionConditions = request.PermissionConditions ?? Array.Empty<CloneRole.RolePermissionCondition>();
+
+            request.PermissionConditions = permissionConditions.Union(defaultPermissionConditions)
+                                                               .DistinctBy(t => new { t.PermissionId, t.Priority, t.Group, t.Key, t.Value, t.Allowed })
+                                                               .ToArray();
+        }
+
         if (request.PermissionConditions?.Any() == true)
         {
             entity.PermissionConditions = request.PermissionConditions.Select(t => new Domain.Entities.RolePermissionCondition
