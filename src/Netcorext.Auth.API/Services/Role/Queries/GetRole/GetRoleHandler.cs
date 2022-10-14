@@ -66,7 +66,7 @@ public class GetRoleHandler : IRequestHandler<GetRole, Result<IEnumerable<Models
                                                                                                                                }),
                                                                                        Permissions = t2.Permissions.Select(t3 => new Models.RolePermission
                                                                                                                                  {
-                                                                                                                                     PermissionId = t3.Id,
+                                                                                                                                     PermissionId = t3.PermissionId,
                                                                                                                                      Name = t3.Permission.Name,
                                                                                                                                      CreationDate = t3.CreationDate,
                                                                                                                                      CreatorId = t3.CreatorId,
