@@ -28,7 +28,11 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
         if (await ds.AnyAsync(t => t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken))
             return Result<long?>.Conflict;
 
-        var entity = ds.First(t => t.Id == request.SourceId);
+        var entity = ds.Include(t => t.ExtendData)
+                       .Include(t => t.Permissions)
+                       .Include(t => t.PermissionConditions)
+                       .AsNoTracking()
+                       .First(t => t.Id == request.SourceId);
 
         entity.Id = _snowflake.Generate();
         entity.Name = request.Name;
