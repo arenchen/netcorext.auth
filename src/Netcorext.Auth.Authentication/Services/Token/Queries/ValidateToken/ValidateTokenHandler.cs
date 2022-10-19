@@ -30,6 +30,7 @@ public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
                 _tokenValidationParameters.ValidateIssuer = request.ValidationParameters.ValidateIssuer;
                 _tokenValidationParameters.ValidateAudience = request.ValidationParameters.ValidateAudience;
                 _tokenValidationParameters.ValidateLifetime = request.ValidationParameters.ValidateLifetime;
+                _tokenValidationParameters.ValidateIssuerSigningKey = request.ValidationParameters.ValidateIssuerSigningKey;
 
                 TokenHelper.ValidateJwt(request.Token, _tokenValidationParameters);
             }
