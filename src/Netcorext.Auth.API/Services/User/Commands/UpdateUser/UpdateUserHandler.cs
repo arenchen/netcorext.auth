@@ -28,13 +28,26 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         var dsRole = _context.Set<UserRole>();
         var dsExtendData = _context.Set<UserExtendData>();
         var dsExternalLogin = _context.Set<UserExternalLogin>();
+        var dsPermission = _context.Set<Domain.Entities.Permission>();
+        var dsPermissionCondition = _context.Set<UserPermissionCondition>();
 
         if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
         if (!request.Username.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.NormalizedUsername == request.Username.ToUpper(), cancellationToken)) return Result.Conflict;
 
+        if (request.PermissionConditions != null && request.PermissionConditions.Any())
+        {
+            var permissionIds = request.PermissionConditions
+                                       .Select(t => t.PermissionId)
+                                       .ToArray();
+
+            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+                return Result.DependencyNotFound;
+        }
+
         var entity = ds.Include(t => t.ExtendData)
                        .Include(t => t.Roles)
                        .Include(t => t.ExternalLogins)
+                       .Include(t => t.PermissionConditions)
                        .First(t => t.Id == request.Id);
 
         _context.Entry(entity)
@@ -48,6 +61,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                                        _context.Entry(user).UpdateProperty(t => t.NormalizedEmail, request.Email?.ToUpper());
                                                                    })
                 .UpdateProperty(t => t.PhoneNumber, request.PhoneNumber, true, user => { _context.Entry(user).UpdateProperty(t => t.PhoneNumberConfirmed, false); })
+                .UpdateProperty(t => t.AllowedRefreshToken, request.AllowedRefreshToken)
                 .UpdateProperty(t => t.TokenExpireSeconds, request.TokenExpireSeconds)
                 .UpdateProperty(t => t.RefreshTokenExpireSeconds, request.RefreshTokenExpireSeconds)
                 .UpdateProperty(t => t.CodeExpireSeconds, request.CodeExpireSeconds)
@@ -184,6 +198,56 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                    .ToArray();
 
             dsExternalLogin.UpdateRange(externalLogins);
+        }
+
+        if (request.PermissionConditions != null && request.PermissionConditions.Any())
+        {
+            var gPermissionCondition = request.PermissionConditions
+                                              .GroupBy(t => t.Crud, (mode, permissionCondition) => new
+                                                                                                   {
+                                                                                                       Mode = mode,
+                                                                                                       Data = permissionCondition.Select(t => new UserPermissionCondition
+                                                                                                                                              {
+                                                                                                                                                  Id = t.Id ?? _snowflake.Generate(),
+                                                                                                                                                  UserId = entity.Id,
+                                                                                                                                                  PermissionId = t.PermissionId,
+                                                                                                                                                  Priority = t.Priority,
+                                                                                                                                                  Group = t.Group?.ToUpper(),
+                                                                                                                                                  Key = t.Key.ToUpper(),
+                                                                                                                                                  Value = t.Value,
+                                                                                                                                                  Allowed = t.Allowed
+                                                                                                                                              })
+                                                                                                                                 .ToArray()
+                                                                                                   })
+                                              .ToArray();
+
+            var createPermissionCondition = gPermissionCondition.FirstOrDefault(t => t.Mode == CRUD.C)?.Data ?? Array.Empty<UserPermissionCondition>();
+            var updatePermissionCondition = gPermissionCondition.FirstOrDefault(t => t.Mode == CRUD.U)?.Data ?? Array.Empty<UserPermissionCondition>();
+            var deletePermissionCondition = gPermissionCondition.FirstOrDefault(t => t.Mode == CRUD.D)?.Data ?? Array.Empty<UserPermissionCondition>();
+
+            var permissionCondition = entity.PermissionConditions
+                                            .Join(deletePermissionCondition, t => t.Id, t => t.Id, (src, desc) => src)
+                                            .ToArray();
+
+            if (permissionCondition.Any()) dsPermissionCondition.RemoveRange(permissionCondition);
+
+            if (createPermissionCondition.Any()) dsPermissionCondition.AddRange(createPermissionCondition);
+
+            permissionCondition = entity.PermissionConditions
+                                        .Join(updatePermissionCondition, t => t.Id, t => t.Id,
+                                              (o, i) =>
+                                              {
+                                                  o.PermissionId = i.PermissionId;
+                                                  o.Priority = i.Priority;
+                                                  o.Group = i.Group;
+                                                  o.Value = i.Value;
+                                                  o.Allowed = i.Allowed;
+
+                                                  return o;
+                                              })
+                                        .ToArray();
+
+            dsPermissionCondition.UpdateRange(permissionCondition);
         }
 
         await _context.SaveChangesAsync(cancellationToken);

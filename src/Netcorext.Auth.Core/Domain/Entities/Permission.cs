@@ -10,4 +10,5 @@ public class Permission : Entity
     public virtual ICollection<Rule> Rules { get; set; } = new HashSet<Rule>();
     public virtual ICollection<RolePermission> RolePermissions { get; set; } = new HashSet<RolePermission>();
     public virtual ICollection<RolePermissionCondition> RolePermissionConditions { get; set; } = new HashSet<RolePermissionCondition>();
+    public virtual ICollection<UserPermissionCondition> UserPermissionConditions { get; set; } = new HashSet<UserPermissionCondition>();
 }

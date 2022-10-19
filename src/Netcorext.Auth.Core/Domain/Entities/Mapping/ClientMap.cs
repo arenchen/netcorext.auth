@@ -26,6 +26,9 @@ public class ClientMap : EntityMap<Client>
                .HasColumnName(nameof(Client.CallbackUrl))
                .HasMaxLength(500);
 
+        Builder.Property(t => t.AllowedRefreshToken)
+               .HasColumnName(nameof(Client.AllowedRefreshToken));
+
         Builder.Property(t => t.TokenExpireSeconds)
                .HasColumnName(nameof(Client.TokenExpireSeconds));
 

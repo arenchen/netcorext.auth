@@ -142,7 +142,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                                                                 entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope)
                                                                                       .Token,
                                                            Scope = scope,
-                                                           RefreshToken = _config.AllowPasswordRefreshToken
+                                                           RefreshToken = entity.AllowedRefreshToken
                                                                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
                                                                                                        entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope
                                                                                                       )

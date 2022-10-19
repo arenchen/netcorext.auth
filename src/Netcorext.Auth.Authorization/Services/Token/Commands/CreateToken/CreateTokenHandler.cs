@@ -42,6 +42,13 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
     public async Task<Result<TokenResult>> Handle(CreateToken request, CancellationToken cancellationToken = default)
     {
+        if (!await IsValidAsync(request.GrantType))
+            return Result<TokenResult>.InvalidInput.Clone(new TokenResult
+                                                          {
+                                                              Error = Constants.OAuth.UNSUPPORTED_GRANT_TYPE,
+                                                              ErrorDescription = $"{request.GrantType} GrantType not allowed."
+                                                          });
+
         return request.GrantType switch
                {
                    Constants.OAuth.GRANT_TYPE_CLIENT_CREDENTIALS => await CreateClientCredentialsAsync(request, cancellationToken),
@@ -103,7 +110,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope);
 
-        var refreshToken = _authOptions.AllowClientCredentialsRefreshToken
+        var refreshToken = client.AllowedRefreshToken || _authOptions.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
                                : (null, null);
 
@@ -117,10 +124,6 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
-
-        DateTimeOffset? expiryDate = (refreshToken.Jwt?.Payload.Exp ?? 0) + (accessToken.Jwt.Payload.Exp ?? 0) == 0
-                                         ? null
-                                         : DateTimeOffset.FromUnixTimeSeconds((refreshToken.Jwt?.Payload.Exp ?? 0) > (accessToken.Jwt.Payload.Exp ?? 0) ? refreshToken.Jwt?.Payload.Exp ?? 0 : accessToken.Jwt.Payload.Exp ?? 0);
 
         dsToken.Add(new Domain.Entities.Token
                     {
@@ -221,7 +224,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope);
 
-        var refreshToken = _authOptions.AllowPasswordRefreshToken
+        var refreshToken = user.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope)
                                : (null, null);
 
@@ -235,10 +238,6 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
-
-        DateTimeOffset? expiryDate = (refreshToken.Jwt?.Payload.Exp ?? 0) + (accessToken.Jwt.Payload.Exp ?? 0) == 0
-                                         ? null
-                                         : DateTimeOffset.FromUnixTimeSeconds((refreshToken.Jwt?.Payload.Exp ?? 0) > (accessToken.Jwt.Payload.Exp ?? 0) ? refreshToken.Jwt?.Payload.Exp ?? 0 : accessToken.Jwt.Payload.Exp ?? 0);
 
         dsToken.Add(new Domain.Entities.Token
                     {
@@ -259,6 +258,9 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
     private async Task<Result<TokenResult>> CreateRefreshTokenAsync(CreateToken request, CancellationToken cancellationToken = default)
     {
+        var dsToken = _context.Set<Domain.Entities.Token>();
+        var dsClient = _context.Set<Domain.Entities.Client>();
+
         if (request.ClientId.IsEmpty() || !long.TryParse(request.ClientId, out var clientId) || request.ClientSecret.IsEmpty())
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
@@ -273,16 +275,12 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               ErrorDescription = Constants.OAuth.INVALID_REQUEST_TOKEN
                                                           });
 
-        var dsToken = _context.Set<Domain.Entities.Token>();
-
         if (await dsToken.AnyAsync(t => t.Disabled && t.RefreshToken == request.RefreshToken, cancellationToken))
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
                                                               Error = Constants.OAuth.INVALID_REQUEST,
                                                               ErrorDescription = Constants.OAuth.INVALID_REQUEST_TOKEN
                                                           });
-
-        var dsClient = _context.Set<Domain.Entities.Client>();
 
         if (!await dsClient.AnyAsync(t => t.Id == clientId, cancellationToken))
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
@@ -359,12 +357,18 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         try
         {
-            var (tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
+            var (disabled, allowedRefreshToken, tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
+
+            if (disabled)
+                return Result<TokenResult>.Unauthorized.Clone(new TokenResult
+                                                              {
+                                                                  Error = Constants.OAuth.ACCESS_DENIED,
+                                                                  ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
+                                                              });
 
             var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType, resourceId!, uid, tokenExpireSeconds, request.Scope ?? role);
 
-            var refreshToken = (resourceType == ResourceType.Client && _authOptions.AllowClientCredentialsRefreshToken)
-                            || (resourceType == ResourceType.User && _authOptions.AllowPasswordRefreshToken)
+            var refreshToken = allowedRefreshToken
                                    ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType, resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
                                    : (null, null);
 
@@ -385,10 +389,6 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
                 _context.Entry(token).Property(t => t.Disabled).IsModified = true;
             }
-
-            DateTimeOffset? expiryDate = (refreshToken.Jwt?.Payload.Exp ?? 0) + (accessToken.Jwt.Payload.Exp ?? 0) == 0
-                                             ? null
-                                             : DateTimeOffset.FromUnixTimeSeconds((refreshToken.Jwt?.Payload.Exp ?? 0) > (accessToken.Jwt.Payload.Exp ?? 0) ? refreshToken.Jwt?.Payload.Exp ?? 0 : accessToken.Jwt.Payload.Exp ?? 0);
 
             dsToken.Add(new Domain.Entities.Token
                         {
@@ -424,7 +424,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         }
     }
 
-    private async Task<(int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
+    private async Task<(bool Disabled, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
     {
         return resourceType switch
                {
@@ -434,29 +434,42 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                };
     }
 
-    private async Task<(int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
+    private async Task<(bool Disabled, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
         var ds = _context.Set<Domain.Entities.User>();
 
-        if (!await ds.AnyAsync(t => t.Id == id)) throw new Exception("Resource not found.");
+        var entity = await ds.FirstOrDefaultAsync(t => t.Id == id);
 
-        var entity = await ds.FirstAsync(t => t.Id == id);
+        if (entity == null) throw new Exception("Resource not found.");
 
-        return (entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+        return (entity.Disabled, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
     }
 
-    private async Task<(int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
+    private async Task<(bool Disabled, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
         var ds = _context.Set<Domain.Entities.Client>();
 
-        if (!await ds.AnyAsync(t => t.Id == id)) throw new Exception("Resource not found.");
+        var entity = await ds.FirstOrDefaultAsync(t => t.Id == id);
 
-        var entity = await ds.FirstAsync(t => t.Id == id);
+        if (entity == null) throw new Exception("Resource not found.");
 
-        return (entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+        return (entity.Disabled, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+    }
+
+    private Task<bool> IsValidAsync(string grantType)
+    {
+        var result = grantType switch
+                     {
+                         Constants.OAuth.GRANT_TYPE_CLIENT_CREDENTIALS => (GrantType.ClientCredentials & _authOptions.AllowedGrantType) == GrantType.ClientCredentials,
+                         Constants.OAuth.GRANT_TYPE_PASSWORD => (GrantType.Password & _authOptions.AllowedGrantType) == GrantType.Password,
+                         Constants.OAuth.GRANT_TYPE_REFRESH_TOKEN => (GrantType.RefreshToken & _authOptions.AllowedGrantType) == GrantType.RefreshToken,
+                         _ => false
+                     };
+
+        return Task.FromResult(result);
     }
 }

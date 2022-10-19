@@ -33,6 +33,7 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
                                 Name = request.Name!,
                                 Secret = request.Secret!.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
                                 CallbackUrl = request.CallbackUrl,
+                                AllowedRefreshToken = request.AllowedRefreshToken,
                                 TokenExpireSeconds = request.TokenExpireSeconds,
                                 RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds,
                                 CodeExpireSeconds = request.CodeExpireSeconds,

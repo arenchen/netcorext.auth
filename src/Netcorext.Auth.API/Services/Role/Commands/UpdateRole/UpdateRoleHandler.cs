@@ -56,7 +56,8 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
         }
 
         var entity = ds.Include(t => t.ExtendData)
-                       .Include(t => t.Permissions).ThenInclude(t => t.Permission)
+                       .Include(t => t.Permissions)
+                       .Include(t => t.PermissionConditions)
                        .First(t => t.Id == request.Id);
 
         _context.Entry(entity).UpdateProperty(t => t.Name, request.Name);

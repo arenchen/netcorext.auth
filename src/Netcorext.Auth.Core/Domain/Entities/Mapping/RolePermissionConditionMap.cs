@@ -11,6 +11,10 @@ public class RolePermissionConditionMap : EntityMap<RolePermissionCondition>
         Builder.HasIndex(t => new { t.RoleId, t.PermissionId, t.Priority, t.Group, t.Key, t.Value })
                .IsUnique();
 
+        Builder.HasIndex(t => t.RoleId);
+        Builder.HasIndex(t => t.PermissionId);
+        Builder.HasIndex(t => t.Group);
+
         // Columns
         Builder.Property(t => t.RoleId)
                .HasColumnName(nameof(RolePermissionCondition.RoleId));

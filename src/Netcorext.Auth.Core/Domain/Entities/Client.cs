@@ -7,6 +7,7 @@ public class Client : Entity
     public string Secret { get; set; } = null!;
     public string Name { get; set; } = null!;
     public string? CallbackUrl { get; set; }
+    public bool AllowedRefreshToken { get; set; }
     public int? TokenExpireSeconds { get; set; }
     public int? RefreshTokenExpireSeconds { get; set; }
     public int? CodeExpireSeconds { get; set; }

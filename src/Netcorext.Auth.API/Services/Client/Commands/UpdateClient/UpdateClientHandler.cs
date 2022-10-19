@@ -41,6 +41,7 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
 
         _context.Entry(entity).UpdateProperty(t => t.Secret, secret);
         _context.Entry(entity).UpdateProperty(t => t.CallbackUrl, request.CallbackUrl);
+        _context.Entry(entity).UpdateProperty(t => t.AllowedRefreshToken, request.AllowedRefreshToken);
         _context.Entry(entity).UpdateProperty(t => t.TokenExpireSeconds, request.TokenExpireSeconds);
         _context.Entry(entity).UpdateProperty(t => t.RefreshTokenExpireSeconds, request.RefreshTokenExpireSeconds);
         _context.Entry(entity).UpdateProperty(t => t.CodeExpireSeconds, request.CodeExpireSeconds);

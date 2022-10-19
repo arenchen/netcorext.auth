@@ -1,12 +1,16 @@
-using Netcorext.Auth.Domain.Entities;
+using System.Diagnostics;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
+using Netcorext.Extensions.Commons;
+using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
 namespace Netcorext.Auth.API.Services.User.Queries;
 
-public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Result<IEnumerable<long>>>
+public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Result<IEnumerable<Models.UserPermission>>>
 {
     private readonly DatabaseContext _context;
 
@@ -15,96 +19,388 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
         _context = context;
     }
 
-    public Task<Result<IEnumerable<long>>> Handle(GetUserPermission request, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<Models.UserPermission>>> Handle(GetUserPermission request, CancellationToken cancellationToken = default)
     {
-        var ds = _context.Set<UserRole>();
+        var ds = _context.Set<Domain.Entities.User>();
+        var dsRole = _context.Set<Domain.Entities.Role>();
 
-        var roles = ds.Where(t => t.Id == request.Id && !t.Role.Disabled)
-                      .Select(t => t.Role);
+        var timer = new Stopwatch();
 
-        var roleIds = roles.Select(t => t.Id)
-                           .ToArray();
+        timer.Start();
 
-        if (!roleIds.Any()) return Task.FromResult(Result<IEnumerable<long>>.Success);
+        var groups = request.PermissionConditions?
+                            .Where(t => !t.Group.IsEmpty())
+                            .Select(t => t.Group!)
+                            .Distinct()
+                            .ToArray() ?? Array.Empty<string>();
 
-        var rolePermissionRules = roles.SelectMany(t => t.Permissions
-                                                         .Where(t2 => !t2.Permission.Disabled)
-                                                         .SelectMany(t2 => t2.Permission.Rules
-                                                                             .Select(t3 => new
-                                                                                           {
-                                                                                               t3.Id,
-                                                                                               RoleId = t.Id,
-                                                                                               t3.PermissionId,
-                                                                                               t3.FunctionId,
-                                                                                               t2.Permission.Priority,
-                                                                                               t3.PermissionType,
-                                                                                               t3.Allowed
-                                                                                           })))
-                                       .ToArray();
+        var user = await ds
+                        .AsNoTracking()
+                        .Where(t => t.Id == request.Id)
+                        .Select(t => new
+                                     {
+                                         Disabled = t.Disabled,
+                                         Roles = t.Roles
+                                                  .Where(t2 => !t2.Role.Disabled)
+                                                  .Select(t2 => t2.RoleId)
+                                                  .ToArray(),
+                                         PermissionConditions = t.PermissionConditions
+                                                                 .Where(t2 => t2.Group == null || groups.Contains(t2.Group))
+                                                                 .Select(t2 => new Models.MixingPermissionCondition
+                                                                               {
+                                                                                   PermissionId = t2.PermissionId,
+                                                                                   Priority = t2.Priority,
+                                                                                   Group = t2.Group,
+                                                                                   Key = t2.Key,
+                                                                                   Value = t2.Value,
+                                                                                   Allowed = t2.Allowed
+                                                                               })
+                                                                 .ToArray()
+                                     })
+                        .FirstOrDefaultAsync(cancellationToken);
 
-        if (!rolePermissionRules.Any()) return Task.FromResult(Result<IEnumerable<long>>.Success);
+        Console.WriteLine($"Query User: {timer.Elapsed.ToString()}");
 
-        var functions = rolePermissionRules.GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
-                                           .Select(t =>
-                                                   {
-                                                       // 先將同權重的權限最大化
-                                                       var p = t.Aggregate((c, n) =>
-                                                                           {
-                                                                               var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+        if (user == null) return Result<IEnumerable<Models.UserPermission>>.NotFound;
 
-                                                                               pt = n.Allowed ? pt | n.PermissionType : pt;
+        var emptyContent = new Models.UserPermission[request.PermissionConditions?.Length ?? 0];
 
-                                                                               return new
-                                                                                      {
-                                                                                          PermissionType = pt,
-                                                                                          Allowed = c.Allowed | n.Allowed
-                                                                                      };
-                                                                           });
+        var content = new List<Models.UserPermission>();
 
-                                                       return new
-                                                              {
-                                                                  t.Key.FunctionId,
-                                                                  t.Key.Priority,
-                                                                  p.PermissionType,
-                                                                  p.Allowed
-                                                              };
-                                                   })
-                                           .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
-                                           .GroupBy(t => t.FunctionId,
-                                                    t => new { t.PermissionType, t.Allowed })
-                                           .Select(t =>
-                                                   {
-                                                       // 最終以優先度高的權限為主
-                                                       var p = t.Aggregate((c, n) =>
-                                                                           {
-                                                                               var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+        if (user.Disabled) return Result<IEnumerable<Models.UserPermission>>.Success.Clone(emptyContent);
 
-                                                                               pt = n.Allowed ? pt | n.PermissionType : (pt ^ n.PermissionType) & pt;
+        var roleIds = user.Roles;
 
-                                                                               return new
-                                                                                      {
-                                                                                          PermissionType = pt,
-                                                                                          Allowed = pt != PermissionType.None
-                                                                                      };
-                                                                           });
+        var roles = dsRole
+                   .AsSplitQuery()
+                   .AsNoTracking()
+                   .Where(t => roleIds.Contains(t.Id) && !t.Disabled)
+                   .Select(t => new
+                                {
+                                    RolePermissions = t.Permissions
+                                                       .Select(t2 => t2.Permission)
+                                                       .Where(t2 => !t2.Disabled)
+                                                       .SelectMany(t2 => t2.Rules.Select(t3 => new Models.MixingPermissionRule
+                                                                                               {
+                                                                                                   Id = t3.Id,
+                                                                                                   PermissionId = t3.PermissionId,
+                                                                                                   FunctionId = t3.FunctionId,
+                                                                                                   Priority = t2.Priority,
+                                                                                                   PermissionType = t3.PermissionType,
+                                                                                                   Allowed = t3.Allowed
+                                                                                               }))
+                                                       .ToArray(),
+                                    RolePermissionConditions = t.PermissionConditions
+                                                                .Where(t2 => t2.Group == null || groups.Contains(t2.Group))
+                                                                .Select(t2 => new Models.MixingPermissionCondition
+                                                                              {
+                                                                                  PermissionId = t2.PermissionId,
+                                                                                  Priority = t2.Priority,
+                                                                                  Group = t2.Group,
+                                                                                  Key = t2.Key,
+                                                                                  Value = t2.Value,
+                                                                                  Allowed = t2.Allowed
+                                                                              })
+                                                                .ToArray()
+                                })
+                   .ToArray();
 
-                                                       return new
-                                                              {
-                                                                  FunctionId = t.Key,
-                                                                  p.PermissionType
-                                                              };
-                                                   });
+        Console.WriteLine($"Query Role: {timer.Elapsed.ToString()}");
 
-        var result = rolePermissionRules.Join(functions, r => r.FunctionId, f => f.FunctionId,
-                                              (r, f) => new
-                                                        {
-                                                            r.PermissionId,
-                                                            PermissionType = r.PermissionType & f.PermissionType
-                                                        })
-                                        .Where(t => t.PermissionType != PermissionType.None)
-                                        .Select(t => t.PermissionId)
-                                        .Distinct();
+        if (!roles.Any())
+            return Result<IEnumerable<Models.UserPermission>>.Success.Clone(emptyContent);
 
-        return Task.FromResult(Result<IEnumerable<long>>.Success.Clone(result));
+        var rolePermissions = roles.SelectMany(t => t.RolePermissions)
+                                   .ToArray();
+
+        if (!rolePermissions.Any()) return Result<IEnumerable<Models.UserPermission>>.Success.Clone(emptyContent);
+
+        if (request.PermissionConditions == null || !request.PermissionConditions.Any())
+        {
+            content.Add(await GetPermissionsWithoutConditionAsync(rolePermissions));
+
+            Console.WriteLine($"GetPermissionsWithoutConditionAsync: {timer.Elapsed.ToString()}");
+
+            return Result<IEnumerable<Models.UserPermission>>.Success.Clone(content);
+        }
+
+        var rolePermissionConditions = roles.SelectMany(t => t.RolePermissionConditions)
+                                            .ToArray();
+
+        var userPermissionConditions = user.PermissionConditions;
+
+        var conditions = rolePermissionConditions.Union(userPermissionConditions)
+                                                 .Distinct()
+                                                 .ToArray();
+
+        foreach (var permissionCondition in request.PermissionConditions)
+        {
+            content.Add(await GetPermissionsAsync(permissionCondition, rolePermissions, conditions));
+        }
+
+        Console.WriteLine($"GetPermissionsAsync({request.PermissionConditions.Length}): {timer.Elapsed.ToString()}");
+
+        return Result<IEnumerable<Models.UserPermission>>.Success.Clone(content);
+    }
+
+    private Task<Models.UserPermission> GetPermissionsWithoutConditionAsync(IEnumerable<Models.MixingPermissionRule> permissions)
+    {
+        var permissionRules = permissions.Select(t => new
+                                                      {
+                                                          t.Id,
+                                                          t.PermissionId,
+                                                          t.FunctionId,
+                                                          t.Priority,
+                                                          t.PermissionType,
+                                                          t.Allowed
+                                                      })
+                                         .ToArray();
+
+        if (!permissionRules.Any()) return Task.FromResult(new Models.UserPermission());
+
+        var functions = permissionRules.GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
+                                       .Select(t =>
+                                               {
+                                                   // 先將同權重的權限最大化
+                                                   var p = t.Aggregate((c, n) =>
+                                                                       {
+                                                                           var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+
+                                                                           pt = n.Allowed ? pt | n.PermissionType : pt;
+
+                                                                           return new
+                                                                                  {
+                                                                                      PermissionType = pt,
+                                                                                      Allowed = c.Allowed | n.Allowed
+                                                                                  };
+                                                                       });
+
+                                                   return new
+                                                          {
+                                                              t.Key.FunctionId,
+                                                              t.Key.Priority,
+                                                              p.PermissionType,
+                                                              p.Allowed
+                                                          };
+                                               })
+                                       .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
+                                       .GroupBy(t => t.FunctionId,
+                                                t => new { t.PermissionType, t.Allowed })
+                                       .Select(t =>
+                                               {
+                                                   // 最終以優先度高的權限為主
+                                                   var p = t.Aggregate((c, n) =>
+                                                                       {
+                                                                           var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+
+                                                                           pt = n.Allowed ? pt | n.PermissionType : (pt ^ n.PermissionType) & pt;
+
+                                                                           return new
+                                                                                  {
+                                                                                      PermissionType = pt,
+                                                                                      Allowed = pt != PermissionType.None
+                                                                                  };
+                                                                       });
+
+                                                   return new
+                                                          {
+                                                              FunctionId = t.Key,
+                                                              p.PermissionType
+                                                          };
+                                               });
+
+        var ids = permissionRules.Join(functions, r => r.FunctionId, f => f.FunctionId,
+                                       (r, f) => new
+                                                 {
+                                                     r.PermissionId,
+                                                     PermissionType = r.PermissionType & f.PermissionType
+                                                 })
+                                 .Where(t => t.PermissionType != PermissionType.None)
+                                 .Select(t => t.PermissionId)
+                                 .Distinct();
+
+        var content = new Models.UserPermission
+                      {
+                          PermissionIds = ids
+                      };
+
+        return Task.FromResult(content);
+    }
+
+    private Task<Models.UserPermission> GetPermissionsAsync(GetUserPermission.PermissionCondition requestPermissionCondition, IEnumerable<Models.MixingPermissionRule> permissionRules, IEnumerable<Models.MixingPermissionCondition> mixingPermissionConditions)
+    {
+        Expression<Func<Models.MixingPermissionCondition, bool>> predicatePermissionCondition = t => true;
+
+        predicatePermissionCondition = requestPermissionCondition.Group.IsEmpty()
+                                           ? predicatePermissionCondition.And(t => t.Group.IsEmpty())
+                                           : predicatePermissionCondition.And(t => t.Group.IsEmpty() || t.Group == requestPermissionCondition.Group);
+
+        var conditions = mixingPermissionConditions.Where(predicatePermissionCondition.Compile())
+                                                   .ToArray();
+
+        var validatorCondition = Array.Empty<Models.Condition>();
+        var keyCount = 0;
+
+        if (!requestPermissionCondition.Conditions.IsEmpty())
+        {
+            var reqConditions = requestPermissionCondition.Conditions
+                                                          .GroupBy(t => t.Key, t => t.Value, (key, values) => new
+                                                                                                              {
+                                                                                                                  Key = key,
+                                                                                                                  Values = values
+                                                                                                              })
+                                                          .ToArray();
+
+            Expression<Func<Models.MixingPermissionCondition, bool>> predicateCondition = t => false;
+
+            foreach (var i in reqConditions)
+            {
+                if (conditions.All(t => t.Key != i.Key)) continue;
+
+                keyCount++;
+
+                Expression<Func<Models.MixingPermissionCondition, bool>> predicateKey = t => t.Key == i.Key && (i.Values.Contains(t.Value) || t.Value == "*");
+
+                predicateCondition = predicateCondition.Or(predicateKey);
+            }
+
+            if (keyCount > 0)
+            {
+                validatorCondition = conditions.Where(predicateCondition.Compile())
+                                               .GroupBy(t => new { t.PermissionId, t.Priority }, t => t.Allowed)
+                                               .Select(t =>
+                                                       {
+                                                           // 先將同權重的權限最大化
+                                                           var p = t.Aggregate((c, n) => c || n);
+
+                                                           return new
+                                                                  {
+                                                                      t.Key.PermissionId,
+                                                                      t.Key.Priority,
+                                                                      Allowed = p
+                                                                  };
+                                                       })
+                                               .OrderBy(t => t.PermissionId).ThenBy(t => t.Priority)
+                                               .GroupBy(t => new { t.PermissionId },
+                                                        t => t.Allowed)
+                                               .Select(t =>
+                                                       {
+                                                           // 最終以優先度高的權限為主
+                                                           var p = t.Last();
+
+                                                           return new
+                                                                  {
+                                                                      PermissionId = t.Key.PermissionId,
+                                                                      Allowed = p
+                                                                  };
+                                                       })
+                                               .GroupBy(t => t.PermissionId, t => t)
+                                               .Select(t => new
+                                                            {
+                                                                PermissionId = t.Key,
+                                                                Data = t,
+                                                                Count = t.Count()
+                                                            })
+                                               .Where(t => t.Count >= keyCount)
+                                               .Select(t =>
+                                                       {
+                                                           var p = t.Data.Select(t2 => t2.Allowed).Aggregate((c, n) => c && n);
+
+                                                           return new Models.Condition
+                                                                  {
+                                                                      PermissionId = t.PermissionId,
+                                                                      Allowed = p
+                                                                  };
+                                                       })
+                                               .ToArray();
+            }
+        }
+
+        var rules = permissionRules as Models.MixingPermissionRule[] ?? permissionRules.ToArray();
+
+        var validatorRules = rules.GroupJoin(validatorCondition, t => t.PermissionId, t => t.PermissionId, (r, c) => new
+                                                                                                                     {
+                                                                                                                         Rule = r,
+                                                                                                                         Conditions = c.DefaultIfEmpty()
+                                                                                                                     })
+                                  .SelectMany(t => t.Conditions.Select(t2 => new
+                                                                             {
+                                                                                 t.Rule.PermissionId,
+                                                                                 RuleId = t.Rule.Id,
+                                                                                 t.Rule.FunctionId,
+                                                                                 t.Rule.PermissionType,
+                                                                                 t.Rule.Priority,
+                                                                                 t.Rule.Allowed,
+                                                                                 Enabled = t2?.Allowed ?? keyCount == 0
+                                                                             }))
+                                  .Where(t => t.Enabled)
+                                  .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
+                                  .Select(t =>
+                                          {
+                                              // 先將同權重的權限最大化
+                                              var p = t.Aggregate((c, n) =>
+                                                                  {
+                                                                      var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+
+                                                                      pt = n.Allowed ? pt | n.PermissionType : pt;
+
+                                                                      return new
+                                                                             {
+                                                                                 PermissionType = pt,
+                                                                                 Allowed = c.Allowed | n.Allowed
+                                                                             };
+                                                                  });
+
+                                              return new
+                                                     {
+                                                         t.Key.FunctionId,
+                                                         t.Key.Priority,
+                                                         p.PermissionType,
+                                                         p.Allowed
+                                                     };
+                                          })
+                                  .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
+                                  .GroupBy(t => t.FunctionId,
+                                           t => new { t.PermissionType, t.Allowed })
+                                  .Select(t =>
+                                          {
+                                              // 最終以優先度高的權限為主
+                                              var p = t.Aggregate((c, n) =>
+                                                                  {
+                                                                      var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+
+                                                                      pt = n.Allowed ? pt | n.PermissionType : (pt ^ n.PermissionType) & pt;
+
+                                                                      return new
+                                                                             {
+                                                                                 PermissionType = pt,
+                                                                                 Allowed = pt != PermissionType.None
+                                                                             };
+                                                                  });
+
+                                              return new
+                                                     {
+                                                         FunctionId = t.Key,
+                                                         p.PermissionType
+                                                     };
+                                          })
+                                  .ToArray();
+
+        var ids = rules.Join(validatorRules, r => r.FunctionId, f => f.FunctionId,
+                             (r, f) => new
+                                       {
+                                           r.PermissionId,
+                                           PermissionType = r.PermissionType & f.PermissionType
+                                       })
+                       .Where(t => t.PermissionType != PermissionType.None)
+                       .Select(t => t.PermissionId)
+                       .Distinct();
+
+        var content = new Models.UserPermission
+                      {
+                          PermissionIds = ids
+                      };
+
+        return Task.FromResult(content);
     }
 }

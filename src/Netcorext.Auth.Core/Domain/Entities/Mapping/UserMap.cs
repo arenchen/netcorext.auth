@@ -66,6 +66,9 @@ public class UserMap : EntityMap<User>
         Builder.Property(t => t.RequiredChangePassword)
                .HasColumnName(nameof(User.RequiredChangePassword));
 
+        Builder.Property(t => t.AllowedRefreshToken)
+               .HasColumnName(nameof(User.AllowedRefreshToken));
+
         Builder.Property(t => t.TokenExpireSeconds)
                .HasColumnName(nameof(User.TokenExpireSeconds));
 

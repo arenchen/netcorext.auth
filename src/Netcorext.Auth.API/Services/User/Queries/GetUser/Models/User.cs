@@ -12,7 +12,7 @@ public class User
     public bool OtpBound { get; set; }
     public bool TwoFactorEnabled { get; set; }
     public bool RequiredChangePassword { get; set; }
-    public string? Scope { get; set; }
+    public bool AllowedRefreshToken { get; set; }
     public int? TokenExpireSeconds { get; set; }
     public int? RefreshTokenExpireSeconds { get; set; }
     public int? CodeExpireSeconds { get; set; }
@@ -26,4 +26,5 @@ public class User
     public IEnumerable<UserRole>? Roles { get; set; }
     public IEnumerable<UserExtendData>? ExtendData { get; set; }
     public IEnumerable<UserExternalLogin>? ExternalLogins { get; set; }
+    public IEnumerable<UserPermissionCondition>? PermissionConditions { get; set; }
 }

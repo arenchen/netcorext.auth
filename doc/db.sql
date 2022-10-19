@@ -1,8 +1,12 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+
 CREATE TABLE "Client" (
   "Id" bigint NOT NULL,
   "Secret" character varying(200) NOT NULL,
   "Name" character varying(50) NOT NULL,
   "CallbackUrl" character varying(500) NULL,
+  "AllowedRefreshToken" boolean NOT NULL,
   "TokenExpireSeconds" integer NULL,
   "RefreshTokenExpireSeconds" integer NULL,
   "CodeExpireSeconds" integer NULL,
@@ -92,6 +96,7 @@ CREATE TABLE "User" (
   "OtpBound" boolean NOT NULL,
   "TwoFactorEnabled" boolean NOT NULL,
   "RequiredChangePassword" boolean NOT NULL,
+  "AllowedRefreshToken" boolean NOT NULL,
   "TokenExpireSeconds" integer NULL,
   "RefreshTokenExpireSeconds" integer NULL,
   "CodeExpireSeconds" integer NULL,
@@ -265,6 +270,26 @@ CREATE TABLE "UserRole" (
 );
 
 
+CREATE TABLE "UserPermissionCondition" (
+  "Id" bigint NOT NULL,
+  "UserId" bigint NOT NULL,
+  "PermissionId" bigint NOT NULL,
+  "Priority" integer NOT NULL,
+  "Group" character varying(50) NULL,
+  "Key" character varying(50) NOT NULL,
+  "Value" character varying(200) NOT NULL,
+  "Allowed" boolean NOT NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_UserPermissionCondition" PRIMARY KEY ("Id"),
+  CONSTRAINT "FK_UserPermissionCondition_Permission_PermissionId" FOREIGN KEY ("PermissionId") REFERENCES "Permission" ("Id") ON DELETE CASCADE,
+  CONSTRAINT "FK_UserPermissionCondition_User_UserId" FOREIGN KEY ("UserId") REFERENCES "User" ("Id") ON DELETE CASCADE
+);
+
+
 CREATE TABLE "RouteValue" (
   "Id" bigint NOT NULL,
   "Key" character varying(50) NOT NULL,
@@ -315,7 +340,13 @@ CREATE INDEX "IX_RoleExtendData_Value" ON "RoleExtendData" ("Value");
 CREATE INDEX "IX_RolePermission_PermissionId" ON "RolePermission" ("PermissionId");
 
 
+CREATE INDEX "IX_RolePermissionCondition_Group" ON "RolePermissionCondition" ("Group");
+
+
 CREATE INDEX "IX_RolePermissionCondition_PermissionId" ON "RolePermissionCondition" ("PermissionId");
+
+
+CREATE INDEX "IX_RolePermissionCondition_RoleId" ON "RolePermissionCondition" ("RoleId");
 
 
 CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Group_~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Group", "Key", "Value");
@@ -405,13 +436,13 @@ CREATE INDEX "IX_User_Email" ON "User" USING gist ("Email" gist_trgm_ops);
 CREATE INDEX "IX_User_NormalizedEmail" ON "User" USING gist ("NormalizedEmail" gist_trgm_ops);
 
 
-CREATE UNIQUE INDEX "IX_User_NormalizedUsername" ON "User" USING gist ("NormalizedUsername" gist_trgm_ops);
+CREATE INDEX "IX_User_NormalizedUsername" ON "User" USING gist ("NormalizedUsername" gist_trgm_ops);
 
 
 CREATE INDEX "IX_User_PhoneNumber" ON "User" USING gist ("PhoneNumber" gist_trgm_ops);
 
 
-CREATE UNIQUE INDEX "IX_User_Username" ON "User" USING gist ("Username" gist_trgm_ops);
+CREATE INDEX "IX_User_Username" ON "User" USING gist ("Username" gist_trgm_ops);
 
 
 CREATE INDEX "IX_UserExtendData_Key" ON "UserExtendData" ("Key");
@@ -424,6 +455,18 @@ CREATE INDEX "IX_UserExternalLogin_Provider" ON "UserExternalLogin" ("Provider")
 
 
 CREATE INDEX "IX_UserExternalLogin_UniqueId" ON "UserExternalLogin" ("UniqueId");
+
+
+CREATE INDEX "IX_UserPermissionCondition_Group" ON "UserPermissionCondition" ("Group");
+
+
+CREATE INDEX "IX_UserPermissionCondition_PermissionId" ON "UserPermissionCondition" ("PermissionId");
+
+
+CREATE INDEX "IX_UserPermissionCondition_UserId" ON "UserPermissionCondition" ("UserId");
+
+
+CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Priority_Group_~" ON "UserPermissionCondition" ("UserId", "PermissionId", "Priority", "Group", "Key", "Value");
 
 
 CREATE INDEX "IX_UserRole_RoleId" ON "UserRole" ("RoleId");
@@ -468,12 +511,11 @@ $function$
 select public.fn_token_partition_table();
 
 
-SELECT cron.schedule('token_partition_table', '0 0 */1 * *', 'SELECT fn_token_partition_table(null, 1)');
-
-
-UPDATE cron.job SET
-database = 'lctech_auth',
--- schedule = '0 0 */1 * *',
--- command = 'SELECT fn_token_partition_table(null, 1)',
--- jobname = '建立分表'
-WHERE jobname = 'token_partition_table';
+-- Please switch to Db: postgres
+-- SELECT cron.schedule('token_partition_table', '0 0 */1 * *', 'SELECT fn_token_partition_table(null, 1)');
+-- UPDATE cron.job SET
+-- database = 'lctech_auth',
+-- -- schedule = '0 0 */1 * *',
+-- -- command = 'SELECT fn_token_partition_table(null, 1)',
+-- -- jobname = '建立分表'
+-- WHERE jobname = 'token_partition_table';

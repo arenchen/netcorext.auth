@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Enums;
@@ -21,14 +22,22 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
         _cache = cache;
     }
 
-    public Task<Result> Handle(ValidatePermission request, CancellationToken cancellationToken = default)
+    public async Task<Result> Handle(ValidatePermission request, CancellationToken cancellationToken = default)
     {
         var roleIds = Array.Empty<long>();
 
         if (request.UserId.HasValue)
         {
-            var ds = _context.Set<Domain.Entities.UserRole>();
-            var userRoles = ds.Where(t => t.Id == request.UserId && !t.Role.Disabled).Select(t => t.RoleId);
+            var ds = _context.Set<Domain.Entities.User>();
+
+            var user = await ds.Include(t => t.Roles)
+                               .FirstOrDefaultAsync(t => t.Id == request.UserId, cancellationToken);
+
+            if (user == null) return Result.Forbidden;
+
+            if (user.Disabled) return Result.AccountIsDisabled;
+
+            var userRoles = user.Roles.Select(t => t.RoleId);
 
             roleIds = userRoles.ToArray();
         }
@@ -38,24 +47,57 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             roleIds = roleIds.Union(request.RoleId).ToArray();
         }
 
-        if (!roleIds.Any()) return Task.FromResult(Result.Forbidden);
+        roleIds = roleIds.Distinct().ToArray();
 
+        if (!roleIds.Any()) return Result.Forbidden;
 
         var cacheRolePermissionRule = _cache.Get<Dictionary<string, Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<string, Models.RolePermissionRule>();
         var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Models.RolePermissionCondition>();
+        var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Models.UserPermissionCondition>();
 
-        if (!cacheRolePermissionRule.Any()) return Task.FromResult(Result.Forbidden);
+        if (!cacheRolePermissionRule.Any()) return Result.Forbidden;
 
         Expression<Func<KeyValuePair<string, Models.RolePermissionRule>, bool>> predicatePermissionRule = t => roleIds.Contains(t.Value.RoleId) && t.Value.FunctionId == request.FunctionId;
-        Expression<Func<KeyValuePair<long, Models.RolePermissionCondition>, bool>> predicatePermissionCondition = t => roleIds.Contains(t.Value.RoleId);
+        Expression<Func<KeyValuePair<long, Models.RolePermissionCondition>, bool>> predicateRolePermissionCondition = t => roleIds.Contains(t.Value.RoleId);
+        Expression<Func<KeyValuePair<long, Models.UserPermissionCondition>, bool>> predicateUserPermissionCondition = t => t.Value.UserId == request.UserId;
 
-        predicatePermissionCondition = request.Group.IsEmpty()
-                                           ? predicatePermissionCondition.And(t => t.Value.Group.IsEmpty())
-                                           : predicatePermissionCondition.And(t => t.Value.Group == request.Group);
+        predicateRolePermissionCondition = request.Group.IsEmpty()
+                                               ? predicateRolePermissionCondition.And(t => t.Value.Group.IsEmpty())
+                                               : predicateRolePermissionCondition.And(t => t.Value.Group.IsEmpty() || t.Value.Group == request.Group);
 
-        var conditions = cacheRolePermissionCondition.Where(predicatePermissionCondition.Compile())
-                                                     .Select(t => t.Value)
-                                                     .ToArray();
+        predicateUserPermissionCondition = request.Group.IsEmpty()
+                                               ? predicateUserPermissionCondition.And(t => t.Value.Group.IsEmpty())
+                                               : predicateUserPermissionCondition.And(t => t.Value.Group.IsEmpty() || t.Value.Group == request.Group);
+
+        var roleConditions = cacheRolePermissionCondition.Where(predicateRolePermissionCondition.Compile())
+                                                         .Select(t => new Models.PermissionCondition
+
+                                                                      {
+                                                                          PermissionId = t.Value.PermissionId,
+                                                                          Priority = t.Value.Priority,
+                                                                          Group = t.Value.Group,
+                                                                          Key = t.Value.Key,
+                                                                          Value = t.Value.Value,
+                                                                          Allowed = t.Value.Allowed
+                                                                      })
+                                                         .ToArray();
+
+        var userConditions = cacheUserPermissionCondition.Where(predicateUserPermissionCondition.Compile())
+                                                         .Select(t => new Models.PermissionCondition
+
+                                                                      {
+                                                                          PermissionId = t.Value.PermissionId,
+                                                                          Priority = t.Value.Priority,
+                                                                          Group = t.Value.Group,
+                                                                          Key = t.Value.Key,
+                                                                          Value = t.Value.Value,
+                                                                          Allowed = t.Value.Allowed
+                                                                      })
+                                                         .ToArray();
+
+        var conditions = roleConditions.Union(userConditions)
+                                       .Distinct()
+                                       .ToArray();
 
         var validatorCondition = Array.Empty<Models.Condition>();
         var keyCount = 0;
@@ -70,7 +112,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                                                                            })
                                        .ToArray();
 
-            Expression<Func<Models.RolePermissionCondition, bool>> predicateCondition = t => false;
+            Expression<Func<Models.PermissionCondition, bool>> predicateCondition = t => false;
 
             foreach (var i in reqConditions)
             {
@@ -78,7 +120,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
                 keyCount++;
 
-                Expression<Func<Models.RolePermissionCondition, bool>> predicateKey = t => t.Key == i.Key && (i.Values.Contains(t.Value) || t.Value == "*");
+                Expression<Func<Models.PermissionCondition, bool>> predicateKey = t => t.Key == i.Key && (i.Values.Contains(t.Value) || t.Value == "*");
 
                 predicateCondition = predicateCondition.Or(predicateKey);
             }
@@ -139,7 +181,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                            .Select(t => t.Value)
                                            .ToArray();
 
-        if (!rules.Any()) return Task.FromResult(Result.Forbidden);
+        if (!rules.Any()) return Result.Forbidden;
 
 
         var validatorRules = rules.GroupJoin(validatorCondition, t => t.PermissionId, t => t.PermissionId, (r, c) => new
@@ -212,8 +254,8 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                   .ToArray();
 
         if (validatorRules.Any(t => (t.PermissionType & request.PermissionType) == request.PermissionType))
-            return Task.FromResult(Result.Success);
+            return Result.Success;
 
-        return Task.FromResult(Result.Forbidden);
+        return Result.Forbidden;
     }
 }

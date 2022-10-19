@@ -21,10 +21,16 @@ public class ValidateClientHandler : IRequestHandler<ValidateClient, Result>
 
         if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.UsernameOrPasswordIncorrect;
 
-        var entity = await ds.FirstAsync(t => t.Id == request.Id, cancellationToken);
+        var entity = await ds.FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken);
+
+        if (entity == null) return Result.UsernameOrPasswordIncorrect;
 
         var secret = request.Secret?.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds());
 
-        return entity.Secret == secret ? Result.Success : Result.UsernameOrPasswordIncorrect;
+        if (entity.Secret != secret) return Result.UsernameOrPasswordIncorrect;
+
+        if (entity.Disabled) return Result.AccountIsDisabled;
+
+        return Result.Success;
     }
 }

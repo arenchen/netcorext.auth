@@ -10,6 +10,7 @@ public class UpdateClient : IRequest<Result>
     public string? Secret { get; set; }
     public string? Name { get; set; }
     public string? CallbackUrl { get; set; }
+    public bool? AllowedRefreshToken { get; set; }
     public int? TokenExpireSeconds { get; set; }
     public int? RefreshTokenExpireSeconds { get; set; }
     public int? CodeExpireSeconds { get; set; }

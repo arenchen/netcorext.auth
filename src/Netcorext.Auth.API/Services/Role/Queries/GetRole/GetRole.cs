@@ -5,7 +5,7 @@ namespace Netcorext.Auth.API.Services.Role.Queries;
 
 public class GetRole : IRequest<Result<IEnumerable<Models.Role>>>
 {
-    public long? Id { get; set; }
+    public long[]? Ids { get; set; }
     public string? Name { get; set; }
     public bool? Disabled { get; set; }
     public RoleExtendData[]? ExtendData { get; set; }

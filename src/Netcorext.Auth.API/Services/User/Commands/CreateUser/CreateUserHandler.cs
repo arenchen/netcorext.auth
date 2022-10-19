@@ -25,8 +25,17 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
     public async Task<Result<long?>> Handle(CreateUser request, CancellationToken cancellationToken = default)
     {
         var ds = _context.Set<Domain.Entities.User>();
+        var dsPermission = _context.Set<Domain.Entities.Permission>();
 
         if (await ds.AnyAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken)) return Result<long?>.Conflict;
+
+        if (request.PermissionConditions?.Any() == true)
+        {
+            var permissionIds = request.PermissionConditions.Select(t => t.PermissionId).ToArray();
+
+            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+                return Result<long?>.DependencyNotFound;
+        }
 
         var id = _snowflake.Generate();
         var creationDate = DateTimeOffset.UtcNow;
@@ -43,6 +52,7 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                 Otp = request.TwoFactorEnabled ? Otp.GenerateRandomKey().ToBase32String() : null,
                                 TwoFactorEnabled = request.TwoFactorEnabled,
                                 RequiredChangePassword = request.RequiredChangePassword,
+                                AllowedRefreshToken = request.AllowedRefreshToken,
                                 TokenExpireSeconds = request.TokenExpireSeconds ?? _config.TokenExpireSeconds,
                                 RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _config.RefreshTokenExpireSeconds,
                                 CodeExpireSeconds = request.CodeExpireSeconds ?? _config.CodeExpireSeconds,
@@ -69,7 +79,20 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                                          Provider = t.Provider,
                                                                          UniqueId = t.UniqueId
                                                                      })
-                                                        .ToArray() ?? Array.Empty<UserExternalLogin>()
+                                                        .ToArray() ?? Array.Empty<UserExternalLogin>(),
+                                PermissionConditions = request.PermissionConditions?
+                                                              .Select(t => new UserPermissionCondition
+                                                                           {
+                                                                               Id = _snowflake.Generate(),
+                                                                               UserId = id,
+                                                                               PermissionId = t.PermissionId,
+                                                                               Priority = t.Priority,
+                                                                               Group = t.Group?.ToUpper(),
+                                                                               Key = t.Key,
+                                                                               Value = t.Value,
+                                                                               Allowed = t.Allowed
+                                                                           })
+                                                              .ToArray() ?? Array.Empty<UserPermissionCondition>()
                             });
 
         await _context.SaveChangesAsync(e =>

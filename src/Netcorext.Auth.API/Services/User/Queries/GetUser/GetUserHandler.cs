@@ -99,6 +99,7 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                          OtpBound = t2.OtpBound,
                                                                          TwoFactorEnabled = t2.TwoFactorEnabled,
                                                                          RequiredChangePassword = t2.RequiredChangePassword,
+                                                                         AllowedRefreshToken = t2.AllowedRefreshToken,
                                                                          TokenExpireSeconds = t2.TokenExpireSeconds,
                                                                          RefreshTokenExpireSeconds = t2.RefreshTokenExpireSeconds,
                                                                          CodeExpireSeconds = t2.CodeExpireSeconds,
@@ -138,7 +139,21 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                                                                              CreatorId = t3.CreatorId,
                                                                                                                              ModificationDate = t3.ModificationDate,
                                                                                                                              ModifierId = t3.ModifierId
-                                                                                                                         })
+                                                                                                                         }),
+                                                                         PermissionConditions = t2.PermissionConditions.Select(t3 => new Models.UserPermissionCondition
+                                                                                                                                     {
+                                                                                                                                         Id = t3.Id,
+                                                                                                                                         PermissionId = t3.PermissionId,
+                                                                                                                                         Priority = t3.Priority,
+                                                                                                                                         Group = t3.Group,
+                                                                                                                                         Key = t3.Key,
+                                                                                                                                         Value = t3.Value,
+                                                                                                                                         Allowed = t3.Allowed,
+                                                                                                                                         CreationDate = t3.CreationDate,
+                                                                                                                                         CreatorId = t3.CreatorId,
+                                                                                                                                         ModificationDate = t3.ModificationDate,
+                                                                                                                                         ModifierId = t3.ModifierId
+                                                                                                                                     })
                                                                      })
                                            })
                               .FirstOrDefaultAsync(cancellationToken);

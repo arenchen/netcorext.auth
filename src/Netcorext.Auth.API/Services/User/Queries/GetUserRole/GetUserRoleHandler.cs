@@ -33,6 +33,7 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
                                                     Id = t.Id,
                                                     RoleId = t.RoleId,
                                                     Name = t.Role.Name,
+                                                    ExpireDate = t.ExpireDate,
                                                     CreationDate = t.Role.CreationDate,
                                                     CreatorId = t.Role.CreatorId,
                                                     ModificationDate = t.Role.ModificationDate,

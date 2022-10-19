@@ -68,6 +68,7 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
                                                                                        Id = t2.Id,
                                                                                        Name = t2.Name,
                                                                                        CallbackUrl = t2.CallbackUrl,
+                                                                                       AllowedRefreshToken = t2.AllowedRefreshToken,
                                                                                        TokenExpireSeconds = t2.TokenExpireSeconds,
                                                                                        RefreshTokenExpireSeconds = t2.RefreshTokenExpireSeconds,
                                                                                        CodeExpireSeconds = t2.CodeExpireSeconds,

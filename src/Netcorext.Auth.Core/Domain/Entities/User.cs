@@ -16,6 +16,7 @@ public class User : Entity
     public bool OtpBound { get; set; }
     public bool TwoFactorEnabled { get; set; }
     public bool RequiredChangePassword { get; set; }
+    public bool AllowedRefreshToken { get; set; }
     public int? TokenExpireSeconds { get; set; }
     public int? RefreshTokenExpireSeconds { get; set; }
     public int? CodeExpireSeconds { get; set; }
@@ -27,4 +28,5 @@ public class User : Entity
     public virtual ICollection<UserRole> Roles { get; set; } = new HashSet<UserRole>();
     public virtual ICollection<UserExtendData> ExtendData { get; set; } = new HashSet<UserExtendData>();
     public virtual ICollection<UserExternalLogin> ExternalLogins { get; set; } = new HashSet<UserExternalLogin>();
+    public virtual ICollection<UserPermissionCondition> PermissionConditions { get; set; } = new HashSet<UserPermissionCondition>();
 }

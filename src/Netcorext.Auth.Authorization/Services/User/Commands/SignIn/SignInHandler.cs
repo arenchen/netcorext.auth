@@ -101,7 +101,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                                                                                                 entity.Id.ToString(), null, entity.TokenExpireSeconds, scope)
                                                                                       .Token,
                                                            Scope = scope,
-                                                           RefreshToken = _config.AllowPasswordRefreshToken
+                                                           RefreshToken = entity.AllowedRefreshToken
                                                                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
                                                                                                        entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
                                                                                              .Token

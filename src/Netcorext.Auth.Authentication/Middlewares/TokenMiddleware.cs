@@ -96,39 +96,30 @@ internal class TokenMiddleware
 
     private async Task<bool> IsBearerValid(string token)
     {
-        var cachePermissions = _cache.Get<Dictionary<string, bool>>(ConfigSettings.CACHE_TOKEN) ?? new Dictionary<string, bool>();
-
         try
         {
             TokenHelper.ValidateJwt(token, _tokenValidationParameters);
 
-            if (cachePermissions.TryGetValue(token, out var cacheResult)) return cacheResult;
+            if (_cache.TryGetValue(token, out bool cacheResult)) return cacheResult;
 
             var result = await _dispatcher.SendAsync(new ValidateToken
                                                      {
                                                          Token = token
                                                      });
 
-            if (!cachePermissions.TryAdd(token, result != null && result.Code == Result.Success))
-            {
-                cachePermissions[token] = result != null && result.Code == Result.Success;
-            }
+            _cache.Set(token, result != null && result.Code == Result.Success, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
 
             return result != null && result.Code == Result.Success;
         }
         catch (SecurityTokenExpiredException)
         {
-            cachePermissions.Remove(token);
+            _cache.Remove(token);
 
             return false;
         }
         catch
         {
             return false;
-        }
-        finally
-        {
-            _cache.Set(ConfigSettings.CACHE_TOKEN, cachePermissions, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
         }
     }
 }

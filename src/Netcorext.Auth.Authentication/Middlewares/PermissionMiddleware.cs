@@ -6,6 +6,7 @@ using Netcorext.Auth.Authentication.Extensions;
 using Netcorext.Auth.Authentication.Services.Permission.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Extensions;
+using Netcorext.Auth.Helpers;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Commons;
 using Netcorext.Mediator;
@@ -51,6 +52,7 @@ internal class PermissionMiddleware
         var allowAnonymous = false;
         var functionId = string.Empty;
 
+        var rt = context.User.Claims.FirstOrDefault(t => t.Type == TokenHelper.CLAIM_TYPES_RESOURCE_TYPE)?.Value;
         var role = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Role)?.Value;
         var path = context.Request.GetPath();
         var method = context.Request.GetMethod();
@@ -71,7 +73,7 @@ internal class PermissionMiddleware
             break;
         }
 
-        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId) || await IsValidAsync(role, functionId, method, context.Request.RouteValues))
+        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId) || await IsValidAsync(_config.AppSettings.ValidationPassUserId && rt == "1" ? id : null, role, functionId, method, context.Request.RouteValues))
         {
             await _next(context);
 
@@ -93,17 +95,18 @@ internal class PermissionMiddleware
         await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
     }
 
-    private async Task<bool> IsValidAsync(string? role, string functionId, string httpMethod, RouteValueDictionary routeValues)
+    private async Task<bool> IsValidAsync(long? userId, string? role, string functionId, string httpMethod, RouteValueDictionary routeValues)
     {
-        if (string.IsNullOrWhiteSpace(role)) return false;
+        var roleIds = role?.Split(" ", StringSplitOptions.RemoveEmptyEntries)
+                           .Where(t => !t.IsEmpty() && long.TryParse(t, out var _))
+                           .Select(long.Parse)
+                           .ToArray();
 
-        var roleIds = role.Split(" ", StringSplitOptions.RemoveEmptyEntries)
-                          .Where(t => !t.IsEmpty() && long.TryParse(t, out var _))
-                          .Select(long.Parse)
-                          .ToArray();
+        if (userId.IsEmpty() && roleIds.IsEmpty()) return false;
 
         var result = await _dispatcher.SendAsync(new ValidatePermission
                                                  {
+                                                     UserId = userId.IsEmpty() ? null : userId,
                                                      RoleId = roleIds,
                                                      FunctionId = functionId,
                                                      PermissionType = httpMethod.ToPermissionType(),
