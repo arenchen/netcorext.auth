@@ -5,6 +5,7 @@ using Netcorext.Auth.Authentication.Middlewares;
 using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Services.Route;
 using Netcorext.Auth.Authentication.Services.Route.Commands;
+using Netcorext.Auth.Authentication.Services.Token;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Mediator;
 
@@ -41,6 +42,7 @@ public class AppConfig
 
         app.MapGrpcService<RouteServiceFacade>();
         app.MapGrpcService<PermissionValidationServiceFacade>();
+        app.MapGrpcService<TokenValidationServiceFacade>();
 
         app.RegisterPermissionEndpoints((_, registerConfig) =>
                                         {
