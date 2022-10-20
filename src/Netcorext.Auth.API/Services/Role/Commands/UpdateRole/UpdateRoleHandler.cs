@@ -41,7 +41,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                        .Select(t => t.PermissionId)
                                        .ToArray();
 
-            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+            if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result.DependencyNotFound;
         }
 
@@ -51,7 +51,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                        .Select(t => t.PermissionId)
                                        .ToArray();
 
-            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+            if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result.DependencyNotFound;
         }
 

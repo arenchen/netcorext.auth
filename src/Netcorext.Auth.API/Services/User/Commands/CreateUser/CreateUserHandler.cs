@@ -33,7 +33,7 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
         {
             var permissionIds = request.PermissionConditions.Select(t => t.PermissionId).ToArray();
 
-            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+            if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result<long?>.DependencyNotFound;
         }
 

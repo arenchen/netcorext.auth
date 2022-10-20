@@ -40,7 +40,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                        .Select(t => t.PermissionId)
                                        .ToArray();
 
-            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+            if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result.DependencyNotFound;
         }
 

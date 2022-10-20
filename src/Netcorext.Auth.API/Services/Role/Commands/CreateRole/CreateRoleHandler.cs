@@ -31,12 +31,12 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
 
             var permissionIds = request.Roles.SelectMany(t => t.Permissions ?? Array.Empty<CreateRole.RolePermission>()).Select(t => t.PermissionId).ToArray();
 
-            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+            if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result<IEnumerable<long>>.DependencyNotFound;
 
             permissionIds = request.Roles.SelectMany(t => t.PermissionConditions ?? Array.Empty<CreateRole.RolePermissionCondition>()).Select(t => t.PermissionId).ToArray();
 
-            if (!dsPermission.All(t => permissionIds.Contains(t.Id)))
+            if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result<IEnumerable<long>>.DependencyNotFound;
         }
 
