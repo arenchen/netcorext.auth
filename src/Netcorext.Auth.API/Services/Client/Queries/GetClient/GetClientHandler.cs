@@ -61,7 +61,8 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
                                             .Select(t => new
                                                          {
                                                              Count = t.Count(),
-                                                             Rows = t.Skip(request.Paging.Offset)
+                                                             Rows = t.OrderBy(t2 => t2.Id)
+                                                                     .Skip(request.Paging.Offset)
                                                                      .Take(request.Paging.Limit)
                                                                      .Select(t2 => new Models.Client
                                                                                    {
