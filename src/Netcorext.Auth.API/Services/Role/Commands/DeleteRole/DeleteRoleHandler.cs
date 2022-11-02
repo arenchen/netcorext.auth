@@ -18,9 +18,9 @@ public class DeleteRoleHandler : IRequestHandler<DeleteRole, Result>
 
     public async Task<Result> Handle(DeleteRole request, CancellationToken cancellationToken = default)
     {
-        var ds = _context.Set<Domain.Entities.Rule>();
+        var ds = _context.Set<Domain.Entities.Role>();
 
-        Expression<Func<Domain.Entities.Rule, bool>> predicate = p => false;
+        Expression<Func<Domain.Entities.Role, bool>> predicate = p => false;
 
         predicate = request.Ids.Aggregate(predicate, (current, id) => current.Or(t => t.Id == id));
 
