@@ -19,7 +19,7 @@ public static class HttpContextExtension
         return context.Request.Protocol == "HTTP/2" && context.Request.Headers.ContentType == "application/grpc";
     }
 
-    public static async Task UnauthorizedAsync(this HttpContext context, bool useNativeStatus = true, string? code = "403000")
+    public static async Task UnauthorizedAsync(this HttpContext context, bool useNativeStatus = true, string? code = "401000")
     {
         code ??= Result.Unauthorized;
 
