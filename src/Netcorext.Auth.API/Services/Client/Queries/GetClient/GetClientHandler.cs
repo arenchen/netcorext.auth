@@ -44,7 +44,7 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
             if (!request.Role.Name.IsEmpty()) predicateRole = predicateRole.And(p => p.Role.Name.Contains(request.Role.Name));
             if (request.Role.ExpireDate.HasValue) predicateRole = predicateRole.And(p => p.ExpireDate == request.Role.ExpireDate);
 
-            predicate = predicate.And(t => t.Roles.Any(predicateRole.Compile()));
+            predicate = predicate.And(t => t.Roles.AsQueryable().Any(predicateRole.Compile()));
         }
 
         if (request.ExtendData != null && request.ExtendData.Any())
