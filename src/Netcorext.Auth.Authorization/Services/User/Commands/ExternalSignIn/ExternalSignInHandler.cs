@@ -91,6 +91,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                        Email = request.Email,
                        NormalizedEmail = request.Email?.ToUpper(),
                        PhoneNumber = request.PhoneNumber,
+                       AllowedRefreshToken = request.AllowedRefreshToken,
                        TokenExpireSeconds = request.TokenExpireSeconds ?? _config.TokenExpireSeconds,
                        RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _config.RefreshTokenExpireSeconds,
                        CodeExpireSeconds = request.CodeExpireSeconds ?? _config.CodeExpireSeconds,

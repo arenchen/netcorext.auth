@@ -12,6 +12,7 @@ public class ExternalSignIn : IRequest<Result<TokenResult>>
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
     public string? Otp { get; set; }
+    public bool AllowedRefreshToken { get; set; }
     public int? TokenExpireSeconds { get; set; }
     public int? RefreshTokenExpireSeconds { get; set; }
     public int? CodeExpireSeconds { get; set; }
