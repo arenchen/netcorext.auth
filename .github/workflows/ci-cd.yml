@@ -82,7 +82,7 @@ jobs:
       - name: Build Image & Push
         uses: netcorext/buildx-image-action@dev
         with:
-          image: ${{ steps.envs.outputs.image }}
+          image: ${{ steps.envs.outputs.image-fullName }}
           tag: ${{ steps.envs.outputs.tag }}
           tag-hash: ${{ steps.envs.outputs.tag-hash }}
           tag-latest: ${{ steps.envs.outputs.tag-latest }}
@@ -111,7 +111,7 @@ jobs:
       - name: Build Image & Push
         uses: netcorext/buildx-image-action@dev
         with:
-          image: ${{ steps.envs.outputs.image }}
+          image: ${{ steps.envs.outputs.image-fullName }}
           tag: ${{ steps.envs.outputs.tag }}
           tag-hash: ${{ steps.envs.outputs.tag-hash }}
           tag-latest: ${{ steps.envs.outputs.tag-latest }}
@@ -140,7 +140,7 @@ jobs:
       - name: Build Image & Push
         uses: netcorext/buildx-image-action@dev
         with:
-          image: ${{ steps.envs.outputs.image }}
+          image: ${{ steps.envs.outputs.image-fullName }}
           tag: ${{ steps.envs.outputs.tag }}
           tag-hash: ${{ steps.envs.outputs.tag-hash }}
           tag-latest: ${{ steps.envs.outputs.tag-latest }}
