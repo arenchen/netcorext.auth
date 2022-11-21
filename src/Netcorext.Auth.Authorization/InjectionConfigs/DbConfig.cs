@@ -12,19 +12,22 @@ namespace Netcorext.Auth.Authorization.InjectionConfigs;
 [Injection]
 public class DbConfig
 {
-    public DbConfig(IServiceCollection services)
+    public DbConfig(IServiceCollection services, IConfiguration config)
     {
+        var slowCommandLoggingThreshold = config.GetValue<long>("AppSettings:SlowCommandLoggingThreshold", 1000);
+
         services.AddIdentityDbContext((provider, builder) =>
                                       {
-                                          var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
-                                          builder.UseNpgsql(config.Connections.RelationalDb.GetDefault()!.Connection);
-                                      });
+                                          var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+
+                                          builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault()!.Connection);
+                                      }, slowCommandLoggingThreshold: slowCommandLoggingThreshold);
 
         services.TryAddSingleton<RedisClient>(provider =>
                                               {
-                                                  var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+                                                  var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
-                                                  return new RedisClientConnection(config.Connections.Redis.GetDefault()!.Connection).Client;
+                                                  return new RedisClientConnection(cfg.Connections.Redis.GetDefault()!.Connection).Client;
                                               });
     }
 }

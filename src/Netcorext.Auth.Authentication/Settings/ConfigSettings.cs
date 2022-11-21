@@ -27,4 +27,5 @@ public class AppSettings
     public int HealthCheckTimeout { get; set; } = 15 * 1000;
     public int CacheTokenExpires { get; set; } = 30 * 60 * 1000;
     public bool UseNativeStatus { get; set; }
+    public long SlowCommandLoggingThreshold { get; set; } = 1000;
 }

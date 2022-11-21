@@ -13,4 +13,5 @@ public class ConfigSettings : Config<AppSettings>
 public class AppSettings
 {
     public RegisterConfig? RegisterConfig { get; set; }
+    public long SlowCommandLoggingThreshold { get; set; } = 1000;
 }
