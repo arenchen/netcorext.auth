@@ -1,10 +1,5 @@
 name: Build and Deploy
 
-env:
-  APP: 'Netcorext.Auth.API'
-  APP_AUTHENTICATION: 'Netcorext.Auth.Authentication'
-  APP_AUTHORIZATION: 'Netcorext.Auth.Authorization'
-
 on:
   push:
     branches:
@@ -23,9 +18,9 @@ jobs:
   Detect:
     runs-on: ubuntu-latest
     outputs:
-      api: ${{ join(steps.detect.outputs.api) }}
-      authentication: ${{ join(steps.detect.outputs.authentication) }}
-      authorization: ${{ join(steps.detect.outputs.authorization) }}
+      app: ${{ steps.detect.outputs.app }}
+      app-authentication: ${{ steps.detect.outputs.app-authentication }}
+      app-authorization: ${{ steps.detect.outputs.app-authorization }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -33,37 +28,48 @@ jobs:
       - name: Detect Change
         id: detect
         run: |
-          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 "${{ env.APP }}" || true`
-          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
-            echo "api=Y" >> $GITHUB_OUTPUT
-          else
-            echo "api=N" >> $GITHUB_OUTPUT
+          APP="Netcorext.Auth.API"
+          APP_AUTHENTICATION="Netcorext.Auth.Authentication"
+          APP_AUTHORIZATION="Netcorext.Auth.Authorization"
+          APP_CORE="Netcorext.Auth.Core"
+          
+          CHANGE_FILES=`git diff --no-commit-id --name-only HEAD^`
+          
+          CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP}|${APP_CORE}" || true`
+          if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
+            echo "No changes in ${APP}"
+            APP=""
           fi
           
-          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 "${{ env.APP_AUTHENTICATION }}" || true`
-          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
-            echo "authentication=Y" >> $GITHUB_OUTPUT
-          else
-            echo "authentication=N" >> $GITHUB_OUTPUT
+          CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP_AUTHENTICATION}|${APP_CORE}" || true`
+          if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
+            echo "No changes in ${APP_AUTHENTICATION}"
+            APP_AUTHENTICATION=""
           fi
           
-          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 "${{ env.APP_AUTHORIZATION }}" || true`
-          if [ ! -z "$CHANGE_FILE" ] || [ ${{ inputs.force }} ]; then
-            echo "authorization=Y" >> $GITHUB_OUTPUT
-          else
-            echo "authorization=N" >> $GITHUB_OUTPUT
+          CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP_AUTHORIZATION}|${APP_CORE}" || true`
+          if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
+            echo "No changes in ${APP_AUTHORIZATION}"
+            APP_AUTHORIZATION=""
           fi
-                    
-          CHANGE_FILE=`git diff --no-commit-id --name-only HEAD^ | grep -Em 1 'Netcorext.Auth.Core' || true`
-          if [ ! -z "$CHANGE_FILE" ]; then
-            echo "api=Y" >> $GITHUB_OUTPUT
-            echo "authentication=Y" >> $GITHUB_OUTPUT
-            echo "authorization=Y" >> $GITHUB_OUTPUT
-          fi
-  BuildApi:
+          
+          echo "app=${APP}" >> $GITHUB_OUTPUT
+          echo "app-authentication=${APP_AUTHENTICATION}" >> $GITHUB_OUTPUT
+          echo "app-authorization=${APP_AUTHORIZATION}" >> $GITHUB_OUTPUT
+  Build:
+    name: "Build ${{ needs.Detect.outputs.app }}"
     needs: Detect
-    if: needs.Detect.outputs.api == 'Y'
+    if: needs.Detect.outputs.app != ''
     runs-on: ubuntu-latest
+    env:
+      app: ${{ needs.Detect.outputs.app }}
+    outputs:
+      app: ${{ steps.envs.outputs.app }}
+      branch: ${{ steps.envs.outputs.branch }}
+      image: ${{ steps.envs.outputs.image }}
+      tag: ${{ steps.envs.outputs.tag }}
+      tag-hash: ${{ steps.envs.outputs.tag-hash }}
+      tag-latest: ${{ steps.envs.outputs.tag-latest }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -71,7 +77,7 @@ jobs:
       - id: envs
         uses: netcorext/dotnet-version-action@dev
         with:
-          app: ${{ env.APP }}
+          app: ${{ env.app }}
           image-prefix: ${{ secrets.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
@@ -89,10 +95,21 @@ jobs:
           build-arg: |-
             --build-arg APP="${{ steps.envs.outputs.app }}" \
             --build-arg ADDITIONAL_ARGUMENTS="${{ steps.envs.outputs.build-options }}"
-  BuildAuthentication:
+
+  Build-Authentication:
+    name: "Build ${{ needs.Detect.outputs.app-authentication }}"
     needs: Detect
-    if: needs.Detect.outputs.authentication == 'Y'
+    if: needs.Detect.outputs.app-authentication != ''
     runs-on: ubuntu-latest
+    env:
+      app: ${{ needs.Detect.outputs.app-authentication }}
+    outputs:
+      app: ${{ steps.envs.outputs.app }}
+      branch: ${{ steps.envs.outputs.branch }}
+      image: ${{ steps.envs.outputs.image }}
+      tag: ${{ steps.envs.outputs.tag }}
+      tag-hash: ${{ steps.envs.outputs.tag-hash }}
+      tag-latest: ${{ steps.envs.outputs.tag-latest }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -100,7 +117,7 @@ jobs:
       - id: envs
         uses: netcorext/dotnet-version-action@dev
         with:
-          app: ${{ env.APP_AUTHENTICATION }}
+          app: ${{ env.app }}
           image-prefix: ${{ secrets.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
@@ -118,10 +135,21 @@ jobs:
           build-arg: |-
             --build-arg APP="${{ steps.envs.outputs.app }}" \
             --build-arg ADDITIONAL_ARGUMENTS="${{ steps.envs.outputs.build-options }}"
-  BuildAuthorization:
+
+  Build-Authorization:
+    name: "Build ${{ needs.Detect.outputs.app-authorization }}"
     needs: Detect
-    if: needs.Detect.outputs.authorization == 'Y'
+    if: needs.Detect.outputs.app-authorization != ''
     runs-on: ubuntu-latest
+    env:
+      app: ${{ needs.Detect.outputs.app-authorization }}
+    outputs:
+      app: ${{ steps.envs.outputs.app }}
+      branch: ${{ steps.envs.outputs.branch }}
+      image: ${{ steps.envs.outputs.image }}
+      tag: ${{ steps.envs.outputs.tag }}
+      tag-hash: ${{ steps.envs.outputs.tag-hash }}
+      tag-latest: ${{ steps.envs.outputs.tag-latest }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -129,7 +157,7 @@ jobs:
       - id: envs
         uses: netcorext/dotnet-version-action@dev
         with:
-          app: ${{ env.APP_AUTHORIZATION }}
+          app: ${{ env.app }}
           image-prefix: ${{ secrets.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
