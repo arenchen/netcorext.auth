@@ -1,0 +1,177 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - stg
+
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force exec'
+        type: boolean
+        required: true
+
+jobs:
+  Detect:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.detect.outputs.app }}
+      app-authentication: ${{ steps.detect.outputs.app-authentication }}
+      app-authorization: ${{ steps.detect.outputs.app-authorization }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Detect Change
+        id: detect
+        run: |
+          APP="Netcorext.Auth.API"
+          APP_AUTHENTICATION="Netcorext.Auth.Authentication"
+          APP_AUTHORIZATION="Netcorext.Auth.Authorization"
+          APP_CORE="Netcorext.Auth.Core"
+          
+          CHANGE_FILES=`git diff --no-commit-id --name-only HEAD^`
+          
+          CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP}|${APP_CORE}" || true`
+          if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
+            echo "No changes in ${APP}"
+            APP=""
+          fi
+          
+          CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP_AUTHENTICATION}|${APP_CORE}" || true`
+          if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
+            echo "No changes in ${APP_AUTHENTICATION}"
+            APP_AUTHENTICATION=""
+          fi
+          
+          CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP_AUTHORIZATION}|${APP_CORE}" || true`
+          if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
+            echo "No changes in ${APP_AUTHORIZATION}"
+            APP_AUTHORIZATION=""
+          fi
+          
+          echo "app=${APP}" >> $GITHUB_OUTPUT
+          echo "app-authentication=${APP_AUTHENTICATION}" >> $GITHUB_OUTPUT
+          echo "app-authorization=${APP_AUTHORIZATION}" >> $GITHUB_OUTPUT
+  Build:
+    name: "Build ${{ needs.Detect.outputs.app }}"
+    needs: Detect
+    if: needs.Detect.outputs.app != ''
+    runs-on: ubuntu-latest
+    env:
+      app: ${{ needs.Detect.outputs.app }}
+    outputs:
+      app: ${{ steps.envs.outputs.app }}
+      branch: ${{ steps.envs.outputs.branch }}
+      image: ${{ steps.envs.outputs.image }}
+      tag: ${{ steps.envs.outputs.tag }}
+      tag-hash: ${{ steps.envs.outputs.tag-hash }}
+      tag-latest: ${{ steps.envs.outputs.tag-latest }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: envs
+        uses: netcorext/dotnet-version-action@dev
+        with:
+          app: ${{ env.app }}
+          image-prefix: ${{ secrets.IMAGE_PREFIX }}
+      - uses: netcorext/dotnet-dockerfile-action@dev
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build Image & Push
+        uses: netcorext/buildx-image-action@dev
+        with:
+          image: ${{ steps.envs.outputs.image-fullName }}
+          tag: ${{ steps.envs.outputs.tag }}
+          tag-hash: ${{ steps.envs.outputs.tag-hash }}
+          tag-latest: ${{ steps.envs.outputs.tag-latest }}
+          build-arg: |-
+            --build-arg APP="${{ steps.envs.outputs.app }}" \
+            --build-arg ADDITIONAL_ARGUMENTS="${{ steps.envs.outputs.build-options }}"
+
+  Build-Authentication:
+    name: "Build ${{ needs.Detect.outputs.app-authentication }}"
+    needs: Detect
+    if: needs.Detect.outputs.app-authentication != ''
+    runs-on: ubuntu-latest
+    env:
+      app: ${{ needs.Detect.outputs.app-authentication }}
+    outputs:
+      app: ${{ steps.envs.outputs.app }}
+      branch: ${{ steps.envs.outputs.branch }}
+      image: ${{ steps.envs.outputs.image }}
+      tag: ${{ steps.envs.outputs.tag }}
+      tag-hash: ${{ steps.envs.outputs.tag-hash }}
+      tag-latest: ${{ steps.envs.outputs.tag-latest }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: envs
+        uses: netcorext/dotnet-version-action@dev
+        with:
+          app: ${{ env.app }}
+          image-prefix: ${{ secrets.IMAGE_PREFIX }}
+      - uses: netcorext/dotnet-dockerfile-action@dev
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build Image & Push
+        uses: netcorext/buildx-image-action@dev
+        with:
+          image: ${{ steps.envs.outputs.image-fullName }}
+          tag: ${{ steps.envs.outputs.tag }}
+          tag-hash: ${{ steps.envs.outputs.tag-hash }}
+          tag-latest: ${{ steps.envs.outputs.tag-latest }}
+          build-arg: |-
+            --build-arg APP="${{ steps.envs.outputs.app }}" \
+            --build-arg ADDITIONAL_ARGUMENTS="${{ steps.envs.outputs.build-options }}"
+
+  Build-Authorization:
+    name: "Build ${{ needs.Detect.outputs.app-authorization }}"
+    needs: Detect
+    if: needs.Detect.outputs.app-authorization != ''
+    runs-on: ubuntu-latest
+    env:
+      app: ${{ needs.Detect.outputs.app-authorization }}
+    outputs:
+      app: ${{ steps.envs.outputs.app }}
+      branch: ${{ steps.envs.outputs.branch }}
+      image: ${{ steps.envs.outputs.image }}
+      tag: ${{ steps.envs.outputs.tag }}
+      tag-hash: ${{ steps.envs.outputs.tag-hash }}
+      tag-latest: ${{ steps.envs.outputs.tag-latest }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: envs
+        uses: netcorext/dotnet-version-action@dev
+        with:
+          app: ${{ env.app }}
+          image-prefix: ${{ secrets.IMAGE_PREFIX }}
+      - uses: netcorext/dotnet-dockerfile-action@dev
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build Image & Push
+        uses: netcorext/buildx-image-action@dev
+        with:
+          image: ${{ steps.envs.outputs.image-fullName }}
+          tag: ${{ steps.envs.outputs.tag }}
+          tag-hash: ${{ steps.envs.outputs.tag-hash }}
+          tag-latest: ${{ steps.envs.outputs.tag-latest }}
+          build-arg: |-
+            --build-arg APP="${{ steps.envs.outputs.app }}" \
+            --build-arg ADDITIONAL_ARGUMENTS="${{ steps.envs.outputs.build-options }}"
