@@ -5,6 +5,7 @@ namespace Netcorext.Auth.API.Services.User.Commands;
 
 public class CreateUser : IRequest<Result<long?>>
 {
+    public long? CustomId { get; set; }
     public string Username { get; set; } = null!;
     public string Password { get; set; } = null!;
     public string? Email { get; set; }

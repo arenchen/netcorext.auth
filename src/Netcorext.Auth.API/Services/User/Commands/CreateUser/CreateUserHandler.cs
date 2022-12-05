@@ -27,7 +27,11 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
         var ds = _context.Set<Domain.Entities.User>();
         var dsPermission = _context.Set<Domain.Entities.Permission>();
 
-        if (await ds.AnyAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken)) return Result<long?>.Conflict;
+        if (await ds.AnyAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken))
+            return Result<long?>.Conflict;
+
+        if (request.CustomId.HasValue && await ds.AnyAsync(t => t.Id == request.CustomId, cancellationToken))
+            return Result<long?>.Conflict;
 
         if (request.PermissionConditions?.Any() == true)
         {
@@ -37,7 +41,7 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                 return Result<long?>.DependencyNotFound;
         }
 
-        var id = _snowflake.Generate();
+        var id = request.CustomId ?? _snowflake.Generate();
         var creationDate = DateTimeOffset.UtcNow;
 
         var entity = ds.Add(new Domain.Entities.User

@@ -36,11 +36,12 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         var dsExternalLogin = _context.Set<Domain.Entities.UserExternalLogin>();
         var dsUser = _context.Set<Domain.Entities.User>();
         var username = request.Username;
-        var id = _snowflake.Generate();
         var creationDate = DateTimeOffset.UtcNow;
 
         var entity = await dsUser.Include(t => t.Roles)
                                  .FirstOrDefaultAsync(t => t.NormalizedUsername == username.ToUpper(), cancellationToken);
+
+        var isNewRegister = entity == null;
 
         if (entity != null)
         {
@@ -80,7 +81,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
             }
         }
 
-        var isNewRegister = entity == null;
+        var id = entity?.Id ?? (request.CustomId ?? _snowflake.Generate());
 
         entity ??= new Domain.Entities.User
                    {
