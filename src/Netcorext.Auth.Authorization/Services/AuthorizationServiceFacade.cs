@@ -26,7 +26,7 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<CreateToken>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<CreateTokenRequest.Types.Result>();
+        return rep.Adapt<CreateTokenRequest.Types.Result>();
     }
 
     public override async Task<ExternalSignInRequest.Types.Result> ExternalSignIn(ExternalSignInRequest request, ServerCallContext context)
@@ -34,7 +34,7 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<ExternalSignIn>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<ExternalSignInRequest.Types.Result>();
+        return rep.Adapt<ExternalSignInRequest.Types.Result>();
     }
 
     public override async Task<Result> ResetOtp(ResetOtpRequest request, ServerCallContext context)
@@ -42,7 +42,7 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<ResetOtp>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     public override async Task<Result> ResetPassword(ResetPasswordRequest request, ServerCallContext context)
@@ -50,7 +50,7 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<ResetPassword>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     public override async Task<SignInRequest.Types.Result> SignIn(SignInRequest request, ServerCallContext context)
@@ -58,7 +58,7 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<SignIn>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<SignInRequest.Types.Result>();
+        return rep.Adapt<SignInRequest.Types.Result>();
     }
 
     public override async Task<Result> SignOut(SignOutRequest request, ServerCallContext context)
@@ -66,7 +66,7 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<SignOut>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -75,7 +75,7 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<ValidateOtp>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -84,6 +84,6 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         var req = request.Adapt<ValidateUser>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 }

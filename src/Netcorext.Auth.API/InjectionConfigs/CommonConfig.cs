@@ -19,5 +19,7 @@ public class CommonSetting
 
                                               return new SnowflakeJavaScriptSafeInteger(machineId);
                                           });
+
+        services.TryAddSystemJsonSerializer();
     }
 }

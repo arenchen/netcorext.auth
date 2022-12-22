@@ -1,6 +1,4 @@
-using System.Text.Json;
 using FreeRedis;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authorization.Settings;
@@ -8,22 +6,23 @@ using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
 using Netcorext.Mediator;
+using Netcorext.Serialization;
 
 namespace Netcorext.Auth.Authorization.Services.User.Commands;
 
 public class SignOutHandler : IRequestHandler<SignOut, Result>
 {
     private readonly DatabaseContext _context;
+    private readonly ISerializer _serializer;
     private readonly RedisClient _redis;
     private readonly ConfigSettings _config;
-    private readonly JsonSerializerOptions _jsonOptions;
 
-    public SignOutHandler(DatabaseContext context, RedisClient redis, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
+    public SignOutHandler(DatabaseContext context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
     {
         _context = context;
+        _serializer = serializer;
         _redis = redis;
         _config = config.Value;
-        _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
     }
 
     public async Task<Result> Handle(SignOut request, CancellationToken cancellationToken = default)
@@ -45,7 +44,7 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
 
         if (!string.IsNullOrWhiteSpace(token.RefreshToken)) lsToken.Add(token.RefreshToken);
 
-        _redis.Publish(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], JsonSerializer.Serialize(lsToken.ToArray(), _jsonOptions));
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], await _serializer.SerializeAsync(lsToken.ToArray(), cancellationToken));
 
         return Result.Success;
     }

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -7,6 +6,7 @@ using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
+using Netcorext.Serialization;
 using Netcorext.Worker;
 
 namespace Netcorext.Auth.Authentication.Workers;
@@ -15,26 +15,30 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly RedisClient _redis;
+    private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
+    private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<UserRunner> _logger;
-    private IDisposable? _subscription;
     private static readonly SemaphoreSlim UserUpdateLocker = new(1, 1);
 
-    public UserRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
+    public UserRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _serializer = serializer;
         _config = config.Value;
         _logger = logger;
     }
 
     public async Task InvokeAsync(AuthWorker worker, CancellationToken cancellationToken = default)
     {
-        _subscription?.Dispose();
+        _logger.LogDebug("{Message}", nameof(UserRunner));
 
-        _subscription = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT], (s, o) => UpdateUserAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
+        _subscriber?.Dispose();
+
+        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT], async (s, o) => await UpdateUserAsync(o.ToString(), cancellationToken));
 
         await UpdateUserAsync(null, cancellationToken);
     }
@@ -50,7 +54,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
             using var scope = _serviceProvider.CreateScope();
             var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
-            var reqIds = ids == null ? null : JsonSerializer.Deserialize<long[]>(ids);
+            var reqIds = ids == null ? null : _serializer.Deserialize<long[]>(ids);
 
             var result = await dispatcher.SendAsync(new GetUserPermission
                                                     {
@@ -90,6 +94,6 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
     public void Dispose()
     {
-        _subscription?.Dispose();
+        _subscriber?.Dispose();
     }
 }

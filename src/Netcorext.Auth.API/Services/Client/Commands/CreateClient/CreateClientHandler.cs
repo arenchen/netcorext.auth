@@ -30,8 +30,8 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
         var entity = ds.Add(new Domain.Entities.Client
                             {
                                 Id = id,
-                                Name = request.Name!,
-                                Secret = request.Secret!.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
+                                Name = request.Name,
+                                Secret = request.Secret.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
                                 CallbackUrl = request.CallbackUrl,
                                 AllowedRefreshToken = request.AllowedRefreshToken,
                                 TokenExpireSeconds = request.TokenExpireSeconds,

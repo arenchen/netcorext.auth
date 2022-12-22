@@ -26,6 +26,6 @@ public class RouteServiceFacade : RouteService.RouteServiceBase
         var req = request.Adapt<RegisterRoute>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 }

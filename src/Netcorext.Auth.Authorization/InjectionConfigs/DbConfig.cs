@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authorization.Settings;
-using Netcorext.Auth.Utilities;
 using Netcorext.Configuration.Extensions;
 using Netcorext.EntityFramework.UserIdentityPattern.AspNetCore;
+using Netcorext.Extensions.Redis.Utilities;
+using Netcorext.Serialization;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
@@ -20,14 +21,20 @@ public class DbConfig
                                       {
                                           var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
-                                          builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault()!.Connection);
+                                          builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault().Connection);
                                       }, slowCommandLoggingThreshold: slowCommandLoggingThreshold);
 
         services.TryAddSingleton<RedisClient>(provider =>
                                               {
                                                   var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+                                                  var serializer = provider.GetRequiredService<ISerializer>();
 
-                                                  return new RedisClientConnection(cfg.Connections.Redis.GetDefault()!.Connection).Client;
+                                                  return new RedisClientConnection<RedisClient>(() => new RedisClient(cfg.Connections.Redis.GetDefault().Connection)
+                                                                                                      {
+                                                                                                          Serialize = serializer.Serialize,
+                                                                                                          Deserialize = serializer.Deserialize,
+                                                                                                          DeserializeRaw = serializer.Deserialize
+                                                                                                      }).Client;
                                               });
     }
 }

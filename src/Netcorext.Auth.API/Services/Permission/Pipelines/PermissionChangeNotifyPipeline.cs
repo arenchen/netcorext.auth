@@ -1,6 +1,4 @@
-using System.Text.Json;
 using FreeRedis;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Permission.Commands;
@@ -8,6 +6,7 @@ using Netcorext.Auth.API.Settings;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator.Pipelines;
+using Netcorext.Serialization;
 
 namespace Netcorext.Auth.API.Services.Permission.Pipelines;
 
@@ -16,15 +15,15 @@ public class PermissionChangeNotifyPipeline : IRequestPipeline<CreatePermission,
                                               IRequestPipeline<DeletePermission, Result>
 {
     private readonly DatabaseContext _context;
+    private readonly ISerializer _serializer;
     private readonly RedisClient _redis;
-    private readonly JsonSerializerOptions _jsonOptions;
     private readonly ConfigSettings _config;
 
-    public PermissionChangeNotifyPipeline(DatabaseContext context, RedisClient redis, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
+    public PermissionChangeNotifyPipeline(DatabaseContext context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
     {
         _context = context;
         _redis = redis;
-        _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
+        _serializer = serializer;
         _config = config.Value;
     }
 
@@ -58,13 +57,11 @@ public class PermissionChangeNotifyPipeline : IRequestPipeline<CreatePermission,
         return result;
     }
 
-    private Task NotifyAsync(params long[] ids)
+    private async Task NotifyAsync(params long[] ids)
     {
-        var value = JsonSerializer.Serialize(ids, _jsonOptions);
+        var value = await _serializer.SerializeAsync(ids);
 
-        _redis.Publish(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], value);
-
-        return Task.CompletedTask;
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], value);
     }
 
     private IEnumerable<long> GetRoleId(params long[] permissionIds)

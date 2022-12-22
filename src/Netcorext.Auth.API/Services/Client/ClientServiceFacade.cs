@@ -26,7 +26,7 @@ public class ClientServiceFacade : ClientService.ClientServiceBase
         var req = request.Adapt<CreateClient>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<CreateClientRequest.Types.Result>();
+        return rep.Adapt<CreateClientRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Delete)]
@@ -35,7 +35,7 @@ public class ClientServiceFacade : ClientService.ClientServiceBase
         var req = request.Adapt<DeleteClient>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -44,7 +44,7 @@ public class ClientServiceFacade : ClientService.ClientServiceBase
         var req = request.Adapt<GetClient>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<GetClientRequest.Types.Result>();
+        return rep.Adapt<GetClientRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Write)]
@@ -53,6 +53,6 @@ public class ClientServiceFacade : ClientService.ClientServiceBase
         var req = request.Adapt<UpdateClient>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 }

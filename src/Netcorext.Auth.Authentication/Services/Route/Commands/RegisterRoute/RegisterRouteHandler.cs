@@ -1,15 +1,11 @@
-using System.Linq.Expressions;
-using System.Text.Json;
 using FreeRedis;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
-using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
+using Netcorext.Serialization;
 
 namespace Netcorext.Auth.Authentication.Services.Route.Commands;
 
@@ -17,16 +13,18 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 {
     private readonly DatabaseContext _context;
     private readonly RedisClient _redis;
+    private readonly ISerializer _serializer;
     private readonly ISnowflake _snowflake;
-    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly ILogger<RegisterRouteHandler> _logger;
     private readonly ConfigSettings _config;
 
-    public RegisterRouteHandler(DatabaseContext context, RedisClient redis, ISnowflake snowflake, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
+    public RegisterRouteHandler(DatabaseContext context, RedisClient redis, ISerializer serializer, ISnowflake snowflake, IOptions<ConfigSettings> config, ILogger<RegisterRouteHandler> logger)
     {
         _context = context;
         _redis = redis;
+        _serializer = serializer;
         _snowflake = snowflake;
-        _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
+        _logger = logger;
         _config = config.Value;
     }
 
@@ -34,99 +32,79 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
     {
         var ds = _context.Set<Domain.Entities.RouteGroup>();
         var dsRoute = _context.Set<Domain.Entities.Route>();
+        var lsChangeIds = new List<long>();
 
-        Expression<Func<Domain.Entities.RouteGroup, bool>> predicate = p => false;
+        foreach (var group in request.Groups)
+        {
+            try
+            {
+                if (!await _redis.HSetNxAsync(_config.AppSettings.LockPrefixKey, group.Name, Array.Empty<byte>()))
+                    continue;
 
-        predicate = request.Groups.Aggregate(predicate, (current, g) => current.Or(t => t.Name.ToUpper() == g.Name.ToUpper()));
+                var entGroup = ds.FirstOrDefault(t => t.Name.ToUpper() == group.Name.ToUpper());
 
-        var groups = ds.Include(t => t.Routes).ThenInclude(t => t.RouteValues)
-                       .Where(predicate)
-                       .ToArray();
+                if (entGroup == null)
+                {
+                    await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name);
 
-        var requestGroups = request.Groups.Select(t =>
-                                                  {
-                                                      var gid = _snowflake.Generate();
+                    continue;
+                }
 
-                                                      return new Domain.Entities.RouteGroup
-                                                             {
-                                                                 Id = gid,
-                                                                 Name = t.Name,
-                                                                 BaseUrl = t.BaseUrl,
-                                                                 ForwarderRequestVersion = t.ForwarderRequestVersion,
-                                                                 ForwarderHttpVersionPolicy = t.ForwarderHttpVersionPolicy,
-                                                                 ForwarderActivityTimeout = t.ForwarderActivityTimeout,
-                                                                 ForwarderAllowResponseBuffering = t.ForwarderAllowResponseBuffering,
-                                                                 Routes = t.Routes.Select(t2 =>
-                                                                                          {
-                                                                                              var id = _snowflake.Generate();
+                var entRoutes = dsRoute.Where(t => t.GroupId == entGroup.Id);
 
-                                                                                              return new Domain.Entities.Route
-                                                                                                     {
-                                                                                                         Id = id,
-                                                                                                         GroupId = gid,
-                                                                                                         Protocol = t2.Protocol.ToUpper(),
-                                                                                                         HttpMethod = t2.HttpMethod.ToUpper(),
-                                                                                                         RelativePath = t2.RelativePath,
-                                                                                                         Template = t2.Template,
-                                                                                                         FunctionId = t2.FunctionId,
-                                                                                                         NativePermission = t2.NativePermission,
-                                                                                                         AllowAnonymous = t2.AllowAnonymous,
-                                                                                                         Tag = t2.Tag,
-                                                                                                         RouteValues = (t2.RouteValues ?? Array.Empty<RegisterRoute.RouteValue>())
-                                                                                                                      .Select(t3 => new Domain.Entities.RouteValue
-                                                                                                                                    {
-                                                                                                                                        Id = id,
-                                                                                                                                        Key = t3.Key,
-                                                                                                                                        Value = t3.Value
-                                                                                                                                    })
-                                                                                                                      .ToHashSet()
-                                                                                                     };
-                                                                                          })
-                                                                           .ToHashSet()
-                                                             };
-                                                  })
-                                   .ToHashSet();
+                dsRoute.RemoveRange(entRoutes);
 
-        var diffGroups = groups.IntersectExcept(requestGroups, t => t.Name);
+                entGroup.BaseUrl = group.BaseUrl;
+                entGroup.ForwarderRequestVersion = group.ForwarderRequestVersion;
+                entGroup.ForwarderHttpVersionPolicy = group.ForwarderHttpVersionPolicy;
+                entGroup.ForwarderActivityTimeout = group.ForwarderActivityTimeout;
+                entGroup.ForwarderAllowResponseBuffering = group.ForwarderAllowResponseBuffering;
 
-        if (diffGroups.FirstExcept.Any())
-            ds.RemoveRange(diffGroups.FirstExcept);
+                var routes = group.Routes.Select(t2 =>
+                                                 {
+                                                     var id = _snowflake.Generate();
 
-        if (diffGroups.SecondExcept.Any())
-            await ds.AddRangeAsync(diffGroups.SecondExcept, cancellationToken);
+                                                     return new Domain.Entities.Route
+                                                            {
+                                                                Id = id,
+                                                                GroupId = entGroup.Id,
+                                                                Protocol = t2.Protocol.ToUpper(),
+                                                                HttpMethod = t2.HttpMethod.ToUpper(),
+                                                                RelativePath = t2.RelativePath,
+                                                                Template = t2.Template,
+                                                                FunctionId = t2.FunctionId,
+                                                                NativePermission = t2.NativePermission,
+                                                                AllowAnonymous = t2.AllowAnonymous,
+                                                                Tag = t2.Tag,
+                                                                RouteValues = (t2.RouteValues ?? Array.Empty<RegisterRoute.RouteValue>())
+                                                                             .Select(t3 => new Domain.Entities.RouteValue
+                                                                                           {
+                                                                                               Id = id,
+                                                                                               Key = t3.Key,
+                                                                                               Value = t3.Value
+                                                                                           })
+                                                                             .ToHashSet()
+                                                            };
+                                                 });
 
-        diffGroups.FirstIntersect.Merge(diffGroups.SecondIntersect, t => t.Name,
-                                        (src, desc) =>
-                                        {
-                                            src.BaseUrl = desc.BaseUrl;
-                                            src.ForwarderRequestVersion = desc.ForwarderRequestVersion;
-                                            src.ForwarderHttpVersionPolicy = desc.ForwarderHttpVersionPolicy;
-                                            src.ForwarderActivityTimeout = desc.ForwarderActivityTimeout;
-                                            src.ForwarderAllowResponseBuffering = desc.ForwarderAllowResponseBuffering;
+                await dsRoute.AddRangeAsync(routes, cancellationToken);
 
-                                            dsRoute.RemoveRange(src.Routes);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                                            src.Routes = desc.Routes
-                                                             .Select(t =>
-                                                                     {
-                                                                         t.GroupId = src.Id;
+                lsChangeIds.Add(entGroup.Id);
 
-                                                                         return t;
-                                                                     })
-                                                             .ToHashSet();
+                await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "{Message}", e);
 
-                                            return src;
-                                        });
+                await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name);
+            }
+        }
 
-        await _context.SaveChangesAsync(cancellationToken);
-
-        var ids = diffGroups.FirstExcept.Select(t => t.Id)
-                            .Union(diffGroups.SecondExcept.Select(t => t.Id))
-                            .Union(diffGroups.FirstIntersect.Select(t => t.Id))
-                            .Distinct()
-                            .ToArray();
-
-        _redis.Publish(_config.Queues[ConfigSettings.QUEUES_ROUTE_CHANGE_EVENT], JsonSerializer.Serialize(ids, _jsonOptions));
+        if (lsChangeIds.Any())
+            await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_ROUTE_CHANGE_EVENT], await _serializer.SerializeAsync(lsChangeIds, cancellationToken));
 
         return Result.Success;
     }

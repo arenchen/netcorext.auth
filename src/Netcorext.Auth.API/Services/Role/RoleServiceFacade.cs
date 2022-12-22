@@ -26,7 +26,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         var req = request.Adapt<CloneRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<CloneRoleRequest.Types.Result>();
+        return rep.Adapt<CloneRoleRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Write)]
@@ -35,7 +35,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         var req = request.Adapt<CreateRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<CreateRoleRequest.Types.Result>();
+        return rep.Adapt<CreateRoleRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Delete)]
@@ -44,7 +44,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         var req = request.Adapt<DeleteRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -53,7 +53,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         var req = request.Adapt<ExistsRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -67,7 +67,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         var req = request.Adapt<GetRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        var r = rep!.Adapt<GetRoleRequest.Types.Result>();
+        var r = rep.Adapt<GetRoleRequest.Types.Result>();
 
         time.Stop();
 
@@ -82,6 +82,6 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         var req = request.Adapt<UpdateRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 }

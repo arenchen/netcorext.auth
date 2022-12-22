@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.46.*" />
     <PackageReference Include="Mapster" Version="7.3.*" />
+    <PackageReference Include="FreeRedis" Version="1.*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,14 +29,17 @@
     <PackageReference Include="Netcorext.Extensions.Commons" Version="1.0.1-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Configuration.Gzip" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Contracts.AspNetCore" Version="1.0.1-dev.*" />
-    <PackageReference Include="Netcorext.Extensions.Mapster.Protobufs" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Extensions.DependencyInjection.AspNetCore" Version="1.0.1-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Grpc" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Hash" Version="1.0.*" />
     <PackageReference Include="Netcorext.Extensions.Linq" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Mapster.Protobufs" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Redis" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Logging.AspNetCoreLogger" Version="1.0" />
     <PackageReference Include="Netcorext.Logging.HttpClientLogger" Version="1.0" />
     <PackageReference Include="Netcorext.Mediator" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Mediator.Queuing.Redis" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Serialization.Json" Version="1.0.0-dev.*" />
   </ItemGroup>
   
   <ItemGroup>

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -7,6 +6,7 @@ using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
+using Netcorext.Serialization;
 using Netcorext.Worker;
 using Yarp.ReverseProxy.Configuration;
 
@@ -16,18 +16,20 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly RedisClient _redis;
+    private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
+    private readonly ISerializer _serializer;
     private readonly InMemoryConfigProvider _memoryConfigProvider;
     private readonly ConfigSettings _config;
     private readonly ILogger<RouteRunner> _logger;
-    private IDisposable? _subscription;
     private static readonly SemaphoreSlim RouteUpdateLocker = new(1, 1);
 
-    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, ILogger<RouteRunner> logger)
+    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, ILogger<RouteRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _serializer = serializer;
         _memoryConfigProvider = (InMemoryConfigProvider)proxyConfigProvider;
         _config = config.Value;
         _logger = logger;
@@ -35,9 +37,11 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
     public async Task InvokeAsync(AuthWorker worker, CancellationToken cancellationToken = default)
     {
-        _subscription?.Dispose();
+        _logger.LogDebug("{Message}", nameof(RouteRunner));
 
-        _subscription = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_ROUTE_CHANGE_EVENT], (s, o) => UpdateRouteAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
+        _subscriber?.Dispose();
+
+        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_ROUTE_CHANGE_EVENT], async (s, o) => await UpdateRouteAsync(o.ToString(), cancellationToken));
 
         await UpdateRouteAsync(null, cancellationToken);
     }
@@ -51,7 +55,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             using var scope = _serviceProvider.CreateScope();
             var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
-            var reqIds = ids == null ? null : JsonSerializer.Deserialize<long[]>(ids);
+            var reqIds = ids == null ? null : _serializer.Deserialize<long[]>(ids);
 
             var request = new GetRoute
                           {
@@ -139,6 +143,6 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
     public void Dispose()
     {
-        _subscription?.Dispose();
+        _subscriber?.Dispose();
     }
 }

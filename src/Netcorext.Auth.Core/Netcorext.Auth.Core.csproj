@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="hashids.net" Version="1.5.*" />
-    <PackageReference Include="FreeRedis" Version="0.5.*" />
   </ItemGroup>
 
   <ItemGroup>

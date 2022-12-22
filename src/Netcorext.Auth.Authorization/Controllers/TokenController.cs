@@ -65,6 +65,6 @@ public class TokenController : ControllerBase
 
         var result = await _dispatcher.SendAsync(request, cancellationToken);
 
-        return result!.ToActionResult("Content");
+        return result.ToActionResult("Content");
     }
 }

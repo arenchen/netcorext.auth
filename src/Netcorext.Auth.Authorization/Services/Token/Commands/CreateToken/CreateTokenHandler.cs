@@ -1,7 +1,5 @@
 using System.Security.Claims;
-using System.Text.Json;
 using FreeRedis;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
@@ -16,6 +14,7 @@ using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
+using Netcorext.Serialization;
 
 namespace Netcorext.Auth.Authorization.Services.Token.Commands;
 
@@ -24,19 +23,19 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
     private readonly DatabaseContext _context;
     private readonly ISnowflake _snowflake;
     private readonly JwtGenerator _jwtGenerator;
+    private readonly ISerializer _serializer;
     private readonly RedisClient _redis;
     private readonly ConfigSettings _config;
-    private readonly JsonSerializerOptions _jsonOptions;
     private readonly AuthOptions _authOptions;
 
-    public CreateTokenHandler(DatabaseContext context, ISnowflake snowflake, JwtGenerator jwtGenerator, IOptions<AuthOptions> authOptions, RedisClient redis, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
+    public CreateTokenHandler(DatabaseContext context, ISnowflake snowflake, JwtGenerator jwtGenerator, RedisClient redis, ISerializer serializer, IOptions<AuthOptions> authOptions, IOptions<ConfigSettings> config)
     {
         _context = context;
         _snowflake = snowflake;
         _jwtGenerator = jwtGenerator;
+        _serializer = serializer;
         _redis = redis;
         _config = config.Value;
-        _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
         _authOptions = authOptions.Value;
     }
 
@@ -410,7 +409,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
             if (!string.IsNullOrWhiteSpace(token.RefreshToken)) lsToken.Add(token.RefreshToken);
 
-            _redis.Publish(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], JsonSerializer.Serialize(lsToken.ToArray(), _jsonOptions));
+            await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], await _serializer.SerializeAsync(lsToken.ToArray(), cancellationToken));
 
             return result;
         }

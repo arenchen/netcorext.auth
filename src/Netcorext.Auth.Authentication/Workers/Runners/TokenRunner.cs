@@ -1,8 +1,8 @@
-using System.Text.Json;
 using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Serialization;
 using Netcorext.Worker;
 
 namespace Netcorext.Auth.Authentication.Workers;
@@ -10,25 +10,29 @@ namespace Netcorext.Auth.Authentication.Workers;
 internal class TokenRunner : IWorkerRunner<AuthWorker>
 {
     private readonly RedisClient _redis;
+    private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
+    private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<TokenRunner> _logger;
-    private IDisposable? _subscription;
     private static readonly SemaphoreSlim TokenUpdateLocker = new(1, 1);
 
-    public TokenRunner(RedisClient redis, IMemoryCache cache, IOptions<ConfigSettings> config, ILogger<TokenRunner> logger)
+    public TokenRunner(RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<TokenRunner> logger)
     {
         _redis = redis;
         _cache = cache;
+        _serializer = serializer;
         _config = config.Value;
         _logger = logger;
     }
 
     public Task InvokeAsync(AuthWorker worker, CancellationToken cancellationToken = default)
     {
-        _subscription?.Dispose();
+        _logger.LogDebug("{Message}", nameof(TokenRunner));
 
-        _subscription = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], (s, o) => UpdateTokenAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
+        _subscriber?.Dispose();
+
+        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], async (s, o) => await UpdateTokenAsync(o.ToString(), cancellationToken));
 
         return Task.CompletedTask;
     }
@@ -45,7 +49,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
 
             var cachePermissions = _cache.Get<Dictionary<string, bool>>(ConfigSettings.CACHE_TOKEN) ?? new Dictionary<string, bool>();
 
-            var tokens = JsonSerializer.Deserialize<string[]>(data);
+            var tokens = _serializer.Deserialize<string[]>(data);
 
             if (tokens == null) return;
 
@@ -66,6 +70,6 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
 
     public void Dispose()
     {
-        _subscription?.Dispose();
+        _subscriber?.Dispose();
     }
 }

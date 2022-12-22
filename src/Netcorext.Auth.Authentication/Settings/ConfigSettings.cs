@@ -1,3 +1,4 @@
+using System.Reflection;
 using Netcorext.Auth.Extensions.AspNetCore.Settings;
 using Netcorext.Configuration;
 
@@ -20,6 +21,7 @@ public class ConfigSettings : Config<AppSettings>
 public class AppSettings
 {
     public RegisterConfig? RegisterConfig { get; set; }
+    public string LockPrefixKey { get; set; } = Assembly.GetEntryAssembly()!.GetName().Name!.ToLower();
     public string[]? InternalHost { get; set; }
     public long[]? Owner { get; set; }
     public bool ValidationPassUserId { get; set; }

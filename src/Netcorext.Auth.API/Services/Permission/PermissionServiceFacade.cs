@@ -22,7 +22,7 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
         var req = request.Adapt<CreatePermission>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<CreatePermissionRequest.Types.Result>();
+        return rep.Adapt<CreatePermissionRequest.Types.Result>();
     }
 
     public override async Task<Result> DeletePermission(DeletePermissionRequest request, ServerCallContext context)
@@ -30,7 +30,7 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
         var req = request.Adapt<DeletePermission>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     public override async Task<GetPermissionRequest.Types.Result> GetPermission(GetPermissionRequest request, ServerCallContext context)
@@ -38,7 +38,7 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
         var req = request.Adapt<GetPermission>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<GetPermissionRequest.Types.Result>();
+        return rep.Adapt<GetPermissionRequest.Types.Result>();
     }
 
     public override async Task<Result> UpdatePermission(UpdatePermissionRequest request, ServerCallContext context)
@@ -46,6 +46,6 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
         var req = request.Adapt<UpdatePermission>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 }

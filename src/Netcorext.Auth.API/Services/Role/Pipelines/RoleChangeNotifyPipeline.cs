@@ -1,11 +1,10 @@
-using System.Text.Json;
 using FreeRedis;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Role.Commands;
 using Netcorext.Auth.API.Settings;
 using Netcorext.Contracts;
 using Netcorext.Mediator.Pipelines;
+using Netcorext.Serialization;
 
 namespace Netcorext.Auth.API.Services.Role.Pipelines;
 
@@ -13,14 +12,14 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnu
                                         IRequestPipeline<UpdateRole, Result>,
                                         IRequestPipeline<DeleteRole, Result>
 {
+    private readonly ISerializer _serializer;
     private readonly RedisClient _redis;
-    private readonly JsonSerializerOptions _jsonOptions;
     private readonly ConfigSettings _config;
 
-    public RoleChangeNotifyPipeline(RedisClient redis, IOptions<ConfigSettings> config, IOptions<JsonOptions> jsonOptions)
+    public RoleChangeNotifyPipeline(RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
     {
+        _serializer = serializer;
         _redis = redis;
-        _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
         _config = config.Value;
     }
 
@@ -54,12 +53,10 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnu
         return result;
     }
 
-    private Task NotifyAsync(params long[] ids)
+    private async Task NotifyAsync(params long[] ids)
     {
-        var value = JsonSerializer.Serialize(ids, _jsonOptions);
+        var value = await _serializer.SerializeAsync(ids);
 
-        _redis.Publish(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], value);
-
-        return Task.CompletedTask;
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], value);
     }
 }

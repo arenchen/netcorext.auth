@@ -35,11 +35,11 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
     {
         var ds = _context.Set<Domain.Entities.User>();
 
-        if (!await ds.AnyAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken))
+        if (!await ds.AnyAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken))
             return Result<TokenResult>.UsernameOrPasswordIncorrect;
 
         var entity = await ds.Include(t => t.Roles)
-                             .FirstAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken);
+                             .FirstAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken);
 
         _context.Entry(entity).UpdateProperty(t => t.LastSignInDate, DateTimeOffset.UtcNow);
         _context.Entry(entity).UpdateProperty(t => t.LastSignInIp, _httpContext?.GetIp());
@@ -51,7 +51,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
             return Result<TokenResult>.AccountIsDisabled;
         }
 
-        var passwordHash = request.Password!.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds());
+        var passwordHash = request.Password.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds());
 
         if (entity.Password != passwordHash)
         {

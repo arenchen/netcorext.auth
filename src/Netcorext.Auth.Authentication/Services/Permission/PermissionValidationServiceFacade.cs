@@ -21,6 +21,6 @@ public class PermissionValidationServiceFacade : PermissionValidationService.Per
         var req = request.Adapt<ValidatePermission>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 }

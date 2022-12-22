@@ -26,7 +26,7 @@ public class UserServiceFacade : UserService.UserServiceBase
         var req = request.Adapt<CreateUser>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<CreateUserRequest.Types.Result>();
+        return rep.Adapt<CreateUserRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Delete)]
@@ -35,7 +35,7 @@ public class UserServiceFacade : UserService.UserServiceBase
         var req = request.Adapt<DeleteUser>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -44,7 +44,7 @@ public class UserServiceFacade : UserService.UserServiceBase
         var req = request.Adapt<ExistsUser>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -53,7 +53,7 @@ public class UserServiceFacade : UserService.UserServiceBase
         var req = request.Adapt<GetUser>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<GetUserRequest.Types.Result>();
+        return rep.Adapt<GetUserRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Read)]
@@ -64,7 +64,7 @@ public class UserServiceFacade : UserService.UserServiceBase
 
         var result = new GetUserPermissionRequest.Types.Result
                      {
-                         Code = rep!.Code,
+                         Code = rep.Code,
                          Message = rep.Message,
                          Content =
                          {
@@ -87,7 +87,7 @@ public class UserServiceFacade : UserService.UserServiceBase
         var req = request.Adapt<GetUserRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<GetUserRoleRequest.Types.Result>();
+        return rep.Adapt<GetUserRoleRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Write)]
@@ -96,6 +96,6 @@ public class UserServiceFacade : UserService.UserServiceBase
         var req = request.Adapt<UpdateUser>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep!.Adapt<Result>();
+        return rep.Adapt<Result>();
     }
 }

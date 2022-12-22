@@ -19,7 +19,7 @@ public class HealthCheckConfig
 
                                    return new PostgreSqlHealthCheckOptions
                                           {
-                                              Connection = config.Connections.RelationalDb.GetDefault()!.Connection
+                                              Connection = config.Connections.RelationalDb.GetDefault().Connection
                                           };
                                }, "Postgresql")
                 .AddRedis(provider =>
@@ -28,7 +28,7 @@ public class HealthCheckConfig
 
                               return new RedisHealthCheckOptions
                                      {
-                                         Connection = config.Connections.Redis.GetDefault()!.Connection
+                                         Connection = config.Connections.Redis.GetDefault().Connection
                                      };
                           }, "Redis");
     }

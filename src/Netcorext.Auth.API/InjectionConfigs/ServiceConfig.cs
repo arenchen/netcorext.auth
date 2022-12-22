@@ -14,6 +14,7 @@ public class ServiceConfig
     public ServiceConfig(IServiceCollection services)
     {
         services.AddMediator()
+                .AddRedisQueuing()
                 .AddPerformancePipeline()
                 .AddValidatorPipeline()
                 .AddRequestPipeline<ClientChangeNotifyPipeline, CreateClient, Result<long?>>()
