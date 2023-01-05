@@ -66,6 +66,7 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
                                                                                    {
                                                                                        Id = t2.Id,
                                                                                        Name = t2.Name,
+                                                                                       Priority = t2.Priority,
                                                                                        Disabled = t2.Disabled,
                                                                                        CreationDate = t2.CreationDate,
                                                                                        CreatorId = t2.CreatorId,
