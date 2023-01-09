@@ -61,7 +61,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
                                                         Ids = reqIds
                                                     }, cancellationToken);
 
-            if (result?.Content == null || result.Code != Result.Success) return;
+            if (result.Content == null || result.Code != Result.Success) return;
 
             var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>();
 

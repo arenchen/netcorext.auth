@@ -66,7 +66,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
             await RouteUpdateLocker.WaitAsync(cancellationToken);
 
-            if (result?.Content == null || result.Code != Result.Success)
+            if (result.Content == null || result.Code != Result.Success)
                 return;
 
             var cacheRouteGroups = _cache.Get<Dictionary<long, Services.Route.Queries.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Queries.Models.RouteGroup>();

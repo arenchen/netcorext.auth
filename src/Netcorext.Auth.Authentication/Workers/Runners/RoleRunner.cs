@@ -61,7 +61,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
                                                         Ids = reqIds
                                                     }, cancellationToken);
 
-            if (result?.Content == null || result.Code != Result.Success) return;
+            if (result.Content == null || result.Code != Result.Success) return;
 
             var cacheRolePermissionRule = _cache.Get<Dictionary<string, Services.Permission.Queries.Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<string, Services.Permission.Queries.Models.RolePermissionRule>();
             var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>();

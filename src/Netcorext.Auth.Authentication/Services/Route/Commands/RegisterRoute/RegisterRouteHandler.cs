@@ -97,7 +97,7 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "{Message}", e);
+                _logger.LogError(e, "{Message}", e.Message);
 
                 await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name);
             }
