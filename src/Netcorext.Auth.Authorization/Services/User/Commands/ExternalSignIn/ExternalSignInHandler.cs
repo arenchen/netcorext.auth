@@ -43,6 +43,9 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         var isNewRegister = entity == null;
 
+        if (isNewRegister && request.ThrowErrorWhenUserNotFound)
+            return Result<TokenResult>.UsernameOrPasswordIncorrect;
+
         if (entity != null)
         {
             if (entity.Disabled)
