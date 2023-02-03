@@ -7,20 +7,20 @@ using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
-namespace Netcorext.Auth.API.Services.User.Queries;
+namespace Netcorext.Auth.API.Services.Client.Queries;
 
-public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Result<IEnumerable<Models.UserPermission>>>
+public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, Result<IEnumerable<Models.ClientPermission>>>
 {
     private readonly DatabaseContext _context;
 
-    public GetUserPermissionHandler(DatabaseContext context)
+    public GetClientPermissionHandler(DatabaseContext context)
     {
         _context = context;
     }
 
-    public async Task<Result<IEnumerable<Models.UserPermission>>> Handle(GetUserPermission request, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<Models.ClientPermission>>> Handle(GetClientPermission request, CancellationToken cancellationToken = default)
     {
-        var ds = _context.Set<Domain.Entities.User>();
+        var ds = _context.Set<Domain.Entities.Client>();
         var dsRole = _context.Set<Domain.Entities.Role>();
 
         var groups = request.PermissionConditions?
@@ -29,40 +29,28 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                             .Distinct()
                             .ToArray() ?? Array.Empty<string>();
 
-        var user = await ds
-                        .AsNoTracking()
-                        .Where(t => t.Id == request.Id)
-                        .Select(t => new
-                                     {
-                                         Disabled = t.Disabled,
-                                         Roles = t.Roles
-                                                  .Where(t2 => !t2.Role.Disabled)
-                                                  .Select(t2 => t2.RoleId)
-                                                  .ToArray(),
-                                         PermissionConditions = t.PermissionConditions
-                                                                 .Where(t2 => t2.Group == null || groups.Contains(t2.Group))
-                                                                 .Select(t2 => new Models.MixingPermissionCondition
-                                                                               {
-                                                                                   PermissionId = t2.PermissionId,
-                                                                                   Priority = t2.Priority,
-                                                                                   Group = t2.Group,
-                                                                                   Key = t2.Key,
-                                                                                   Value = t2.Value,
-                                                                                   Allowed = t2.Allowed
-                                                                               })
-                                                                 .ToArray()
-                                     })
-                        .FirstOrDefaultAsync(cancellationToken);
+        var client = await ds
+                          .AsNoTracking()
+                          .Where(t => t.Id == request.Id)
+                          .Select(t => new
+                                       {
+                                           Disabled = t.Disabled,
+                                           Roles = t.Roles
+                                                    .Where(t2 => !t2.Role.Disabled)
+                                                    .Select(t2 => t2.RoleId)
+                                                    .ToArray()
+                                       })
+                          .FirstOrDefaultAsync(cancellationToken);
 
-        if (user == null) return Result<IEnumerable<Models.UserPermission>>.NotFound;
+        if (client == null) return Result<IEnumerable<Models.ClientPermission>>.NotFound;
 
-        var emptyContent = new Models.UserPermission[request.PermissionConditions?.Length ?? 0];
+        var emptyContent = new Models.ClientPermission[request.PermissionConditions?.Length ?? 0];
 
-        var content = new List<Models.UserPermission>();
+        var content = new List<Models.ClientPermission>();
 
-        if (user.Disabled) return Result<IEnumerable<Models.UserPermission>>.Success.Clone(emptyContent);
+        if (client.Disabled) return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
 
-        var roleIds = user.Roles;
+        var roleIds = client.Roles;
 
         var roles = dsRole
                    .AsSplitQuery()
@@ -99,38 +87,32 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                    .ToArray();
 
         if (!roles.Any())
-            return Result<IEnumerable<Models.UserPermission>>.Success.Clone(emptyContent);
+            return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
 
         var rolePermissions = roles.SelectMany(t => t.RolePermissions)
                                    .ToArray();
 
-        if (!rolePermissions.Any()) return Result<IEnumerable<Models.UserPermission>>.Success.Clone(emptyContent);
+        if (!rolePermissions.Any()) return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
 
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
             content.Add(await GetPermissionsWithoutConditionAsync(rolePermissions));
 
-            return Result<IEnumerable<Models.UserPermission>>.Success.Clone(content);
+            return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(content);
         }
 
-        var rolePermissionConditions = roles.SelectMany(t => t.RolePermissionConditions)
-                                            .ToArray();
-
-        var userPermissionConditions = user.PermissionConditions;
-
-        var conditions = rolePermissionConditions.Union(userPermissionConditions)
-                                                 .Distinct()
-                                                 .ToArray();
+        var conditions = roles.SelectMany(t => t.RolePermissionConditions)
+                              .ToArray();
 
         foreach (var permissionCondition in request.PermissionConditions)
         {
             content.Add(await GetPermissionsAsync(permissionCondition, rolePermissions, conditions));
         }
 
-        return Result<IEnumerable<Models.UserPermission>>.Success.Clone(content);
+        return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(content);
     }
 
-    private Task<Models.UserPermission> GetPermissionsWithoutConditionAsync(IEnumerable<Models.MixingPermissionRule> permissions)
+    private Task<Models.ClientPermission> GetPermissionsWithoutConditionAsync(IEnumerable<Models.MixingPermissionRule> permissions)
     {
         var permissionRules = permissions.Select(t => new
                                                       {
@@ -143,7 +125,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                                       })
                                          .ToArray();
 
-        if (!permissionRules.Any()) return Task.FromResult(new Models.UserPermission());
+        if (!permissionRules.Any()) return Task.FromResult(new Models.ClientPermission());
 
         var functions = permissionRules.GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
                                        .Select(t =>
@@ -206,7 +188,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                  .Select(t => t.PermissionId)
                                  .Distinct();
 
-        var content = new Models.UserPermission
+        var content = new Models.ClientPermission
                       {
                           PermissionIds = ids
                       };
@@ -214,7 +196,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
         return Task.FromResult(content);
     }
 
-    private Task<Models.UserPermission> GetPermissionsAsync(GetUserPermission.PermissionCondition requestPermissionCondition, IEnumerable<Models.MixingPermissionRule> permissionRules, IEnumerable<Models.MixingPermissionCondition> mixingPermissionConditions)
+    private Task<Models.ClientPermission> GetPermissionsAsync(GetClientPermission.PermissionCondition requestPermissionCondition, IEnumerable<Models.MixingPermissionRule> permissionRules, IEnumerable<Models.MixingPermissionCondition> mixingPermissionConditions)
     {
         Expression<Func<Models.MixingPermissionCondition, bool>> predicatePermissionCondition = t => true;
 
@@ -383,7 +365,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                        .Select(t => t.PermissionId)
                        .Distinct();
 
-        var content = new Models.UserPermission
+        var content = new Models.ClientPermission
                       {
                           PermissionIds = ids
                       };
