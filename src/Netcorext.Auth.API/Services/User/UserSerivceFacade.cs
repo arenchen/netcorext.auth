@@ -68,13 +68,10 @@ public class UserServiceFacade : UserService.UserServiceBase
                          Message = rep.Message,
                          Content =
                          {
-                             rep.Content?.Select(t =>
-                                                 {
-                                                     return new GetUserPermissionRequest.Types.Result.Types.UserPermission
-                                                            {
-                                                                PermissionIds = { t?.PermissionIds ?? Array.Empty<long>() }
-                                                            };
-                                                 })
+                             rep.Content?.Select(t => new GetUserPermissionRequest.Types.Result.Types.UserPermission
+                                                      {
+                                                          PermissionIds = { t.PermissionIds ?? Array.Empty<long>() }
+                                                      })
                          }
                      };
 

@@ -52,7 +52,20 @@ public class ClientServiceFacade : ClientService.ClientServiceBase
         var req = request.Adapt<GetClientPermission>();
         var rep = await _dispatcher.SendAsync(req);
 
-        return rep.Adapt<GetClientPermissionRequest.Types.Result>();
+        var result = new GetClientPermissionRequest.Types.Result
+                     {
+                         Code = rep.Code,
+                         Message = rep.Message,
+                         Content =
+                         {
+                             rep.Content?.Select(t => new GetClientPermissionRequest.Types.Result.Types.ClientPermission
+                                                      {
+                                                          PermissionIds = { t.PermissionIds ?? Array.Empty<long>() }
+                                                      })
+                         }
+                     };
+
+        return result;
     }
 
     [Permission("AUTH", PermissionType.Write)]
