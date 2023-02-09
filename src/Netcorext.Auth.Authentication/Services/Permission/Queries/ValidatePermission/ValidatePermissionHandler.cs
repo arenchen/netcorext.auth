@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
@@ -15,11 +16,13 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 {
     private readonly DatabaseContext _context;
     private readonly IMemoryCache _cache;
+    private readonly ConfigSettings _config;
 
-    public ValidatePermissionHandler(DatabaseContext context, IMemoryCache cache)
+    public ValidatePermissionHandler(DatabaseContext context, IMemoryCache cache, IOptions<ConfigSettings> config)
     {
         _context = context;
         _cache = cache;
+        _config = config.Value;
     }
 
     public async Task<Result> Handle(ValidatePermission request, CancellationToken cancellationToken = default)
@@ -28,6 +31,9 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
         if (request.UserId.HasValue)
         {
+            if (_config.AppSettings.Owner?.Any(t => t == request.UserId) ?? false)
+                return Result.Success;
+
             var ds = _context.Set<Domain.Entities.User>();
 
             var user = await ds.Include(t => t.Roles)
