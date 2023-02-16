@@ -21,25 +21,20 @@ internal class TokenMiddleware
     private readonly IMemoryCache _cache;
     private readonly ConfigSettings _config;
     private readonly TokenValidationParameters _tokenValidationParameters;
-    private IDispatcher _dispatcher;
 
     public TokenMiddleware(RequestDelegate next,
-                           IDispatcher dispatcher,
                            IMemoryCache cache,
                            IOptions<AuthOptions> authOptions,
                            IOptions<ConfigSettings> config)
     {
         _next = next;
-        _dispatcher = dispatcher;
         _cache = cache;
         _config = config.Value;
         _tokenValidationParameters = authOptions.Value.GetTokenValidationParameters();
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, IDispatcher dispatcher)
     {
-        _dispatcher = context.RequestServices.GetRequiredService<IDispatcher>();
-
         if (_config.AppSettings.InternalHost?.Any(t => t.Equals(context.Request.Host.Host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
         {
             await _next(context);
@@ -49,7 +44,7 @@ internal class TokenMiddleware
 
         var headerValue = context.Request.Headers["Authorization"];
 
-        if (await IsValid(headerValue))
+        if (await IsValid(dispatcher, headerValue))
         {
             await _next(context);
 
@@ -59,7 +54,7 @@ internal class TokenMiddleware
         await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus);
     }
 
-    private async Task<bool> IsValid(string headerValue)
+    private async Task<bool> IsValid(IDispatcher dispatcher, string headerValue)
     {
         if (headerValue.IsEmpty()) return true;
 
@@ -71,13 +66,13 @@ internal class TokenMiddleware
 
         return authHeader.Scheme.ToUpper() switch
                {
-                   Constants.OAuth.TOKEN_TYPE_BASIC_NORMALIZED => await IsBasicValid(token),
-                   Constants.OAuth.TOKEN_TYPE_BEARER_NORMALIZED => await IsBearerValid(token),
+                   Constants.OAuth.TOKEN_TYPE_BASIC_NORMALIZED => await IsBasicValid(dispatcher, token),
+                   Constants.OAuth.TOKEN_TYPE_BEARER_NORMALIZED => await IsBearerValid(dispatcher, token),
                    _ => false
                };
     }
 
-    private async Task<bool> IsBasicValid(string token)
+    private async Task<bool> IsBasicValid(IDispatcher dispatcher, string token)
     {
         var raw = Encoding.UTF8.GetString(Convert.FromBase64String(token));
 
@@ -85,16 +80,16 @@ internal class TokenMiddleware
 
         if (client.Length != 2 || !long.TryParse(client[0], out var clientId)) return false;
 
-        var result = await _dispatcher.SendAsync(new ValidateClient
-                                                 {
-                                                     Id = clientId,
-                                                     Secret = client[1]
-                                                 });
+        var result = await dispatcher.SendAsync(new ValidateClient
+                                                {
+                                                    Id = clientId,
+                                                    Secret = client[1]
+                                                });
 
-        return result != null && result.Code == Result.Success;
+        return result.Code == Result.Success;
     }
 
-    private async Task<bool> IsBearerValid(string token)
+    private async Task<bool> IsBearerValid(IDispatcher dispatcher, string token)
     {
         try
         {
@@ -102,14 +97,14 @@ internal class TokenMiddleware
 
             if (_cache.TryGetValue(token, out bool cacheResult)) return cacheResult;
 
-            var result = await _dispatcher.SendAsync(new ValidateToken
-                                                     {
-                                                         Token = token
-                                                     });
+            var result = await dispatcher.SendAsync(new ValidateToken
+                                                    {
+                                                        Token = token
+                                                    });
 
-            _cache.Set(token, result != null && result.Code == Result.Success, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+            _cache.Set(token, result.Code == Result.Success, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
 
-            return result != null && result.Code == Result.Success;
+            return result.Code == Result.Success;
         }
         catch (SecurityTokenExpiredException)
         {

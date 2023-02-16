@@ -18,17 +18,15 @@ internal class PermissionMiddleware
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _cache;
     private readonly ConfigSettings _config;
-    private IDispatcher _dispatcher;
 
-    public PermissionMiddleware(RequestDelegate next, IMemoryCache cache, IOptions<ConfigSettings> config, IDispatcher dispatcher)
+    public PermissionMiddleware(RequestDelegate next, IMemoryCache cache, IOptions<ConfigSettings> config)
     {
         _next = next;
         _cache = cache;
         _config = config.Value;
-        _dispatcher = dispatcher;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, IDispatcher dispatcher)
     {
         if (_config.AppSettings.InternalHost?.Any(t => t.Equals(context.Request.Host.Host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
         {
@@ -45,8 +43,6 @@ internal class PermissionMiddleware
 
             return;
         }
-
-        _dispatcher = context.RequestServices.GetRequiredService<IDispatcher>();
 
         var permissionEndpoints = _cache.Get<Dictionary<long, Services.Route.Queries.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Queries.Models.RouteGroup>();
         var allowAnonymous = false;
@@ -73,7 +69,7 @@ internal class PermissionMiddleware
             break;
         }
 
-        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId) || await IsValidAsync(_config.AppSettings.ValidationPassUserId && rt == "1" ? id : null, role, functionId, method, context.Request.RouteValues))
+        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId) || await IsValidAsync(dispatcher, _config.AppSettings.ValidationPassUserId && rt == "1" ? id : null, role, functionId, method, context.Request.RouteValues))
         {
             await _next(context);
 
@@ -95,7 +91,7 @@ internal class PermissionMiddleware
         await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
     }
 
-    private async Task<bool> IsValidAsync(long? userId, string? role, string functionId, string httpMethod, RouteValueDictionary routeValues)
+    private async Task<bool> IsValidAsync(IDispatcher dispatcher, long? userId, string? role, string functionId, string httpMethod, RouteValueDictionary routeValues)
     {
         var roleIds = role?.Split(" ", StringSplitOptions.RemoveEmptyEntries)
                            .Where(t => !t.IsEmpty() && long.TryParse(t, out var _))
@@ -104,19 +100,19 @@ internal class PermissionMiddleware
 
         if (userId.IsEmpty() && roleIds.IsEmpty()) return false;
 
-        var result = await _dispatcher.SendAsync(new ValidatePermission
-                                                 {
-                                                     UserId = userId.IsEmpty() ? null : userId,
-                                                     RoleId = roleIds,
-                                                     FunctionId = functionId,
-                                                     PermissionType = httpMethod.ToPermissionType(),
-                                                     PermissionConditions = routeValues.Select(t => new ValidatePermission.PermissionCondition
-                                                                                                    {
-                                                                                                        Key = t.Key,
-                                                                                                        Value = t.Value?.ToString()!
-                                                                                                    })
-                                                                                       .ToArray()
-                                                 });
+        var result = await dispatcher.SendAsync(new ValidatePermission
+                                                {
+                                                    UserId = userId.IsEmpty() ? null : userId,
+                                                    RoleId = roleIds,
+                                                    FunctionId = functionId,
+                                                    PermissionType = httpMethod.ToPermissionType(),
+                                                    PermissionConditions = routeValues.Select(t => new ValidatePermission.PermissionCondition
+                                                                                                   {
+                                                                                                       Key = t.Key,
+                                                                                                       Value = t.Value?.ToString()!
+                                                                                                   })
+                                                                                      .ToArray()
+                                                });
 
         return result == Result.Success;
     }
