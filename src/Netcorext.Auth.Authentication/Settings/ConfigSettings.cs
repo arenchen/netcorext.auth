@@ -11,6 +11,7 @@ public class ConfigSettings : Config<AppSettings>
     public const string QUEUES_ROLE_CHANGE_EVENT = "RoleChangeEvent";
     public const string QUEUES_USER_ROLE_CHANGE_EVENT = "UserRoleChangeEvent";
     public const string QUEUES_HEALTH_CHECK_EVENT = "HealthCheckEvent";
+    public const string CACHE_MAINTAIN_KEY = "Maintain";
     public const string CACHE_ROUTE = "Route";
     public const string CACHE_TOKEN = "Token";
     public const string CACHE_ROLE_PERMISSION_RULE = "RolePermissionRule";

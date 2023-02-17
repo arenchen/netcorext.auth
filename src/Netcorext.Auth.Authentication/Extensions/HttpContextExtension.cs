@@ -63,6 +63,28 @@ public static class HttpContextExtension
         await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(message));
     }
 
+    public static async Task ServiceUnavailableAsync(this HttpContext context, bool useNativeStatus = true, string? code = "503000", string? message = "Service Unavailable")
+    {
+        code ??= Result.ServiceUnavailable;
+
+        var msg = message ?? ErrorMessages[code];
+
+        if (context.IsGrpc())
+        {
+            context.Response.StatusCode = useNativeStatus ? 503 : 200;
+            context.Response.ContentType = "application/grpc";
+            context.Response.Headers.Add("Trailers-Only", "true");
+            context.Response.AppendTrailer("grpc-status", StatusCode.Unavailable.ToString("D"));
+            context.Response.AppendTrailer("grpc-message", msg);
+
+            return;
+        }
+
+        context.Response.StatusCode = 503;
+        context.Response.ContentType = "application/json";
+        await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(msg));
+    }
+
     public static string GetPath(this HttpRequest request)
     {
         return request.Headers.TryGetValue("X-Forwarded-Uri", out var xpath) ? xpath : request.Path;

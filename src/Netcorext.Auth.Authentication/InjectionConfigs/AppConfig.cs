@@ -34,6 +34,7 @@ public class AppConfig
 
         app.UseMiddleware<TokenMiddleware>();
         app.UseJwtAuthentication();
+        app.UseMiddleware<MaintainMiddleware>();
         app.UseMiddleware<PermissionMiddleware>();
 
         app.MapReverseProxy();
