@@ -2,6 +2,7 @@ using FreeRedis;
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Auth.Domain.Entities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
@@ -30,7 +31,7 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 
     public async Task<Result> Handle(RegisterRoute request, CancellationToken cancellationToken = default)
     {
-        var ds = _context.Set<Domain.Entities.RouteGroup>();
+        var ds = _context.Set<RouteGroup>();
         var dsRoute = _context.Set<Domain.Entities.Route>();
         var lsChangeIds = new List<long>();
 
@@ -45,9 +46,13 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 
                 if (entGroup == null)
                 {
-                    await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name);
+                    entGroup = new RouteGroup
+                               {
+                                   Id = _snowflake.Generate(),
+                                   Name = group.Name
+                               };
 
-                    continue;
+                    await ds.AddAsync(entGroup, cancellationToken);
                 }
 
                 var entRoutes = dsRoute.Where(t => t.GroupId == entGroup.Id);
@@ -77,7 +82,7 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
                                                                 AllowAnonymous = t2.AllowAnonymous,
                                                                 Tag = t2.Tag,
                                                                 RouteValues = (t2.RouteValues ?? Array.Empty<RegisterRoute.RouteValue>())
-                                                                             .Select(t3 => new Domain.Entities.RouteValue
+                                                                             .Select(t3 => new RouteValue
                                                                                            {
                                                                                                Id = id,
                                                                                                Key = t3.Key,
