@@ -2,6 +2,7 @@ using Mapster;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Middlewares;
+using Netcorext.Auth.Authentication.Services.Maintenance;
 using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Services.Route;
 using Netcorext.Auth.Authentication.Services.Route.Commands;
@@ -43,6 +44,7 @@ public class AppConfig
 
         app.MapGrpcService<RouteServiceFacade>();
         app.MapGrpcService<PermissionValidationServiceFacade>();
+        app.MapGrpcService<MaintenanceServiceFacade>();
         app.MapGrpcService<TokenValidationServiceFacade>();
 
         app.RegisterPermissionEndpoints((_, registerConfig) =>
