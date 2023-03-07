@@ -28,9 +28,11 @@ internal class MaintainMiddleware
     {
         if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN_KEY, out var maintain))
         {
-            var key = _config.Caches[ConfigSettings.CACHE_MAINTAIN_KEY].Key;
+            var cacheData = _config.Caches[ConfigSettings.CACHE_MAINTAIN_KEY];
 
-            maintain = await _redis.GetAsync<Maintain>(key) ?? new Maintain();
+            maintain = await _redis.GetAsync<Maintain>(cacheData.Key) ?? new Maintain();
+
+            _cache.Set(ConfigSettings.CACHE_MAINTAIN_KEY, maintain, TimeSpan.FromSeconds(cacheData.ServerDuration ?? 3600));
         }
 
         if (!maintain.Enabled)
