@@ -23,7 +23,7 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
     {
         var ds = _context.Set<Domain.Entities.UserRole>();
 
-        var queryEntities = ds.Where(t => request.Ids.Contains(t.Id) && !t.Role.Disabled)
+        var queryEntities = ds.Where(t => request.Ids.Contains(t.Id) && (t.ExpireDate == null || t.ExpireDate > DateTime.UtcNow) && !t.Role.Disabled)
                               .OrderBy(t => t.Id)
                               .Take(_dataSizeLimit)
                               .AsNoTracking();

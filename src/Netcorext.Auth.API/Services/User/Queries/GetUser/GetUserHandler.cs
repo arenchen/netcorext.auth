@@ -150,6 +150,7 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                                                                                          Key = t3.Key,
                                                                                                                                          Value = t3.Value,
                                                                                                                                          Allowed = t3.Allowed,
+                                                                                                                                         ExpireDate = t3.ExpireDate,
                                                                                                                                          CreationDate = t3.CreationDate,
                                                                                                                                          CreatorId = t3.CreatorId,
                                                                                                                                          ModificationDate = t3.ModificationDate,

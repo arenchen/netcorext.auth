@@ -43,6 +43,9 @@ public class UserPermissionConditionMap : EntityMap<UserPermissionCondition>
         Builder.Property(t => t.Priority)
                .HasColumnName(nameof(UserPermissionCondition.Priority));
 
+        Builder.Property(t => t.ExpireDate)
+               .HasColumnName(nameof(UserRole.ExpireDate));
+
         // Relationships
         Builder.HasOne(t => t.User)
                .WithMany(t => t.PermissionConditions)

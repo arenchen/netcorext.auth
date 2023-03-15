@@ -39,6 +39,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         var creationDate = DateTimeOffset.UtcNow;
 
         var entity = await dsUser.Include(t => t.Roles)
+                                 .ThenInclude(t => t.Role)
                                  .FirstOrDefaultAsync(t => t.NormalizedUsername == username.ToUpper(), cancellationToken);
 
         var isNewRegister = entity == null;
@@ -138,7 +139,11 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        var scope = entity.Roles.Any() ? entity.Roles.Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n) : null;
+        var scope = entity.Roles.Any(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+                        ? entity.Roles
+                                .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+                                .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
+                        : null;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {

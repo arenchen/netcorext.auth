@@ -94,7 +94,8 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                                                Group = t.Group?.ToUpper(),
                                                                                Key = t.Key,
                                                                                Value = t.Value,
-                                                                               Allowed = t.Allowed
+                                                                               Allowed = t.Allowed,
+                                                                               ExpireDate = t.ExpireDate
                                                                            })
                                                               .ToArray() ?? Array.Empty<UserPermissionCondition>()
                             });

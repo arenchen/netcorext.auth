@@ -9,6 +9,7 @@ public class UserPermissionCondition
     public string Key { get; set; } = null!;
     public string Value { get; set; } = null!;
     public bool Allowed { get; set; }
+    public DateTimeOffset? ExpireDate { get; set; }
     public DateTimeOffset CreationDate { get; set; }
     public long CreatorId { get; set; }
     public DateTimeOffset ModificationDate { get; set; }

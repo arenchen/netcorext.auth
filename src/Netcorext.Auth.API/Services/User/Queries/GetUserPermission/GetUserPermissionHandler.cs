@@ -36,11 +36,11 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                      {
                                          Disabled = t.Disabled,
                                          Roles = t.Roles
-                                                  .Where(t2 => !t2.Role.Disabled)
+                                                  .Where(t2 => (t2.ExpireDate == null || t2.ExpireDate > DateTimeOffset.Now) && !t2.Role.Disabled)
                                                   .Select(t2 => t2.RoleId)
                                                   .ToArray(),
                                          PermissionConditions = t.PermissionConditions
-                                                                 .Where(t2 => t2.Group == null || groups.Contains(t2.Group))
+                                                                 .Where(t2 => (t2.ExpireDate == null || t2.ExpireDate > DateTimeOffset.Now) && (t2.Group == null || groups.Contains(t2.Group)))
                                                                  .Select(t2 => new Models.MixingPermissionCondition
                                                                                {
                                                                                    PermissionId = t2.PermissionId,

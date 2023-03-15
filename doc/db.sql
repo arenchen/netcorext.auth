@@ -279,6 +279,7 @@ CREATE TABLE "UserPermissionCondition" (
   "Key" character varying(50) NOT NULL,
   "Value" character varying(200) NOT NULL,
   "Allowed" boolean NOT NULL,
+  "ExpireDate" timestamp with time zone NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -455,6 +456,9 @@ CREATE INDEX "IX_UserExternalLogin_Provider" ON "UserExternalLogin" ("Provider")
 
 
 CREATE INDEX "IX_UserExternalLogin_UniqueId" ON "UserExternalLogin" ("UniqueId");
+
+
+CREATE INDEX "IX_UserPermissionCondition_ExpireDate" ON "UserPermissionCondition" ("ExpireDate");
 
 
 CREATE INDEX "IX_UserPermissionCondition_Group" ON "UserPermissionCondition" ("Group");

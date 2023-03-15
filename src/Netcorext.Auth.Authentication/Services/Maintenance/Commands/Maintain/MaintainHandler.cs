@@ -25,7 +25,7 @@ public class MaintainHandler : IRequestHandler<Maintain, Result>
         var cacheData = _config.Caches[ConfigSettings.CACHE_MAINTAIN_KEY];
 
         _cache.Set(ConfigSettings.CACHE_MAINTAIN_KEY, request, TimeSpan.FromSeconds(cacheData.ServerDuration ?? 3600));
-
+        
         await _redis.SetAsync(cacheData.Key, request);
 
         return Result.Success;

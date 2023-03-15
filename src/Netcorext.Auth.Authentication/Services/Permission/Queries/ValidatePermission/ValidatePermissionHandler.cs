@@ -43,7 +43,9 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
             if (user.Disabled) return Result.AccountIsDisabled;
 
-            var userRoles = user.Roles.Select(t => t.RoleId);
+            var userRoles = user.Roles
+                                .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+                                .Select(t => t.RoleId);
 
             roleIds = userRoles.ToArray();
         }
@@ -65,7 +67,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
         Expression<Func<KeyValuePair<string, Models.RolePermissionRule>, bool>> predicatePermissionRule = t => roleIds.Contains(t.Value.RoleId) && t.Value.FunctionId == request.FunctionId;
         Expression<Func<KeyValuePair<long, Models.RolePermissionCondition>, bool>> predicateRolePermissionCondition = t => roleIds.Contains(t.Value.RoleId);
-        Expression<Func<KeyValuePair<long, Models.UserPermissionCondition>, bool>> predicateUserPermissionCondition = t => t.Value.UserId == request.UserId;
+        Expression<Func<KeyValuePair<long, Models.UserPermissionCondition>, bool>> predicateUserPermissionCondition = t => t.Value.UserId == request.UserId && (t.Value.ExpireDate == null || t.Value.ExpireDate > DateTimeOffset.UtcNow);
 
         predicateRolePermissionCondition = request.Group.IsEmpty()
                                                ? predicateRolePermissionCondition.And(t => t.Value.Group.IsEmpty())
