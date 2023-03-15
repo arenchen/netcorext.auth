@@ -37,6 +37,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             var ds = _context.Set<Domain.Entities.User>();
 
             var user = await ds.Include(t => t.Roles)
+                               .ThenInclude(t => t.Role)
                                .FirstOrDefaultAsync(t => t.Id == request.UserId, cancellationToken);
 
             if (user == null) return Result.Forbidden;
