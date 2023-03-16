@@ -16,7 +16,7 @@ public class ConfigSettings : Config<AppSettings>
     public const string CACHE_ROUTE = "Route";
     public const string CACHE_TOKEN = "Token";
     public const string CACHE_USER_ROLE = "UserRole";
-    public const string CACHE_USER = "User";
+    public const string CACHE_BLOCK_USER = "User";
     public const string CACHE_ROLE_PERMISSION_RULE = "RolePermissionRule";
     public const string CACHE_ROLE_PERMISSION_CONDITION = "RolePermissionCondition";
     public const string CACHE_USER_PERMISSION_CONDITION = "UserPermissionCondition";

@@ -25,7 +25,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
     {
         var cacheRolePermissionRule = _cache.Get<Dictionary<string, Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<string, Models.RolePermissionRule>();
         var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Models.RolePermissionCondition>();
-        var cacheUser = _cache.Get<Dictionary<long, Models.User>>(ConfigSettings.CACHE_USER) ?? new Dictionary<long, Models.User>();
+        var cacheBlockUser = _cache.Get<Dictionary<long, Models.BlockUser>>(ConfigSettings.CACHE_BLOCK_USER) ?? new Dictionary<long, Models.BlockUser>();
         var cacheUserRole = _cache.Get<Dictionary<long, Models.UserRole>>(ConfigSettings.CACHE_USER_ROLE) ?? new Dictionary<long, Models.UserRole>();
         var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Models.UserPermissionCondition>();
 
@@ -39,7 +39,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             if (_config.AppSettings.Owner?.Any(t => t == request.UserId) ?? false)
                 return Result.Success;
 
-            if (!cacheUser.ContainsKey(request.UserId.Value))
+            if (cacheBlockUser.ContainsKey(request.UserId.Value))
                 return Result.AccountIsDisabled;
 
             if (!cacheUserRole.ContainsKey(request.UserId.Value))

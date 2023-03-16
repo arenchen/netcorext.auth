@@ -22,7 +22,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
         var dsCondition = _context.Set<Domain.Entities.UserPermissionCondition>();
         var dsRole = _context.Set<Domain.Entities.UserRole>();
 
-        Expression<Func<Domain.Entities.User, bool>> predicate = p => !p.Disabled;
+        Expression<Func<Domain.Entities.User, bool>> predicate = p => p.Disabled;
         Expression<Func<Domain.Entities.UserPermissionCondition, bool>> predicateCondition = p => (p.ExpireDate == null || p.ExpireDate > DateTime.UtcNow) && !p.User.Disabled;
         Expression<Func<Domain.Entities.UserRole, bool>> predicateRole = p => (p.ExpireDate == null || p.ExpireDate > DateTime.UtcNow) && !p.Role.Disabled && !p.User.Disabled;
 
@@ -34,7 +34,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
         }
 
         var user = ds.Where(predicate)
-                     .Select(t => new Models.User
+                     .Select(t => new Models.BlockUser
                                   {
                                       Id = t.Id
                                   });
@@ -63,7 +63,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
 
         var result = new Models.UserPermission
                      {
-                         Users = user.ToArray(),
+                         BlockUsers = user.ToArray(),
                          PermissionConditions = condition.ToArray(),
                          Roles = role.ToArray()
                      };

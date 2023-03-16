@@ -67,20 +67,20 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
             if (result.Content == null || result.Code != Result.Success) return;
 
-            var cacheUser = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.User>>(ConfigSettings.CACHE_USER) ?? new Dictionary<long, Services.Permission.Queries.Models.User>();
+            var cacheBlockUser = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.BlockUser>>(ConfigSettings.CACHE_BLOCK_USER) ?? new Dictionary<long, Services.Permission.Queries.Models.BlockUser>();
             var cacheUserRole = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.UserRole>>(ConfigSettings.CACHE_USER_ROLE) ?? new Dictionary<long, Services.Permission.Queries.Models.UserRole>();
             var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>();
 
             if (reqIds != null && reqIds.Any())
             {
-                var repIds = result.Content.Users.Select(t => t.Id);
+                var repIds = result.Content.BlockUsers.Select(t => t.Id);
 
                 var diffIds = reqIds.Except(repIds);
 
-                var users = cacheUser.Where(t => diffIds.Contains(t.Value.Id))
-                                     .ToArray();
+                var users = cacheBlockUser.Where(t => diffIds.Contains(t.Value.Id))
+                                          .ToArray();
 
-                users.ForEach(t => cacheUser.Remove(t.Key));
+                users.ForEach(t => cacheBlockUser.Remove(t.Key));
 
                 repIds = result.Content.Roles.Select(t => t.Id);
                 diffIds = reqIds.Except(repIds);
@@ -100,14 +100,14 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
                 conditions.ForEach(t => cacheUserPermissionCondition.Remove(t.Key));
             }
 
-            foreach (var i in result.Content.Users)
+            foreach (var i in result.Content.BlockUsers)
             {
-                if (cacheUser.TryAdd(i.Id, i)) continue;
+                if (cacheBlockUser.TryAdd(i.Id, i)) continue;
 
-                cacheUser[i.Id] = i;
+                cacheBlockUser[i.Id] = i;
             }
 
-            _cache.Set(ConfigSettings.CACHE_USER, cacheUser);
+            _cache.Set(ConfigSettings.CACHE_BLOCK_USER, cacheBlockUser);
 
             foreach (var i in result.Content.Roles)
             {
