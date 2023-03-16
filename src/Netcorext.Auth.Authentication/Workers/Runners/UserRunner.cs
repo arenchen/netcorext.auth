@@ -38,7 +38,11 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
         _subscriber?.Dispose();
 
-        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT], async (s, o) => await UpdateUserAsync(o.ToString(), cancellationToken));
+        _subscriber = _redis.Subscribe(new[]
+                                       {
+                                           _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT]
+                                       },
+                                       async (s, o) => await UpdateUserAsync(o.ToString(), cancellationToken));
 
         await UpdateUserAsync(null, cancellationToken);
     }
@@ -63,19 +67,56 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
             if (result.Content == null || result.Code != Result.Success) return;
 
+            var cacheUser = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.User>>(ConfigSettings.CACHE_USER) ?? new Dictionary<long, Services.Permission.Queries.Models.User>();
+            var cacheUserRole = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.UserRole>>(ConfigSettings.CACHE_USER_ROLE) ?? new Dictionary<long, Services.Permission.Queries.Models.UserRole>();
             var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>();
 
             if (reqIds != null && reqIds.Any())
             {
-                var repIds = result.Content.PermissionConditions.Select(t => t.UserId);
+                var repIds = result.Content.Users.Select(t => t.Id);
 
                 var diffIds = reqIds.Except(repIds);
+
+                var users = cacheUser.Where(t => diffIds.Contains(t.Value.Id))
+                                     .ToArray();
+
+                users.ForEach(t => cacheUser.Remove(t.Key));
+
+                repIds = result.Content.Roles.Select(t => t.Id);
+                diffIds = reqIds.Except(repIds);
+
+                var roles = cacheUserRole.Where(t => diffIds.Contains(t.Value.Id))
+                                         .ToArray();
+
+                roles.ForEach(t => cacheUserRole.Remove(t.Key));
+
+                repIds = result.Content.PermissionConditions.Select(t => t.UserId);
+
+                diffIds = reqIds.Except(repIds);
 
                 var conditions = cacheUserPermissionCondition.Where(t => diffIds.Contains(t.Value.UserId))
                                                              .ToArray();
 
                 conditions.ForEach(t => cacheUserPermissionCondition.Remove(t.Key));
             }
+
+            foreach (var i in result.Content.Users)
+            {
+                if (cacheUser.TryAdd(i.Id, i)) continue;
+
+                cacheUser[i.Id] = i;
+            }
+
+            _cache.Set(ConfigSettings.CACHE_USER, cacheUser);
+
+            foreach (var i in result.Content.Roles)
+            {
+                if (cacheUserRole.TryAdd(i.Id, i)) continue;
+
+                cacheUserRole[i.Id] = i;
+            }
+
+            _cache.Set(ConfigSettings.CACHE_USER_ROLE, cacheUserRole);
 
             foreach (var i in result.Content.PermissionConditions)
             {
