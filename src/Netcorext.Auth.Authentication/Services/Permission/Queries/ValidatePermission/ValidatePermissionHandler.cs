@@ -1,9 +1,11 @@
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
+using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
@@ -12,11 +14,13 @@ namespace Netcorext.Auth.Authentication.Services.Permission.Queries;
 
 public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Result>
 {
+    private readonly DatabaseContext _context;
     private readonly IMemoryCache _cache;
     private readonly ConfigSettings _config;
 
-    public ValidatePermissionHandler(IMemoryCache cache, IOptions<ConfigSettings> config)
+    public ValidatePermissionHandler(DatabaseContext context, IMemoryCache cache, IOptions<ConfigSettings> config)
     {
+        _context = context;
         _cache = cache;
         _config = config.Value;
     }
@@ -25,8 +29,6 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
     {
         var cacheRolePermissionRule = _cache.Get<Dictionary<string, Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<string, Models.RolePermissionRule>();
         var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Models.RolePermissionCondition>();
-        var cacheBlockUser = _cache.Get<Dictionary<long, Models.BlockUser>>(ConfigSettings.CACHE_BLOCK_USER) ?? new Dictionary<long, Models.BlockUser>();
-        var cacheUserRole = _cache.Get<Dictionary<long, Models.UserRole>>(ConfigSettings.CACHE_USER_ROLE) ?? new Dictionary<long, Models.UserRole>();
         var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Models.UserPermissionCondition>();
 
         if (!cacheRolePermissionRule.Any())
@@ -39,16 +41,29 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             if (_config.AppSettings.Owner?.Any(t => t == request.UserId) ?? false)
                 return Result.Success;
 
-            if (cacheBlockUser.ContainsKey(request.UserId.Value))
-                return Result.AccountIsDisabled;
+            var dsUser = _context.Set<Domain.Entities.User>();
 
-            if (!cacheUserRole.ContainsKey(request.UserId.Value))
+            var user = await dsUser.Where(t => t.Id == request.UserId.Value)
+                                   .Select(t => new
+                                                {
+                                                    t.Id,
+                                                    t.Disabled,
+                                                    Roles = t.Roles
+                                                             .Where(t2 => t2.ExpireDate == null || t2.ExpireDate > DateTimeOffset.UtcNow)
+                                                             .Select(t2 => t2.RoleId)
+                                                })
+                                   .FirstOrDefaultAsync(cancellationToken);
+
+            if (user == null)
                 return Result.Forbidden;
 
-            var userRoles = cacheUserRole.Where(t => t.Value.ExpireDate == null || t.Value.ExpireDate > DateTimeOffset.UtcNow)
-                                         .Select(t => t.Value.RoleId);
+            if (user.Disabled)
+                return Result.AccountIsDisabled;
 
-            roleIds = userRoles.ToArray();
+            if (!user.Roles.Any())
+                return Result.Forbidden;
+
+            roleIds = user.Roles.ToArray();
         }
 
         if (request.RoleId != null && request.RoleId.Any())

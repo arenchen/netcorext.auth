@@ -67,56 +67,19 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
             if (result.Content == null || result.Code != Result.Success) return;
 
-            var cacheBlockUser = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.BlockUser>>(ConfigSettings.CACHE_BLOCK_USER) ?? new Dictionary<long, Services.Permission.Queries.Models.BlockUser>();
-            var cacheUserRole = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.UserRole>>(ConfigSettings.CACHE_USER_ROLE) ?? new Dictionary<long, Services.Permission.Queries.Models.UserRole>();
             var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.UserPermissionCondition>();
 
             if (reqIds != null && reqIds.Any())
             {
-                var repIds = result.Content.BlockUsers.Select(t => t.Id);
+                var repIds = result.Content.PermissionConditions.Select(t => t.UserId);
 
                 var diffIds = reqIds.Except(repIds);
-
-                var users = cacheBlockUser.Where(t => diffIds.Contains(t.Value.Id))
-                                          .ToArray();
-
-                users.ForEach(t => cacheBlockUser.Remove(t.Key));
-
-                repIds = result.Content.Roles.Select(t => t.Id);
-                diffIds = reqIds.Except(repIds);
-
-                var roles = cacheUserRole.Where(t => diffIds.Contains(t.Value.Id))
-                                         .ToArray();
-
-                roles.ForEach(t => cacheUserRole.Remove(t.Key));
-
-                repIds = result.Content.PermissionConditions.Select(t => t.UserId);
-
-                diffIds = reqIds.Except(repIds);
 
                 var conditions = cacheUserPermissionCondition.Where(t => diffIds.Contains(t.Value.UserId))
                                                              .ToArray();
 
                 conditions.ForEach(t => cacheUserPermissionCondition.Remove(t.Key));
             }
-
-            foreach (var i in result.Content.BlockUsers)
-            {
-                if (cacheBlockUser.TryAdd(i.Id, i)) continue;
-
-                cacheBlockUser[i.Id] = i;
-            }
-
-            _cache.Set(ConfigSettings.CACHE_BLOCK_USER, cacheBlockUser);
-
-            foreach (var i in result.Content.Roles)
-            {
-                if (cacheUserRole.TryAdd(i.Id, i)) continue;
-
-                cacheUserRole[i.Id] = i;
-            }
-
-            _cache.Set(ConfigSettings.CACHE_USER_ROLE, cacheUserRole);
 
             foreach (var i in result.Content.PermissionConditions)
             {
