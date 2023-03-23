@@ -116,7 +116,7 @@ CREATE TABLE "User" (
 CREATE TABLE "ClientExtendData" (
   "Id" bigint NOT NULL,
   "Key" character varying(50) NOT NULL,
-  "Value" character varying(200) NULL,
+  "Value" character varying(200) NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -161,7 +161,7 @@ CREATE TABLE "ClientRole" (
 CREATE TABLE "RoleExtendData" (
   "Id" bigint NOT NULL,
   "Key" character varying(50) NOT NULL,
-  "Value" character varying(200) NULL,
+  "Value" character varying(200) NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -230,7 +230,7 @@ CREATE TABLE "Route" (
 CREATE TABLE "UserExtendData" (
   "Id" bigint NOT NULL,
   "Key" character varying(50) NOT NULL,
-  "Value" character varying(200) NULL,
+  "Value" character varying(200) NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -294,7 +294,7 @@ CREATE TABLE "UserPermissionCondition" (
 CREATE TABLE "RouteValue" (
   "Id" bigint NOT NULL,
   "Key" character varying(50) NOT NULL,
-  "Value" character varying(200) NULL,
+  "Value" character varying(200) NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -490,20 +490,20 @@ BEGIN
   FOR i IN 0..months LOOP
     endDate   = to_char(beginDate, 'YYYY-MM-01')::timestamptz + (1 || ' month')::interval;
     tableName = 'Token_'||to_char(beginDate, 'YYYYMM');
-  
+
     IF EXISTS (SELECT 1 FROM information_schema."tables" WHERE "table_name" = tableName) THEN
       beginDate = endDate;
       CONTINUE;
     END IF;
-  
+
     cmd = 'CREATE TABLE IF NOT EXISTS "'||tableName||'" PARTITION OF "Token" FOR VALUES FROM ('''||to_char(beginDate, 'YYYY-MM-DD')||''') TO ('''||to_char(endDate, 'YYYY-MM-DD')||''')';
     EXECUTE cmd;
     --RAISE NOTICE '%', cmd;
-  
+
     cmd = 'ALTER TABLE "'||tableName||'" ADD CONSTRAINT "PK_'||tableName||'" PRIMARY KEY ("Id")';
     EXECUTE cmd;
     --RAISE NOTICE '%', cmd;
-  
+
     beginDate = endDate;
   END LOOP;
 
