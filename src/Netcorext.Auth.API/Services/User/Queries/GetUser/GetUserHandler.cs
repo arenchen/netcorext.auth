@@ -53,9 +53,20 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
             predicate = predicate.And(t => t.Roles.AsQueryable().Any(predicateRole));
         }
 
-        if (!request.ExtendData.IsEmpty())
+        if (request.ExtendData != null && request.ExtendData.Any())
         {
-            predicate = request.ExtendData.Aggregate(predicate, (expression, extendData) => expression.And(t => t.ExtendData.Any(t2 => t2.Key == extendData.Key.ToUpper() && t2.Value == extendData.Value)));
+            Expression<Func<Domain.Entities.UserExtendData, bool>> predicateExtendData = p => false;
+
+            var extendData = request.ExtendData.GroupBy(t => t.Key, (k, values) =>
+                                                                        new
+                                                                        {
+                                                                            Key = k.ToUpper(),
+                                                                            Values = values.Select(t => t.Value?.ToUpper())
+                                                                        });
+
+            predicateExtendData = extendData.Aggregate(predicateExtendData, (current, item) => current.Or(t => t.Key == item.Key && item.Values.Contains(t.Value)));
+
+            predicate = predicate.And(t => t.ExtendData.AsQueryable().Any(predicateExtendData));
         }
 
         if (request.ExternalLogin != null)

@@ -23,6 +23,6 @@ public class GetClient : IRequest<Result<IEnumerable<Models.Client>>>
     public class ClientExtendData
     {
         public string Key { get; set; } = null!;
-        public string? Value { get; set; }
+        public string Value { get; set; } = null!;
     }
 }

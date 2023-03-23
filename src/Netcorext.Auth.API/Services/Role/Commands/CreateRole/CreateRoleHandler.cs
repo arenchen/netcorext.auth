@@ -53,7 +53,7 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
                                                                          .Select(t2 => new RoleExtendData
                                                                                        {
                                                                                            Id = id,
-                                                                                           Key = t2.Key,
+                                                                                           Key = t2.Key.ToUpper(),
                                                                                            Value = t2.Value
                                                                                        })
                                                                          .ToArray() ?? Array.Empty<RoleExtendData>(),

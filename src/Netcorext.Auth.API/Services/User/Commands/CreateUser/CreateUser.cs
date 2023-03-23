@@ -30,7 +30,7 @@ public class CreateUser : IRequest<Result<long?>>
     public class UserExtendData
     {
         public string Key { get; set; } = null!;
-        public string? Value { get; set; }
+        public string Value { get; set; } = null!;
     }
 
     public class UserExternalLogin

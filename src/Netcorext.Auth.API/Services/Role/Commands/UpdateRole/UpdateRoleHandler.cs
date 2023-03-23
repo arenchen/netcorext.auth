@@ -73,7 +73,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                                                                Data = data.Select(t => new Domain.Entities.RoleExtendData
                                                                                                        {
                                                                                                            Id = entity.Id,
-                                                                                                           Key = t.Key,
+                                                                                                           Key = t.Key.ToUpper(),
                                                                                                            Value = t.Value
                                                                                                        })
                                                                                           .ToArray()

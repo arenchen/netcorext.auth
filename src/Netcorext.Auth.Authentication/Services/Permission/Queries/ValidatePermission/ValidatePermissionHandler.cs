@@ -71,6 +71,28 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             roleIds = roleIds.Union(request.RoleId).ToArray();
         }
 
+        if (request.RoleExtendData != null && request.RoleExtendData.Any())
+        {
+            Expression<Func<Domain.Entities.Role, bool>> predicateRole = p => false;
+
+            var extendData = request.RoleExtendData.GroupBy(t => t.Key, (k, values) =>
+                                                                            new
+                                                                            {
+                                                                                Key = k.ToUpper(),
+                                                                                Values = values.Select(t => t.Value.ToUpper())
+                                                                            });
+
+            predicateRole = extendData.Aggregate(predicateRole, (current, item) => current.Or(t => t.ExtendData.Any(t2 => t2.Key == item.Key && item.Values.Contains(t2.Value))));
+
+            var dsRole = _context.Set<Domain.Entities.Role>();
+
+            var roleIdFilter = await dsRole.Where(predicateRole)
+                                           .Select(t => t.Id)
+                                           .ToArrayAsync(cancellationToken);
+
+            roleIds = roleIds.Where(t => roleIdFilter.Contains(t)).ToArray();
+        }
+
         roleIds = roleIds.Distinct().ToArray();
 
         if (!roleIds.Any()) return Result.Forbidden;

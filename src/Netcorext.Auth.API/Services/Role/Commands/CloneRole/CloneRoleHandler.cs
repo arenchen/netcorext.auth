@@ -39,6 +39,7 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
         entity.Disabled = request.Disabled;
         entity.ExtendData.ForEach(t => t.Id = entity.Id);
         entity.Permissions.ForEach(t => t.Id = entity.Id);
+
         entity.PermissionConditions.ForEach(t =>
                                             {
                                                 t.Id = _snowflake.Generate();
@@ -51,7 +52,7 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
                                        .Select(t => new Domain.Entities.RoleExtendData
                                                     {
                                                         Id = entity.Id,
-                                                        Key = t.Key,
+                                                        Key = t.Key.ToUpper(),
                                                         Value = t.Value
                                                     })
                                        .Union(entity.ExtendData)

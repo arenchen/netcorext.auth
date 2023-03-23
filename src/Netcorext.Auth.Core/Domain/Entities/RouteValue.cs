@@ -5,6 +5,6 @@ namespace Netcorext.Auth.Domain.Entities;
 public class RouteValue : Entity
 {
     public string Key { get; set; } = null!;
-    public string? Value { get; set; }
+    public string Value { get; set; } = null!;
     public virtual Route Route { get; set; } = null!;
 }

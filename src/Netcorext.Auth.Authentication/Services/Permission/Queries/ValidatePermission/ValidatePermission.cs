@@ -12,8 +12,15 @@ public class ValidatePermission : IRequest<Result>
     public string? Group { get; set; }
     public PermissionType PermissionType { get; set; }
     public PermissionCondition[]? PermissionConditions { get; set; }
+    public ExtendData[]? RoleExtendData { get; set; }
 
     public class PermissionCondition
+    {
+        public string Key { get; set; } = null!;
+        public string Value { get; set; } = null!;
+    }
+
+    public class ExtendData
     {
         public string Key { get; set; } = null!;
         public string Value { get; set; } = null!;

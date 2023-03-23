@@ -14,6 +14,6 @@ public class GetRole : IRequest<Result<IEnumerable<Models.Role>>>
     public class RoleExtendData
     {
         public string Key { get; set; } = null!;
-        public string? Value { get; set; }
+        public string Value { get; set; } = null!;
     }
 }
