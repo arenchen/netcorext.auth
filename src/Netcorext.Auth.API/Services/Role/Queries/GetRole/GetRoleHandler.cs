@@ -40,7 +40,7 @@ public class GetRoleHandler : IRequestHandler<GetRole, Result<IEnumerable<Models
                                                                         new
                                                                         {
                                                                             Key = k.ToUpper(),
-                                                                            Values = values.Select(t => t.Value?.ToUpper())
+                                                                            Values = values.Select(t => t.Value.ToUpper())
                                                                         });
 
             predicateExtendData = extendData.Aggregate(predicateExtendData, (current, item) => current.Or(t => t.Key == item.Key && item.Values.Contains(t.Value)));

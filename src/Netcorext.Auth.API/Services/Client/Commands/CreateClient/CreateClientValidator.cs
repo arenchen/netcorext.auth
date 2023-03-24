@@ -8,5 +8,10 @@ public class CreateClientValidator : AbstractValidator<CreateClient>
     {
         RuleFor(t => t.Name).NotEmpty();
         RuleFor(t => t.Secret).NotEmpty();
+        RuleForEach(t => t.ExtendData).ChildRules(c =>
+                                                  {
+                                                      c.RuleFor(t => t.Key).NotEmpty();
+                                                      c.RuleFor(t => t.Value).NotEmpty();
+                                                  });
     }
 }

@@ -53,7 +53,7 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
                                                     {
                                                         Id = entity.Id,
                                                         Key = t.Key.ToUpper(),
-                                                        Value = t.Value
+                                                        Value = t.Value.ToUpper()
                                                     })
                                        .Union(entity.ExtendData)
                                        .DistinctBy(t => t.Key)

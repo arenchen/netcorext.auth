@@ -9,6 +9,7 @@ public class UpdateRoleValidator : AbstractValidator<UpdateRole>
         RuleForEach(t => t.ExtendData).ChildRules(c =>
                                                   {
                                                       c.RuleFor(t => t.Key).NotEmpty();
+                                                      c.RuleFor(t => t.Value).NotEmpty();
                                                   });
 
         RuleForEach(t => t.PermissionConditions).ChildRules(c =>

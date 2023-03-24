@@ -11,5 +11,11 @@ public class ValidatePermissionValidator : AbstractValidator<ValidatePermission>
         RuleFor(t => t.RoleId).NotEmpty().When(t => t.UserId.IsEmpty());
         RuleFor(t => t.FunctionId).NotEmpty();
         RuleFor(t => t.PermissionType).IsInEnum();
+        
+        RuleForEach(t => t.RoleExtendData).ChildRules(c =>
+                                                  {
+                                                      c.RuleFor(t => t.Key).NotEmpty();
+                                                      c.RuleFor(t => t.Value).NotEmpty();
+                                                  });
     }
 }

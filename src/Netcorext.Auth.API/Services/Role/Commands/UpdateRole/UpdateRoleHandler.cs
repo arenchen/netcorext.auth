@@ -74,7 +74,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                                                                                        {
                                                                                                            Id = entity.Id,
                                                                                                            Key = t.Key.ToUpper(),
-                                                                                                           Value = t.Value
+                                                                                                           Value = t.Value.ToUpper()
                                                                                                        })
                                                                                           .ToArray()
                                                                            })
@@ -96,7 +96,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                .Join(updateExtendData, t => new { t.Id, t.Key }, t => new { t.Id, t.Key },
                                      (src, desc) =>
                                      {
-                                         src.Value = desc.Value;
+                                         src.Value = desc.Value.ToUpper();
 
                                          return src;
                                      })

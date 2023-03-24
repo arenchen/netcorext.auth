@@ -15,6 +15,7 @@ public class CreateRoleValidator : AbstractValidator<CreateRole>
                                                  c.RuleForEach(t2 => t2.ExtendData).ChildRules(c2 =>
                                                                                                {
                                                                                                    c2.RuleFor(t => t.Key).NotEmpty();
+                                                                                                   c2.RuleFor(t => t.Value).NotEmpty();
                                                                                                });
 
                                                  c.RuleForEach(t2 => t2.PermissionConditions).ChildRules(c2 =>

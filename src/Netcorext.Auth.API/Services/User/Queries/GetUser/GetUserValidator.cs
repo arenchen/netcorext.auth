@@ -14,6 +14,7 @@ public class GetUserValidator : AbstractValidator<GetUser>
         RuleForEach(t => t.ExtendData).ChildRules(c =>
                                                   {
                                                       c.RuleFor(t => t.Key).NotEmpty();
+                                                      c.RuleFor(t => t.Value).NotEmpty();
                                                   });
     }
 }

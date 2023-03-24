@@ -54,7 +54,7 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
                                                                                        {
                                                                                            Id = id,
                                                                                            Key = t2.Key.ToUpper(),
-                                                                                           Value = t2.Value
+                                                                                           Value = t2.Value.ToUpper()
                                                                                        })
                                                                          .ToArray() ?? Array.Empty<RoleExtendData>(),
                                                            Permissions = t.Permissions?

@@ -11,6 +11,7 @@ public class UpdateUserValidator : AbstractValidator<UpdateUser>
         RuleForEach(t => t.ExtendData).ChildRules(c =>
                                                   {
                                                       c.RuleFor(t => t.Key).NotEmpty();
+                                                      c.RuleFor(t => t.Value).NotEmpty();
                                                   });
 
         RuleForEach(t => t.ExternalLogins).ChildRules(c =>

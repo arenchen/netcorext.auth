@@ -51,7 +51,7 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
                                                                  {
                                                                      Id = id,
                                                                      Key = t.Key.ToUpper(),
-                                                                     Value = t.Value
+                                                                     Value = t.Value.ToUpper()
                                                                  })
                                                     .ToArray() ?? Array.Empty<Domain.Entities.ClientExtendData>()
                             });

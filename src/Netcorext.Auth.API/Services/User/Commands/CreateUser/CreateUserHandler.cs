@@ -73,7 +73,7 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                                  {
                                                                      Id = id,
                                                                      Key = t.Key.ToUpper(),
-                                                                     Value = t.Value
+                                                                     Value = t.Value.ToUpper()
                                                                  })
                                                     .ToArray() ?? Array.Empty<UserExtendData>(),
                                 ExternalLogins = request.ExternalLogins?
