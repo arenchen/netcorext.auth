@@ -120,15 +120,17 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
             var routes = cacheRouteGroups.Values
                                          .SelectMany(t => t.Routes
-                                                           .Select(t2 => new { t2.Protocol, t2.RelativePath })
+                                                           .Select(t2 => new { t2.Protocol, t2.HttpMethod, t2.RelativePath })
                                                            .Distinct()
+                                                           .GroupBy(t2 => new { t2.Protocol, t2.RelativePath }, t2 => t2.HttpMethod)
                                                            .Select(t2 => new RouteConfig
                                                                          {
                                                                              ClusterId = $"{t.Id}-{t.Name}",
-                                                                             RouteId = $"{t2.Protocol} - {t.BaseUrl}/{t2.RelativePath}",
+                                                                             RouteId = $"{t2.Key.Protocol} - {t.BaseUrl}/{t2.Key.RelativePath}",
                                                                              Match = new RouteMatch
                                                                                      {
-                                                                                         Path = t2.RelativePath
+                                                                                         Methods = t2.ToArray(),
+                                                                                         Path = t2.Key.RelativePath
                                                                                      }
                                                                          }))
                                          .ToArray();
