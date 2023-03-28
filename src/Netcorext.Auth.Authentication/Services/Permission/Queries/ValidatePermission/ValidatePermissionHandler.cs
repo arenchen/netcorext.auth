@@ -229,17 +229,20 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                                                                                                          Rule = r,
                                                                                                                          Conditions = c.DefaultIfEmpty()
                                                                                                                      })
-                                  .SelectMany(t => t.Conditions.Select(t2 => new
-                                                                             {
-                                                                                 t.Rule.RoleId,
-                                                                                 t.Rule.PermissionId,
-                                                                                 RuleId = t.Rule.Id,
-                                                                                 t.Rule.FunctionId,
-                                                                                 t.Rule.PermissionType,
-                                                                                 t.Rule.Priority,
-                                                                                 t.Rule.Allowed,
-                                                                                 Enabled = t2?.Allowed ?? keyCount == 0
-                                                                             }))
+                                  .SelectMany(t => t.Conditions.Select(t2 =>
+                                                                       {
+                                                                           return new
+                                                                                  {
+                                                                                      t.Rule.RoleId,
+                                                                                      t.Rule.PermissionId,
+                                                                                      RuleId = t.Rule.Id,
+                                                                                      t.Rule.FunctionId,
+                                                                                      t.Rule.PermissionType,
+                                                                                      t.Rule.Priority,
+                                                                                      t.Rule.Allowed,
+                                                                                      Enabled = t2?.Allowed ?? t.Rule.Allowed
+                                                                                  };
+                                                                       }))
                                   .Where(t => t.Enabled)
                                   .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
                                   .Select(t =>
