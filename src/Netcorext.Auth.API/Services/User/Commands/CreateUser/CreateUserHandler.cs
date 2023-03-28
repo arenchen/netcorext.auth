@@ -92,8 +92,8 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                                                PermissionId = t.PermissionId,
                                                                                Priority = t.Priority,
                                                                                Group = t.Group?.ToUpper(),
-                                                                               Key = t.Key,
-                                                                               Value = t.Value,
+                                                                               Key = t.Key.ToUpper(),
+                                                                               Value = t.Value.ToUpper(),
                                                                                Allowed = t.Allowed,
                                                                                ExpireDate = t.ExpireDate
                                                                            })

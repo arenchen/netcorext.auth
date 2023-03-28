@@ -213,11 +213,11 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
         if (!requestPermissionCondition.Conditions.IsEmpty())
         {
             var reqConditions = requestPermissionCondition.Conditions
-                                                          .GroupBy(t => t.Key, t => t.Value, (key, values) => new
-                                                                                                              {
-                                                                                                                  Key = key,
-                                                                                                                  Values = values
-                                                                                                              })
+                                                          .GroupBy(t => t.Key.ToUpper(), t => t.Value.ToUpper(), (key, values) => new
+                                                                                                                                  {
+                                                                                                                                      Key = key.ToUpper(),
+                                                                                                                                      Values = values.Select(t => t.ToUpper())
+                                                                                                                                  })
                                                           .ToArray();
 
             Expression<Func<Models.MixingPermissionCondition, bool>> predicateCondition = t => false;

@@ -145,11 +145,11 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
         if (!request.PermissionConditions.IsEmpty())
         {
             var reqConditions = request.PermissionConditions
-                                       .GroupBy(t => t.Key, t => t.Value, (key, values) => new
-                                                                                           {
-                                                                                               Key = key,
-                                                                                               Values = values
-                                                                                           })
+                                       .GroupBy(t => t.Key.ToUpper(), t => t.Value.ToUpper(), (key, values) => new
+                                                                                                               {
+                                                                                                                   Key = key.ToUpper(),
+                                                                                                                   Values = values.Select(t => t.ToUpper())
+                                                                                                               })
                                        .ToArray();
 
             Expression<Func<Models.PermissionCondition, bool>> predicateCondition = t => false;

@@ -72,8 +72,8 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
                                                                                                     PermissionId = t.PermissionId,
                                                                                                     Priority = t.Priority,
                                                                                                     Group = t.Group?.ToUpper(),
-                                                                                                    Key = t.Key,
-                                                                                                    Value = t.Value,
+                                                                                                    Key = t.Key.ToUpper(),
+                                                                                                    Value = t.Value.ToUpper(),
                                                                                                     Allowed = t.Allowed
                                                                                                 })
                                                                                    .ToArray() ?? Array.Empty<RolePermissionCondition>()

@@ -82,9 +82,9 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
                                                                                                      {
                                                                                                          PermissionId = permission.PermissionId,
                                                                                                          Priority = t.Priority,
-                                                                                                         Group = t.Group,
-                                                                                                         Key = t.Key,
-                                                                                                         Value = t.Value,
+                                                                                                         Group = t.Group?.ToUpper(),
+                                                                                                         Key = t.Key.ToUpper(),
+                                                                                                         Value = t.Value.ToUpper(),
                                                                                                          Allowed = t.Allowed
                                                                                                      }));
             }
@@ -105,8 +105,8 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
                                                                                        PermissionId = t.PermissionId,
                                                                                        Priority = t.Priority,
                                                                                        Group = t.Group?.ToUpper(),
-                                                                                       Key = t.Key,
-                                                                                       Value = t.Value,
+                                                                                       Key = t.Key.ToUpper(),
+                                                                                       Value = t.Value.ToUpper(),
                                                                                        Allowed = t.Allowed
                                                                                    })
                                                  .Union(entity.PermissionConditions)

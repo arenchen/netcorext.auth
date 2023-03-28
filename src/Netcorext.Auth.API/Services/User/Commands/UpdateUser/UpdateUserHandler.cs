@@ -214,7 +214,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                                                                                                                   Priority = t.Priority,
                                                                                                                                                   Group = t.Group?.ToUpper(),
                                                                                                                                                   Key = t.Key.ToUpper(),
-                                                                                                                                                  Value = t.Value,
+                                                                                                                                                  Value = t.Value.ToUpper(),
                                                                                                                                                   Allowed = t.Allowed,
                                                                                                                                                   ExpireDate = t.ExpireDate
                                                                                                                                               })

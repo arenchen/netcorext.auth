@@ -156,7 +156,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                                                                                                                                   Priority = t.Priority,
                                                                                                                                                   Group = t.Group?.ToUpper(),
                                                                                                                                                   Key = t.Key.ToUpper(),
-                                                                                                                                                  Value = t.Value,
+                                                                                                                                                  Value = t.Value.ToUpper(),
                                                                                                                                                   Allowed = t.Allowed
                                                                                                                                               })
                                                                                                                                  .ToArray()
