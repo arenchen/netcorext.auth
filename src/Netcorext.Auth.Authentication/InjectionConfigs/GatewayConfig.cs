@@ -16,5 +16,6 @@ public class GatewayConfig
         services.AddWorkerRunner<AuthWorker, RoleRunner>();
         services.AddWorkerRunner<AuthWorker, UserRunner>();
         services.AddWorkerRunner<AuthWorker, RouteRunner>();
+        services.AddWorkerRunner<AuthWorker, MaintainRunner>();
     }
 }
