@@ -19,16 +19,19 @@ internal class TokenMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _cache;
+    private readonly ILogger<TokenMiddleware> _logger;
     private readonly ConfigSettings _config;
     private readonly TokenValidationParameters _tokenValidationParameters;
 
     public TokenMiddleware(RequestDelegate next,
                            IMemoryCache cache,
                            IOptions<AuthOptions> authOptions,
-                           IOptions<ConfigSettings> config)
+                           IOptions<ConfigSettings> config,
+                           ILogger<TokenMiddleware> logger)
     {
         _next = next;
         _cache = cache;
+        _logger = logger;
         _config = config.Value;
         _tokenValidationParameters = authOptions.Value.GetTokenValidationParameters();
     }
@@ -56,20 +59,39 @@ internal class TokenMiddleware
 
     private async Task<bool> IsValid(IDispatcher dispatcher, string headerValue)
     {
-        if (headerValue.IsEmpty()) return true;
+        if (headerValue.IsEmpty())
+        {
+            _logger.LogWarning("Unauthorized, no authorization header");
 
-        if (!AuthenticationHeaderValue.TryParse(headerValue, out var authHeader)) return false;
+            return true;
+        }
+
+        if (!AuthenticationHeaderValue.TryParse(headerValue, out var authHeader))
+        {
+            _logger.LogWarning("Unauthorized, header 'Authorization' is invalid");
+
+            return false;
+        }
 
         var token = authHeader.Parameter;
 
-        if (string.IsNullOrWhiteSpace(token)) return false;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            _logger.LogWarning("Token is empty");
 
-        return authHeader.Scheme.ToUpper() switch
-               {
-                   Constants.OAuth.TOKEN_TYPE_BASIC_NORMALIZED => await IsBasicValid(dispatcher, token),
-                   Constants.OAuth.TOKEN_TYPE_BEARER_NORMALIZED => await IsBearerValid(dispatcher, token),
-                   _ => false
-               };
+            return false;
+        }
+
+        var result = authHeader.Scheme.ToUpper() switch
+                     {
+                         Constants.OAuth.TOKEN_TYPE_BASIC_NORMALIZED => await IsBasicValid(dispatcher, token),
+                         Constants.OAuth.TOKEN_TYPE_BEARER_NORMALIZED => await IsBearerValid(dispatcher, token),
+                         _ => false
+                     };
+
+        _logger.LogWarning("Unauthorized, token is invalid");
+
+        return result;
     }
 
     private async Task<bool> IsBasicValid(IDispatcher dispatcher, string token)

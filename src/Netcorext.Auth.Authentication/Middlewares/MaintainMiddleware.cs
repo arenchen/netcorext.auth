@@ -14,13 +14,15 @@ internal class MaintainMiddleware
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _cache;
     private readonly RedisClient _redis;
+    private readonly ILogger<MaintainMiddleware> _logger;
     private readonly ConfigSettings _config;
 
-    public MaintainMiddleware(RequestDelegate next, IMemoryCache cache, RedisClient redis, IOptions<ConfigSettings> config)
+    public MaintainMiddleware(RequestDelegate next, IMemoryCache cache, RedisClient redis, IOptions<ConfigSettings> config, ILogger<MaintainMiddleware> logger)
     {
         _next = next;
         _cache = cache;
         _redis = redis;
+        _logger = logger;
         _config = config.Value;
     }
 
@@ -66,6 +68,8 @@ internal class MaintainMiddleware
 
             return;
         }
+
+        _logger.LogInformation("Service Unavailable: {Message}", maintain.Message);
 
         await context.ServiceUnavailableAsync(_config.AppSettings.UseNativeStatus, message: maintain.Message);
     }

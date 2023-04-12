@@ -17,12 +17,14 @@ internal class PermissionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _cache;
+    private readonly ILogger<PermissionMiddleware> _logger;
     private readonly ConfigSettings _config;
 
-    public PermissionMiddleware(RequestDelegate next, IMemoryCache cache, IOptions<ConfigSettings> config)
+    public PermissionMiddleware(RequestDelegate next, IMemoryCache cache, IOptions<ConfigSettings> config, ILogger<PermissionMiddleware> logger)
     {
         _next = next;
         _cache = cache;
+        _logger = logger;
         _config = config.Value;
     }
 
@@ -82,11 +84,15 @@ internal class PermissionMiddleware
 
             if (headerValue.IsEmpty())
             {
+                _logger.LogWarning("Unauthorized, header 'Authorization' value is empty");
+
                 await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus);
 
                 return;
             }
         }
+
+        _logger.LogWarning("Forbidden");
 
         await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
     }

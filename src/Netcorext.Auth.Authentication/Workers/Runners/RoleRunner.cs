@@ -38,7 +38,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
 
         _subscriber?.Dispose();
 
-        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], async (s, o) => await UpdateRoleAsync(o.ToString(), cancellationToken));
+        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], (s, o) => UpdateRoleAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
 
         await UpdateRoleAsync(null, cancellationToken);
     }

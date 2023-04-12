@@ -28,9 +28,9 @@ public class AppSettings
     public string[]? InternalHost { get; set; }
     public long[]? Owner { get; set; }
     public bool ValidationPassUserId { get; set; }
-    public int HealthCheckInterval { get; set; } = 10 * 1000;
-    public int HealthCheckTimeout { get; set; } = 15 * 1000;
     public int CacheTokenExpires { get; set; } = 30 * 60 * 1000;
     public bool UseNativeStatus { get; set; }
     public long SlowCommandLoggingThreshold { get; set; } = 1000;
+    public int? WorkerTaskLimit { get; set; } = 5;
+    public int? RetryLimit { get; set; } = 3;
 }

@@ -1,19 +1,44 @@
+using Microsoft.Extensions.Options;
+using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Worker;
 
 namespace Netcorext.Auth.Authentication.Workers;
 
 internal class AuthWorker : BackgroundWorker
 {
+    private readonly ConfigSettings _config;
     private readonly IEnumerable<IWorkerRunner<AuthWorker>> _runners;
+    private readonly ILogger<AuthWorker> _logger;
+    private int _retryCount;
 
-    public AuthWorker(IEnumerable<IWorkerRunner<AuthWorker>> runners)
+    public AuthWorker(IOptions<ConfigSettings> config, IEnumerable<IWorkerRunner<AuthWorker>> runners, ILogger<AuthWorker> logger)
     {
+        _config = config.Value;
         _runners = runners;
+        _logger = logger;
     }
 
-    protected override Task ExecuteAsync(CancellationToken cancellationToken = default)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return Task.WhenAll(_runners.Select(t => t.InvokeAsync(this, cancellationToken)));
+        var ct = new CancellationTokenSource();
+
+        try
+        {
+            await Task.WhenAll(_runners.Select(t => t.InvokeAsync(this, ct.Token)));
+
+            _retryCount = 0;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "${Message}", e.Message);
+
+            ct.Cancel();
+
+            _retryCount++;
+
+            if (_retryCount <= _config.AppSettings.RetryLimit)
+                await ExecuteAsync(cancellationToken);
+        }
     }
 
     public override void Dispose()
