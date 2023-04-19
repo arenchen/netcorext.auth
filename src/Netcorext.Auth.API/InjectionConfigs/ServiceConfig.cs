@@ -1,9 +1,12 @@
+using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Client.Commands;
 using Netcorext.Auth.API.Services.Client.Pipelines;
 using Netcorext.Auth.API.Services.Role.Commands;
 using Netcorext.Auth.API.Services.Role.Pipelines;
 using Netcorext.Auth.API.Services.User.Commands;
 using Netcorext.Auth.API.Services.User.Pipelines;
+using Netcorext.Auth.API.Settings;
+using Netcorext.Configuration.Extensions;
 using Netcorext.Contracts;
 
 namespace Netcorext.Auth.API.InjectionConfigs;
@@ -14,7 +17,11 @@ public class ServiceConfig
     public ServiceConfig(IServiceCollection services)
     {
         services.AddMediator()
-                .AddRedisQueuing()
+                .AddRedisQueuing((provider, options) =>
+                                 {
+                                     var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+                                     options.ConnectionString = cfg.Connections.Redis.GetDefault().Connection;
+                                 })
                 .AddPerformancePipeline()
                 .AddValidatorPipeline()
                 .AddRequestPipeline<ClientChangeNotifyPipeline, CreateClient, Result<long?>>()
