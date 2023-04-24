@@ -1,7 +1,9 @@
+using FreeRedis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Authorization.Models;
+using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Extensions;
 using Netcorext.Auth.Utilities;
@@ -17,18 +19,22 @@ namespace Netcorext.Auth.Authorization.Services.User.Commands;
 public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<TokenResult>>
 {
     private readonly DatabaseContext _context;
+    private readonly RedisClient _redis;
     private readonly HttpContext? _httpContext;
     private readonly ISnowflake _snowflake;
     private readonly JwtGenerator _jwtGenerator;
-    private readonly AuthOptions _config;
+    private readonly ConfigSettings _config;
+    private readonly AuthOptions _authOptions;
 
-    public ExternalSignInHandler(DatabaseContext context, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake, JwtGenerator jwtGenerator, IOptions<AuthOptions> config)
+    public ExternalSignInHandler(DatabaseContext context, RedisClient redis, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake, JwtGenerator jwtGenerator, IOptions<ConfigSettings> config, IOptions<AuthOptions> authOptions)
     {
         _context = context;
+        _redis = redis;
         _httpContext = httpContextAccessor.HttpContext;
         _snowflake = snowflake;
         _jwtGenerator = jwtGenerator;
         _config = config.Value;
+        _authOptions = authOptions.Value;
     }
 
     public async Task<Result<TokenResult>> Handle(ExternalSignIn request, CancellationToken cancellationToken = default)
@@ -67,7 +73,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                     return new Result<TokenResult>
                            {
                                Code = Result.RequiredTwoFactorAuthenticationBinding,
-                               Message = string.Format(_config.OtpAuthScheme, _config.Issuer, entity.Username, entity.Otp)
+                               Message = string.Format(_authOptions.OtpAuthScheme, _authOptions.Issuer, entity.Username, entity.Otp)
                            };
                 }
 
@@ -97,9 +103,9 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                        NormalizedEmail = request.Email?.ToUpper(),
                        PhoneNumber = request.PhoneNumber,
                        AllowedRefreshToken = request.AllowedRefreshToken,
-                       TokenExpireSeconds = request.TokenExpireSeconds ?? _config.TokenExpireSeconds,
-                       RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _config.RefreshTokenExpireSeconds,
-                       CodeExpireSeconds = request.CodeExpireSeconds ?? _config.CodeExpireSeconds,
+                       TokenExpireSeconds = request.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
+                       RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds,
+                       CodeExpireSeconds = request.CodeExpireSeconds ?? _authOptions.CodeExpireSeconds,
                        Roles = request.Roles?
                                       .Select(t => new Domain.Entities.UserRole
                                                    {
@@ -158,7 +164,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                                                                       )
                                                                                              .Token
                                                                               : null,
-                                                           ExpiresIn = entity.TokenExpireSeconds ?? _config.TokenExpireSeconds,
+                                                           ExpiresIn = entity.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
                                                            NameId = entity.Id.ToString()
                                                        });
 
@@ -178,6 +184,8 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_USER_SIGN_IN_EVENT], "[{\"Id\":" + entity.Id + ",\"LastSignInDate\":\"" + entity.LastSignInDate?.ToString("O") + "\"}]");
+
         return result;
     }
 
@@ -185,7 +193,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
     {
         _context.Entry(entity).UpdateProperty(t => t.AccessFailedCount, entity.AccessFailedCount++);
 
-        if (!entity.Disabled && _config.LockoutAccessFailedCount.HasValue && entity.AccessFailedCount >= _config.LockoutAccessFailedCount)
+        if (!entity.Disabled && _authOptions.LockoutAccessFailedCount.HasValue && entity.AccessFailedCount >= _authOptions.LockoutAccessFailedCount)
         {
             _context.Entry(entity).UpdateProperty(t => t.Disabled, true);
         }

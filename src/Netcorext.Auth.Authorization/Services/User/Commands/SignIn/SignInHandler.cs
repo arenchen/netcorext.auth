@@ -1,7 +1,9 @@
+using FreeRedis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Authorization.Models;
+using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Enums;
 using Netcorext.Auth.Extensions;
 using Netcorext.Auth.Utilities;
@@ -17,18 +19,22 @@ namespace Netcorext.Auth.Authorization.Services.User.Commands;
 public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 {
     private readonly DatabaseContext _context;
+    private readonly RedisClient _redis;
     private readonly ISnowflake _snowflake;
     private readonly JwtGenerator _jwtGenerator;
+    private readonly ConfigSettings _config;
+    private readonly AuthOptions _authOptions;
     private readonly HttpContext? _httpContext;
-    private readonly AuthOptions _config;
 
-    public SignInHandler(DatabaseContext context, ISnowflake snowflake, IHttpContextAccessor httpContextAccessor, JwtGenerator jwtGenerator, IOptions<AuthOptions> config)
+    public SignInHandler(DatabaseContext context, RedisClient redis, ISnowflake snowflake, IHttpContextAccessor httpContextAccessor, JwtGenerator jwtGenerator, IOptions<ConfigSettings> config, IOptions<AuthOptions> autoOptions)
     {
         _context = context;
+        _redis = redis;
         _snowflake = snowflake;
         _jwtGenerator = jwtGenerator;
-        _httpContext = httpContextAccessor.HttpContext;
         _config = config.Value;
+        _authOptions = autoOptions.Value;
+        _httpContext = httpContextAccessor.HttpContext;
     }
 
     public async Task<Result<TokenResult>> Handle(SignIn request, CancellationToken cancellationToken = default)
@@ -72,7 +78,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                 return new Result<TokenResult>
                        {
                            Code = Result.RequiredTwoFactorAuthenticationBinding,
-                           Message = string.Format(_config.OtpAuthScheme, _config.Issuer, entity.Username, entity.Otp)
+                           Message = string.Format(_authOptions.OtpAuthScheme, _authOptions.Issuer, entity.Username, entity.Otp)
                        };
             }
 
@@ -111,7 +117,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                                                                                                        entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
                                                                                              .Token
                                                                               : null,
-                                                           ExpiresIn = entity.TokenExpireSeconds ?? _config.TokenExpireSeconds
+                                                           ExpiresIn = entity.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
@@ -130,6 +136,8 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_USER_SIGN_IN_EVENT], "[{\"Id\":" + entity.Id + ",\"LastSignInDate\":\"" + entity.LastSignInDate?.ToString("O") + "\"}]");
+
         return result;
     }
 
@@ -139,7 +147,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
         _context.Entry(entity).Property(t => t.AccessFailedCount).IsModified = true;
 
-        if (!entity.Disabled && _config.LockoutAccessFailedCount.HasValue && entity.AccessFailedCount >= _config.LockoutAccessFailedCount)
+        if (!entity.Disabled && _authOptions.LockoutAccessFailedCount.HasValue && entity.AccessFailedCount >= _authOptions.LockoutAccessFailedCount)
         {
             entity.Disabled = true;
 

@@ -254,6 +254,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_USER_SIGN_IN_EVENT], "[{\"Id\":" + user.Id + ",\"LastSignInDate\":\"" + user.LastSignInDate?.ToString("O") + "\"}]");
+
         return result;
     }
 
@@ -404,6 +406,9 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         });
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            if (resourceType == ResourceType.User)
+                await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_USER_REFRESH_TOKEN_EVENT], "[{\"Id\":" + resourceId + ",\"RefreshDate\":\"" + DateTimeOffset.UtcNow.ToString("O") + "\"}]");
 
             if (token == null) return result;
 
