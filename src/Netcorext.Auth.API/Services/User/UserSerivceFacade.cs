@@ -56,6 +56,14 @@ public class UserServiceFacade : UserService.UserServiceBase
         return rep.Adapt<GetUserRequest.Types.Result>();
     }
 
+    public override async Task<GetUserIdentityRequest.Types.Result> GetUserIdentity(GetUserIdentityRequest request, ServerCallContext context)
+    {
+        var req = request.Adapt<GetUserIdentity>();
+        var rep = await _dispatcher.SendAsync(req);
+
+        return rep.Adapt<GetUserIdentityRequest.Types.Result>();
+    }
+
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetUserPermissionRequest.Types.Result> GetUserPermission(GetUserPermissionRequest request, ServerCallContext context)
     {

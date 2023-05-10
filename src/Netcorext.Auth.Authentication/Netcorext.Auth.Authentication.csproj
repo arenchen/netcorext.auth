@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <PackageReference Include="Netcorext.Worker.Abstractions" Version="1.0.0-dev.*"/>
-        <PackageReference Include="Netcorext.Extensions.AspNetCore" Version="1.0.1-dev.*"/>
     </ItemGroup>
 
     <Import Project="../Packages.targets"/>

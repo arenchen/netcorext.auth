@@ -5,7 +5,6 @@ namespace Netcorext.Auth.API.Services.User.Queries;
 
 public class GetUser : IRequest<Result<IEnumerable<Models.User>>>
 {
-    public string? Keyword { get; set; }
     public long[]? Ids { get; set; }
     public string? Username { get; set; }
     public string? Email { get; set; }

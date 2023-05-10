@@ -30,13 +30,13 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
 
         if (!request.Ids.IsEmpty()) predicate = predicate.And(t => request.Ids.Contains(t.Id));
 
-        if (!request.Username.IsEmpty()) predicate = predicate.And(p => p.NormalizedUsername.Contains(request.Username!.ToUpper()));
+        if (!request.Username.IsEmpty()) predicate = predicate.And(p => p.NormalizedUsername.Equals(request.Username!.ToUpper()));
 
-        if (!request.Email.IsEmpty()) predicate = predicate.And(p => p.NormalizedEmail != null && p.NormalizedEmail.Contains(request.Email.ToUpper()));
+        if (!request.Email.IsEmpty()) predicate = predicate.And(p => p.NormalizedEmail != null && p.NormalizedEmail.Equals(request.Email.ToUpper()));
 
         if (!request.EmailConfirmed.IsEmpty()) predicate = predicate.And(p => p.EmailConfirmed == request.EmailConfirmed);
 
-        if (!request.PhoneNumber.IsEmpty()) predicate = predicate.And(p => p.PhoneNumber != null && EF.Functions.Like(p.PhoneNumber, $"%{request.PhoneNumber}%"));
+        if (!request.PhoneNumber.IsEmpty()) predicate = predicate.And(p => p.PhoneNumber != null && p.PhoneNumber.Equals(request.PhoneNumber));
 
         if (!request.PhoneNumberConfirmed.IsEmpty()) predicate = predicate.And(p => p.PhoneNumberConfirmed == request.PhoneNumberConfirmed);
 
@@ -77,13 +77,6 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
             if (!request.ExternalLogin.UniqueId.IsEmpty()) predicateExternalLogin = predicateExternalLogin.And(p => p.UniqueId == request.ExternalLogin.UniqueId);
 
             predicate = predicate.And(t => t.ExternalLogins.AsQueryable().Any(predicateExternalLogin));
-        }
-
-        if (!request.Keyword.IsEmpty())
-        {
-            predicate = predicate.And(p => p.NormalizedUsername.Contains(request.Keyword.ToUpper()) ||
-                                           (p.NormalizedEmail != null && p.NormalizedEmail.Contains(request.Keyword.ToUpper())) ||
-                                           (p.PhoneNumber != null && p.PhoneNumber.Contains(request.Keyword.ToUpper())));
         }
 
         var queryEntities = ds.Where(predicate)
