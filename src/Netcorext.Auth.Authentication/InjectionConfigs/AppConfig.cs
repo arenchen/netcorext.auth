@@ -5,6 +5,7 @@ using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Services.Route;
 using Netcorext.Auth.Authentication.Services.Token;
 using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Extensions.AspNetCore.Middlewares;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
 
@@ -15,6 +16,8 @@ public class AppConfig
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
+        app.UseMiddleware<CustomExceptionMiddleware>();
+
         app.UseCors(b =>
                     {
                         b.SetIsOriginAllowed(host =>
@@ -24,6 +27,7 @@ public class AppConfig
 
                                                  return allowList.Any(h => h.Equals(host, StringComparison.OrdinalIgnoreCase) || h == "*");
                                              })
+                         .SetIsOriginAllowedToAllowWildcardSubdomains()
                          .AllowAnyHeader()
                          .AllowAnyMethod()
                          .AllowCredentials();
