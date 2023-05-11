@@ -14,6 +14,9 @@ public class UserMap : EntityMap<User>
         Builder.HasIndex(t => t.NormalizedUsername)
                .IsUnique();
 
+        Builder.HasIndex(t => t.DisplayName);
+        Builder.HasIndex(t => t.NormalizedDisplayName);
+
         Builder.HasIndex(t => t.Email);
 
         Builder.HasIndex(t => t.NormalizedEmail);

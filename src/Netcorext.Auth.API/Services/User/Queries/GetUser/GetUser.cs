@@ -7,6 +7,7 @@ public class GetUser : IRequest<Result<IEnumerable<Models.User>>>
 {
     public long[]? Ids { get; set; }
     public string? Username { get; set; }
+    public string? DisplayName { get; set; }
     public string? Email { get; set; }
     public bool? EmailConfirmed { get; set; }
     public string? PhoneNumber { get; set; }

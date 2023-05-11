@@ -49,6 +49,8 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                 Id = id,
                                 Username = request.Username,
                                 NormalizedUsername = request.Username.ToUpper(),
+                                DisplayName = request.DisplayName ?? request.Username,
+                                NormalizedDisplayName = (request.DisplayName ?? request.Username).ToUpper(),
                                 Password = request.Password.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
                                 Email = request.Email,
                                 NormalizedEmail = request.Email?.ToUpper(),

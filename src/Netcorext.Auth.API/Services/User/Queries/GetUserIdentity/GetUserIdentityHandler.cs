@@ -17,7 +17,7 @@ public class GetUserIdentityHandler : IRequestHandler<GetUserIdentity, Result<IE
 
     public Task<Result<IEnumerable<Models.UserIdentity>>> Handle(GetUserIdentity request, CancellationToken cancellationToken = new())
     {
-        Expression<Func<Domain.Entities.User, bool>> predicate = p => true;
+        Expression<Func<Domain.Entities.User, bool>> predicate = p => false;
 
         if (request.Ids?.Any() == true)
             predicate = predicate.Or(t => request.Ids.Contains(t.Id));
@@ -33,7 +33,8 @@ public class GetUserIdentityHandler : IRequestHandler<GetUserIdentity, Result<IE
                       .Select(t => new Models.UserIdentity
                                    {
                                        Id = t.Id,
-                                       Username = t.Username
+                                       Username = t.Username,
+                                       DisplayName = t.DisplayName
                                    });
 
         return Task.FromResult(Result<IEnumerable<Models.UserIdentity>>.Success.Clone(users));

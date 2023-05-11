@@ -53,6 +53,8 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         _context.Entry(entity)
                 .UpdateProperty(t => t.Username, request.Username)
                 .UpdateProperty(t => t.NormalizedUsername, request.Username?.ToUpper())
+                .UpdateProperty(t => t.DisplayName, request.DisplayName)
+                .UpdateProperty(t => t.NormalizedDisplayName, request.DisplayName?.ToUpper())
                 .UpdateProperty(t => t.Password, request.Password?.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds()))
                 .UpdateProperty(t => t.RequiredChangePassword, false)
                 .UpdateProperty(t => t.Email, request.Email, true, user =>

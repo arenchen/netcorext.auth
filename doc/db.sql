@@ -86,6 +86,8 @@ CREATE TABLE "User" (
   "Id" bigint NOT NULL,
   "Username" character varying(50) NOT NULL,
   "NormalizedUsername" character varying(50) NOT NULL,
+  "DisplayName" character varying(50) NOT NULL,
+  "NormalizedDisplayName" character varying(50) NOT NULL,
   "Password" character varying(200) NOT NULL,
   "Email" character varying(100) NULL,
   "NormalizedEmail" character varying(100) NULL,
@@ -305,175 +307,65 @@ CREATE TABLE "RouteValue" (
 );
 
 
-CREATE INDEX "IX_Client_Disabled" ON "Client" ("Disabled");
-
-
-CREATE UNIQUE INDEX "IX_Client_Name" ON "Client" ("Name");
-
-
 CREATE INDEX "IX_ClientExtendData_Key" ON "ClientExtendData" ("Key");
-
-
 CREATE INDEX "IX_ClientExtendData_Value" ON "ClientExtendData" ("Value");
-
-
 CREATE INDEX "IX_ClientRole_RoleId" ON "ClientRole" ("RoleId");
-
-
+CREATE INDEX "IX_Client_Disabled" ON "Client" ("Disabled");
 CREATE INDEX "IX_Permission_Disabled" ON "Permission" ("Disabled");
-
-
-CREATE UNIQUE INDEX "IX_Permission_Name" ON "Permission" ("Name");
-
-
-CREATE INDEX "IX_Role_Disabled" ON "Role" ("Disabled");
-
-
-CREATE UNIQUE INDEX "IX_Role_Name" ON "Role" ("Name");
-
-
 CREATE INDEX "IX_RoleExtendData_Key" ON "RoleExtendData" ("Key");
-
-
 CREATE INDEX "IX_RoleExtendData_Value" ON "RoleExtendData" ("Value");
-
-
-CREATE INDEX "IX_RolePermission_PermissionId" ON "RolePermission" ("PermissionId");
-
-
 CREATE INDEX "IX_RolePermissionCondition_Group" ON "RolePermissionCondition" ("Group");
-
-
 CREATE INDEX "IX_RolePermissionCondition_PermissionId" ON "RolePermissionCondition" ("PermissionId");
-
-
 CREATE INDEX "IX_RolePermissionCondition_RoleId" ON "RolePermissionCondition" ("RoleId");
-
-
-CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Group_~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Group", "Key", "Value");
-
-
-CREATE INDEX "IX_Route_AllowAnonymous" ON "Route" ("AllowAnonymous");
-
-
-CREATE INDEX "IX_Route_FunctionId" ON "Route" ("FunctionId");
-
-
-CREATE INDEX "IX_Route_GroupId" ON "Route" ("GroupId");
-
-
-CREATE INDEX "IX_Route_HttpMethod" ON "Route" ("HttpMethod");
-
-
-CREATE UNIQUE INDEX "IX_Route_HttpMethod_RelativePath" ON "Route" ("HttpMethod", "RelativePath");
-
-
-CREATE INDEX "IX_Route_NativePermission" ON "Route" ("NativePermission");
-
-
-CREATE INDEX "IX_Route_Protocol" ON "Route" ("Protocol");
-
-
-CREATE INDEX "IX_Route_RelativePath" ON "Route" ("RelativePath");
-
-
-CREATE INDEX "IX_Route_Tag" ON "Route" ("Tag");
-
-
-CREATE INDEX "IX_Route_Template" ON "Route" ("Template");
-
-
+CREATE INDEX "IX_RolePermission_PermissionId" ON "RolePermission" ("PermissionId");
+CREATE INDEX "IX_Role_Disabled" ON "Role" ("Disabled");
 CREATE INDEX "IX_RouteGroup_Name" ON "RouteGroup" ("Name");
-
-
 CREATE INDEX "IX_RouteValue_Key" ON "RouteValue" ("Key");
-
-
 CREATE INDEX "IX_RouteValue_Value" ON "RouteValue" ("Value");
-
-
+CREATE INDEX "IX_Route_AllowAnonymous" ON "Route" ("AllowAnonymous");
+CREATE INDEX "IX_Route_FunctionId" ON "Route" ("FunctionId");
+CREATE INDEX "IX_Route_GroupId" ON "Route" ("GroupId");
+CREATE INDEX "IX_Route_HttpMethod" ON "Route" ("HttpMethod");
+CREATE INDEX "IX_Route_NativePermission" ON "Route" ("NativePermission");
+CREATE INDEX "IX_Route_Protocol" ON "Route" ("Protocol");
+CREATE INDEX "IX_Route_RelativePath" ON "Route" ("RelativePath");
+CREATE INDEX "IX_Route_Tag" ON "Route" ("Tag");
+CREATE INDEX "IX_Route_Template" ON "Route" ("Template");
 CREATE INDEX "IX_Rule_Allowed" ON "Rule" ("Allowed");
-
-
 CREATE INDEX "IX_Rule_FunctionId" ON "Rule" ("FunctionId");
-
-
-CREATE UNIQUE INDEX "IX_Rule_Id_FunctionId_PermissionType_Allowed" ON "Rule" ("Id", "FunctionId", "PermissionType", "Allowed");
-
-
 CREATE INDEX "IX_Rule_PermissionId" ON "Rule" ("PermissionId");
-
-
 CREATE INDEX "IX_Rule_PermissionType" ON "Rule" ("PermissionType");
-
-
 CREATE INDEX "IX_Token_AccessToken" ON "Token" ("AccessToken");
-
-
 CREATE INDEX "IX_Token_Disabled" ON "Token" ("Disabled");
-
-
 CREATE INDEX "IX_Token_ExpiresIn" ON "Token" ("ExpiresIn");
-
-
 CREATE INDEX "IX_Token_RefreshToken" ON "Token" ("RefreshToken");
-
-
 CREATE INDEX "IX_Token_ResourceId" ON "Token" ("ResourceId");
-
-
 CREATE INDEX "IX_Token_ResourceType" ON "Token" ("ResourceType");
-
-
 CREATE INDEX "IX_Token_TokenType" ON "Token" ("TokenType");
-
-
-CREATE INDEX "IX_User_Disabled" ON "User" ("Disabled");
-
-
-CREATE INDEX "IX_User_Email" ON "User" USING gist ("Email" gist_trgm_ops);
-
-
-CREATE INDEX "IX_User_NormalizedEmail" ON "User" USING gist ("NormalizedEmail" gist_trgm_ops);
-
-
-CREATE INDEX "IX_User_NormalizedUsername" ON "User" USING gist ("NormalizedUsername" gist_trgm_ops);
-
-
-CREATE INDEX "IX_User_PhoneNumber" ON "User" USING gist ("PhoneNumber" gist_trgm_ops);
-
-
-CREATE INDEX "IX_User_Username" ON "User" USING gist ("Username" gist_trgm_ops);
-
-
 CREATE INDEX "IX_UserExtendData_Key" ON "UserExtendData" ("Key");
-
-
 CREATE INDEX "IX_UserExtendData_Value" ON "UserExtendData" ("Value");
-
-
 CREATE INDEX "IX_UserExternalLogin_Provider" ON "UserExternalLogin" ("Provider");
-
-
 CREATE INDEX "IX_UserExternalLogin_UniqueId" ON "UserExternalLogin" ("UniqueId");
-
-
 CREATE INDEX "IX_UserPermissionCondition_ExpireDate" ON "UserPermissionCondition" ("ExpireDate");
-
-
 CREATE INDEX "IX_UserPermissionCondition_Group" ON "UserPermissionCondition" ("Group");
-
-
 CREATE INDEX "IX_UserPermissionCondition_PermissionId" ON "UserPermissionCondition" ("PermissionId");
-
-
 CREATE INDEX "IX_UserPermissionCondition_UserId" ON "UserPermissionCondition" ("UserId");
-
-
-CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Priority_Group_~" ON "UserPermissionCondition" ("UserId", "PermissionId", "Priority", "Group", "Key", "Value");
-
-
 CREATE INDEX "IX_UserRole_RoleId" ON "UserRole" ("RoleId");
+CREATE INDEX "IX_User_Disabled" ON "User" ("Disabled");
+CREATE INDEX "IX_User_DisplayName" ON "User" ("DisplayName");
+CREATE INDEX "IX_User_Email" ON "User" ("Email");
+CREATE INDEX "IX_User_NormalizedEmail" ON "User" ("NormalizedEmail");
+CREATE INDEX "IX_User_NormalizedDisplayName" ON "User" ("IX_NormalizedDisplayName");
+CREATE INDEX "IX_User_NormalizedUsername" ON "User" ("NormalizedUsername");
+CREATE INDEX "IX_User_PhoneNumber" ON "User" ("PhoneNumber");
+CREATE INDEX "IX_User_Username" ON "User" ("Username");
+CREATE UNIQUE INDEX "IX_Client_Name" ON "Client" ("Name");
+CREATE UNIQUE INDEX "IX_Permission_Name" ON "Permission" ("Name");
+CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Group_~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Group", "Key", "Value");
+CREATE UNIQUE INDEX "IX_Role_Name" ON "Role" ("Name");
+CREATE UNIQUE INDEX "IX_Route_HttpMethod_RelativePath" ON "Route" ("HttpMethod", "RelativePath");
+CREATE UNIQUE INDEX "IX_Rule_Id_FunctionId_PermissionType_Allowed" ON "Rule" ("Id", "FunctionId", "PermissionType", "Allowed");
+CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Priority_Group_~" ON "UserPermissionCondition" ("UserId", "PermissionId", "Priority", "Group", "Key", "Value");
 
 
 /* Functions */

@@ -32,6 +32,8 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
 
         if (!request.Username.IsEmpty()) predicate = predicate.And(p => p.NormalizedUsername.Equals(request.Username!.ToUpper()));
 
+        if (!request.DisplayName.IsEmpty()) predicate = predicate.And(p => p.NormalizedDisplayName.Equals(request.DisplayName!.ToUpper()));
+
         if (!request.Email.IsEmpty()) predicate = predicate.And(p => p.NormalizedEmail != null && p.NormalizedEmail.Equals(request.Email.ToUpper()));
 
         if (!request.EmailConfirmed.IsEmpty()) predicate = predicate.And(p => p.EmailConfirmed == request.EmailConfirmed);
@@ -96,6 +98,7 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                      {
                                                                          Id = t2.Id,
                                                                          Username = t2.Username,
+                                                                         DisplayName = t2.DisplayName,
                                                                          Email = t2.Email,
                                                                          EmailConfirmed = t2.EmailConfirmed,
                                                                          PhoneNumber = t2.PhoneNumber,
