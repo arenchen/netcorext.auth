@@ -356,9 +356,9 @@ CREATE INDEX "IX_User_DisplayName" ON "User" ("DisplayName");
 CREATE INDEX "IX_User_Email" ON "User" ("Email");
 CREATE INDEX "IX_User_NormalizedEmail" ON "User" ("NormalizedEmail");
 CREATE INDEX "IX_User_NormalizedDisplayName" ON "User" ("IX_NormalizedDisplayName");
-CREATE INDEX "IX_User_NormalizedUsername" ON "User" ("NormalizedUsername");
 CREATE INDEX "IX_User_PhoneNumber" ON "User" ("PhoneNumber");
-CREATE INDEX "IX_User_Username" ON "User" ("Username");
+CREATE UNIQUE INDEX "IX_User_Username" ON "User" ("Username");
+CREATE UNIQUE INDEX "IX_User_NormalizedUsername" ON "User" ("NormalizedUsername");
 CREATE UNIQUE INDEX "IX_Client_Name" ON "Client" ("Name");
 CREATE UNIQUE INDEX "IX_Permission_Name" ON "Permission" ("Name");
 CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Group_~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Group", "Key", "Value");
@@ -408,9 +408,10 @@ select public.fn_token_partition_table();
 
 
 -- Please switch to Db: postgres
+-- CREATE EXTENSION pg_cron;
 -- SELECT cron.schedule('token_partition_table', '0 0 */1 * *', 'SELECT fn_token_partition_table(null, 1)');
 -- UPDATE cron.job SET
--- database = 'lctech_auth',
+-- database = 'lctech_auth'
 -- -- schedule = '0 0 */1 * *',
 -- -- command = 'SELECT fn_token_partition_table(null, 1)',
 -- -- jobname = '建立分表'
