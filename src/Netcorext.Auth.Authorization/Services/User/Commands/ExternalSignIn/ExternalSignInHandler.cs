@@ -98,6 +98,8 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                        Id = id,
                        Username = username,
                        NormalizedUsername = username.ToUpper(),
+                       DisplayName = request.DisplayName ?? request.Username,
+                       NormalizedDisplayName = (request.DisplayName ?? request.Username).ToUpper(),
                        Password = Guid.NewGuid().ToString().Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
                        Email = request.Email,
                        NormalizedEmail = request.Email?.ToUpper(),

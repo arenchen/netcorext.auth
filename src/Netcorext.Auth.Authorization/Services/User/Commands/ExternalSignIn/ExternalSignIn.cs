@@ -8,6 +8,7 @@ public class ExternalSignIn : IRequest<Result<TokenResult>>
 {
     public long? CustomId { get; set; }
     public string Username { get; set; } = null!;
+    public string? DisplayName { get; set; }
     public string Provider { get; set; } = null!;
     public string UniqueId { get; set; } = null!;
     public string? Email { get; set; }
