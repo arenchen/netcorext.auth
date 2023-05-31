@@ -10,9 +10,9 @@ public class ValidateClientHandler : IRequestHandler<ValidateClient, Result>
 {
     private readonly DatabaseContext _context;
 
-    public ValidateClientHandler(DatabaseContext context)
+    public ValidateClientHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public async Task<Result> Handle(ValidateClient request, CancellationToken cancellationToken = default)

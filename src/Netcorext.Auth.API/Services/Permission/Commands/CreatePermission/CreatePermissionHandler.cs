@@ -10,7 +10,7 @@ public class CreatePermissionHandler : IRequestHandler<CreatePermission, Result<
     private readonly DatabaseContext _context;
     private readonly ISnowflake _snowflake;
 
-    public CreatePermissionHandler(DatabaseContext context, ISnowflake snowflake)
+    public CreatePermissionHandler(DatabaseContextAdapter context, ISnowflake snowflake)
     {
         _context = context;
         _snowflake = snowflake;
@@ -34,19 +34,19 @@ public class CreatePermissionHandler : IRequestHandler<CreatePermission, Result<
 
                                                       return new Domain.Entities.Permission
                                                              {
-                                                                 Id = id,
-                                                                 Name = t.Name,
-                                                                 Priority = t.Priority,
-                                                                 Disabled = t.Disabled,
-                                                                 Rules = t.Rules?.Select(t2 => new Domain.Entities.Rule
-                                                                                               {
-                                                                                                   Id = _snowflake.Generate(),
-                                                                                                   PermissionId = id,
-                                                                                                   FunctionId = t2.FunctionId,
-                                                                                                   PermissionType = t2.PermissionType,
-                                                                                                   Allowed = t2.Allowed
-                                                                                               })
-                                                                          .ToArray() ?? Array.Empty<Domain.Entities.Rule>()
+                                                                     Id = id,
+                                                                     Name = t.Name,
+                                                                     Priority = t.Priority,
+                                                                     Disabled = t.Disabled,
+                                                                     Rules = t.Rules?.Select(t2 => new Domain.Entities.Rule
+                                                                                                   {
+                                                                                                           Id = _snowflake.Generate(),
+                                                                                                           PermissionId = id,
+                                                                                                           FunctionId = t2.FunctionId,
+                                                                                                           PermissionType = t2.PermissionType,
+                                                                                                           Allowed = t2.Allowed
+                                                                                                   })
+                                                                              .ToArray() ?? Array.Empty<Domain.Entities.Rule>()
                                                              };
                                                   })
                               .ToArray();

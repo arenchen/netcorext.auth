@@ -11,9 +11,9 @@ public class ExistsRoleHandler : IRequestHandler<ExistsRole, Result>
 {
     private readonly DatabaseContext _context;
 
-    public ExistsRoleHandler(DatabaseContext context)
+    public ExistsRoleHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public async Task<Result> Handle(ExistsRole request, CancellationToken cancellationToken = default)

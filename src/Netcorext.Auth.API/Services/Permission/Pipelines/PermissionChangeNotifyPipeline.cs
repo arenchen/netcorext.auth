@@ -19,7 +19,7 @@ public class PermissionChangeNotifyPipeline : IRequestPipeline<CreatePermission,
     private readonly RedisClient _redis;
     private readonly ConfigSettings _config;
 
-    public PermissionChangeNotifyPipeline(DatabaseContext context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
+    public PermissionChangeNotifyPipeline(DatabaseContextAdapter context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
     {
         _context = context;
         _redis = redis;

@@ -12,9 +12,9 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
 {
     private readonly DatabaseContext _context;
 
-    public GetRolePermissionHandler(DatabaseContext context)
+    public GetRolePermissionHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public Task<Result<Models.RolePermission>> Handle(GetRolePermission request, CancellationToken cancellationToken = default)

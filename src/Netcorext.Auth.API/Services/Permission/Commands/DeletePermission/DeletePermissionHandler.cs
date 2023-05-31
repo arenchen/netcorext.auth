@@ -11,7 +11,7 @@ public class DeletePermissionHandler : IRequestHandler<DeletePermission, Result>
 {
     private readonly DatabaseContext _context;
 
-    public DeletePermissionHandler(DatabaseContext context)
+    public DeletePermissionHandler(DatabaseContextAdapter context)
     {
         _context = context;
     }

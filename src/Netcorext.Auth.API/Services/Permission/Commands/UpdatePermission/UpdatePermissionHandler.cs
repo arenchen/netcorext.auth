@@ -14,7 +14,7 @@ public class UpdatePermissionHandler : IRequestHandler<UpdatePermission, Result>
     private readonly DatabaseContext _context;
     private readonly ISnowflake _snowflake;
 
-    public UpdatePermissionHandler(DatabaseContext context, ISnowflake snowflake)
+    public UpdatePermissionHandler(DatabaseContextAdapter context, ISnowflake snowflake)
     {
         _context = context;
         _snowflake = snowflake;
@@ -40,16 +40,16 @@ public class UpdatePermissionHandler : IRequestHandler<UpdatePermission, Result>
             var gRules = request.Rules
                                 .GroupBy(t => t.Crud, (mode, roles) => new
                                                                        {
-                                                                           Mode = mode,
-                                                                           Data = roles.Select(t => new Domain.Entities.Rule
-                                                                                                    {
-                                                                                                        Id = t.Id ?? _snowflake.Generate(),
-                                                                                                        PermissionId = entity.Id,
-                                                                                                        FunctionId = t.FunctionId,
-                                                                                                        PermissionType = t.PermissionType,
-                                                                                                        Allowed = t.Allowed
-                                                                                                    })
-                                                                                       .ToArray()
+                                                                               Mode = mode,
+                                                                               Data = roles.Select(t => new Domain.Entities.Rule
+                                                                                                        {
+                                                                                                                Id = t.Id ?? _snowflake.Generate(),
+                                                                                                                PermissionId = entity.Id,
+                                                                                                                FunctionId = t.FunctionId,
+                                                                                                                PermissionType = t.PermissionType,
+                                                                                                                Allowed = t.Allowed
+                                                                                                        })
+                                                                                           .ToArray()
                                                                        })
                                 .ToArray();
 

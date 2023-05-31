@@ -11,7 +11,7 @@ public class DeleteRoleHandler : IRequestHandler<DeleteRole, Result>
 {
     private readonly DatabaseContext _context;
 
-    public DeleteRoleHandler(DatabaseContext context)
+    public DeleteRoleHandler(DatabaseContextAdapter context)
     {
         _context = context;
     }

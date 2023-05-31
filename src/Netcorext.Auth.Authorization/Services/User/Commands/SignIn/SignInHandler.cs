@@ -26,7 +26,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
     private readonly AuthOptions _authOptions;
     private readonly HttpContext? _httpContext;
 
-    public SignInHandler(DatabaseContext context, RedisClient redis, ISnowflake snowflake, IHttpContextAccessor httpContextAccessor, JwtGenerator jwtGenerator, IOptions<ConfigSettings> config, IOptions<AuthOptions> autoOptions)
+    public SignInHandler(DatabaseContextAdapter context, RedisClient redis, ISnowflake snowflake, IHttpContextAccessor httpContextAccessor, JwtGenerator jwtGenerator, IOptions<ConfigSettings> config, IOptions<AuthOptions> autoOptions)
     {
         _context = context;
         _redis = redis;
@@ -77,8 +77,8 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
                 return new Result<TokenResult>
                        {
-                           Code = Result.RequiredTwoFactorAuthenticationBinding,
-                           Message = string.Format(_authOptions.OtpAuthScheme, _authOptions.Issuer, entity.Username, entity.Otp)
+                               Code = Result.RequiredTwoFactorAuthenticationBinding,
+                               Message = string.Format(_authOptions.OtpAuthScheme, _authOptions.Issuer, entity.Username, entity.Otp)
                        };
             }
 
@@ -100,38 +100,38 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
         await _context.SaveChangesAsync(cancellationToken);
 
         var scope = entity.Roles.Any(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
-                        ? entity.Roles
-                                .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
-                                .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
-                        : null;
+                            ? entity.Roles
+                                    .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+                                    .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
+                            : null;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
-                                                           TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
-                                                                                                entity.Id.ToString(), null, entity.TokenExpireSeconds, scope)
-                                                                                      .Token,
-                                                           Scope = scope,
-                                                           RefreshToken = entity.AllowedRefreshToken
-                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
-                                                                                                       entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
-                                                                                             .Token
-                                                                              : null,
-                                                           ExpiresIn = entity.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
+                                                               TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
+                                                               AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
+                                                                                                    entity.Id.ToString(), null, entity.TokenExpireSeconds, scope)
+                                                                                          .Token,
+                                                               Scope = scope,
+                                                               RefreshToken = entity.AllowedRefreshToken
+                                                                                      ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
+                                                                                                               entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
+                                                                                                     .Token
+                                                                                      : null,
+                                                               ExpiresIn = entity.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
 
         dsToken.Add(new Domain.Entities.Token
                     {
-                        Id = _snowflake.Generate(),
-                        ResourceType = ResourceType.User,
-                        ResourceId = entity.Id.ToString(),
-                        TokenType = result.Content?.TokenType!,
-                        AccessToken = result.Content?.AccessToken!,
-                        ExpiresIn = result.Content?.ExpiresIn,
-                        Scope = result.Content?.Scope,
-                        RefreshToken = result.Content?.RefreshToken
+                            Id = _snowflake.Generate(),
+                            ResourceType = ResourceType.User,
+                            ResourceId = entity.Id.ToString(),
+                            TokenType = result.Content?.TokenType!,
+                            AccessToken = result.Content?.AccessToken!,
+                            ExpiresIn = result.Content?.ExpiresIn,
+                            Scope = result.Content?.Scope,
+                            RefreshToken = result.Content?.RefreshToken
                     });
 
         await _context.SaveChangesAsync(cancellationToken);

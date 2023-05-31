@@ -18,9 +18,9 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
     private readonly IMemoryCache _cache;
     private readonly ConfigSettings _config;
 
-    public ValidatePermissionHandler(DatabaseContext context, IMemoryCache cache, IOptions<ConfigSettings> config)
+    public ValidatePermissionHandler(DatabaseContextAdapter context, IMemoryCache cache, IOptions<ConfigSettings> config)
     {
-        _context = context;
+        _context = context.Slave;
         _cache = cache;
         _config = config.Value;
     }
@@ -46,11 +46,11 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             var user = await dsUser.Where(t => t.Id == request.UserId.Value)
                                    .Select(t => new
                                                 {
-                                                    t.Id,
-                                                    t.Disabled,
-                                                    Roles = t.Roles
-                                                             .Where(t2 => t2.ExpireDate == null || t2.ExpireDate > DateTimeOffset.UtcNow)
-                                                             .Select(t2 => t2.RoleId)
+                                                        t.Id,
+                                                        t.Disabled,
+                                                        Roles = t.Roles
+                                                                 .Where(t2 => t2.ExpireDate == null || t2.ExpireDate > DateTimeOffset.UtcNow)
+                                                                 .Select(t2 => t2.RoleId)
                                                 })
                                    .FirstOrDefaultAsync(cancellationToken);
 
@@ -76,11 +76,11 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             Expression<Func<Domain.Entities.Role, bool>> predicateRole = p => false;
 
             var extendData = request.RoleExtendData.GroupBy(t => t.Key, (k, values) =>
-                                                                            new
-                                                                            {
-                                                                                Key = k.ToUpper(),
-                                                                                Values = values.Select(t => t.Value.ToUpper())
-                                                                            });
+                                                                                new
+                                                                                {
+                                                                                        Key = k.ToUpper(),
+                                                                                        Values = values.Select(t => t.Value.ToUpper())
+                                                                                });
 
             predicateRole = extendData.Aggregate(predicateRole, (current, item) => current.Or(t => t.ExtendData.Any(t2 => t2.Key == item.Key && item.Values.Contains(t2.Value))));
 
@@ -102,23 +102,23 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
         Expression<Func<KeyValuePair<long, Models.UserPermissionCondition>, bool>> predicateUserPermissionCondition = t => t.Value.UserId == request.UserId && (t.Value.ExpireDate == null || t.Value.ExpireDate > DateTimeOffset.UtcNow);
 
         predicateRolePermissionCondition = request.Group.IsEmpty()
-                                               ? predicateRolePermissionCondition.And(t => t.Value.Group.IsEmpty())
-                                               : predicateRolePermissionCondition.And(t => t.Value.Group.IsEmpty() || t.Value.Group == request.Group);
+                                                   ? predicateRolePermissionCondition.And(t => t.Value.Group.IsEmpty())
+                                                   : predicateRolePermissionCondition.And(t => t.Value.Group.IsEmpty() || t.Value.Group == request.Group);
 
         predicateUserPermissionCondition = request.Group.IsEmpty()
-                                               ? predicateUserPermissionCondition.And(t => t.Value.Group.IsEmpty())
-                                               : predicateUserPermissionCondition.And(t => t.Value.Group.IsEmpty() || t.Value.Group == request.Group);
+                                                   ? predicateUserPermissionCondition.And(t => t.Value.Group.IsEmpty())
+                                                   : predicateUserPermissionCondition.And(t => t.Value.Group.IsEmpty() || t.Value.Group == request.Group);
 
         var roleConditions = cacheRolePermissionCondition.Where(predicateRolePermissionCondition.Compile())
                                                          .Select(t => new Models.PermissionCondition
 
                                                                       {
-                                                                          PermissionId = t.Value.PermissionId,
-                                                                          Priority = t.Value.Priority,
-                                                                          Group = t.Value.Group,
-                                                                          Key = t.Value.Key,
-                                                                          Value = t.Value.Value,
-                                                                          Allowed = t.Value.Allowed
+                                                                              PermissionId = t.Value.PermissionId,
+                                                                              Priority = t.Value.Priority,
+                                                                              Group = t.Value.Group,
+                                                                              Key = t.Value.Key,
+                                                                              Value = t.Value.Value,
+                                                                              Allowed = t.Value.Allowed
                                                                       })
                                                          .ToArray();
 
@@ -126,12 +126,12 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                                          .Select(t => new Models.PermissionCondition
 
                                                                       {
-                                                                          PermissionId = t.Value.PermissionId,
-                                                                          Priority = t.Value.Priority,
-                                                                          Group = t.Value.Group,
-                                                                          Key = t.Value.Key,
-                                                                          Value = t.Value.Value,
-                                                                          Allowed = t.Value.Allowed
+                                                                              PermissionId = t.Value.PermissionId,
+                                                                              Priority = t.Value.Priority,
+                                                                              Group = t.Value.Group,
+                                                                              Key = t.Value.Key,
+                                                                              Value = t.Value.Value,
+                                                                              Allowed = t.Value.Allowed
                                                                       })
                                                          .ToArray();
 
@@ -147,8 +147,8 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             var reqConditions = request.PermissionConditions
                                        .GroupBy(t => t.Key.ToUpper(), t => t.Value.ToUpper(), (key, values) => new
                                                                                                                {
-                                                                                                                   Key = key.ToUpper(),
-                                                                                                                   Values = values.Select(t => t.ToUpper())
+                                                                                                                       Key = key.ToUpper(),
+                                                                                                                       Values = values.Select(t => t.ToUpper())
                                                                                                                })
                                        .ToArray();
 
@@ -176,9 +176,9 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
                                                            return new
                                                                   {
-                                                                      t.Key.PermissionId,
-                                                                      t.Key.Priority,
-                                                                      Allowed = p
+                                                                          t.Key.PermissionId,
+                                                                          t.Key.Priority,
+                                                                          Allowed = p
                                                                   };
                                                        })
                                                .OrderBy(t => t.PermissionId).ThenBy(t => t.Priority)
@@ -191,16 +191,16 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
                                                            return new
                                                                   {
-                                                                      PermissionId = t.Key.PermissionId,
-                                                                      Allowed = p
+                                                                          t.Key.PermissionId,
+                                                                          Allowed = p
                                                                   };
                                                        })
                                                .GroupBy(t => t.PermissionId, t => t)
                                                .Select(t => new
                                                             {
-                                                                PermissionId = t.Key,
-                                                                Data = t,
-                                                                Count = t.Count()
+                                                                    PermissionId = t.Key,
+                                                                    Data = t,
+                                                                    Count = t.Count()
                                                             })
                                                .Where(t => t.Count >= keyCount)
                                                .Select(t =>
@@ -209,8 +209,8 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
                                                            return new Models.Condition
                                                                   {
-                                                                      PermissionId = t.PermissionId,
-                                                                      Allowed = p
+                                                                          PermissionId = t.PermissionId,
+                                                                          Allowed = p
                                                                   };
                                                        })
                                                .ToArray();
@@ -226,21 +226,21 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
         var validatorRules = rules.GroupJoin(validatorCondition, t => t.PermissionId, t => t.PermissionId, (r, c) => new
                                                                                                                      {
-                                                                                                                         Rule = r,
-                                                                                                                         Conditions = c.DefaultIfEmpty()
+                                                                                                                             Rule = r,
+                                                                                                                             Conditions = c.DefaultIfEmpty()
                                                                                                                      })
                                   .SelectMany(t => t.Conditions.Select(t2 =>
                                                                        {
                                                                            return new
                                                                                   {
-                                                                                      t.Rule.RoleId,
-                                                                                      t.Rule.PermissionId,
-                                                                                      RuleId = t.Rule.Id,
-                                                                                      t.Rule.FunctionId,
-                                                                                      t.Rule.PermissionType,
-                                                                                      t.Rule.Priority,
-                                                                                      t.Rule.Allowed,
-                                                                                      Enabled = t2?.Allowed ?? t.Rule.Allowed
+                                                                                          t.Rule.RoleId,
+                                                                                          t.Rule.PermissionId,
+                                                                                          RuleId = t.Rule.Id,
+                                                                                          t.Rule.FunctionId,
+                                                                                          t.Rule.PermissionType,
+                                                                                          t.Rule.Priority,
+                                                                                          t.Rule.Allowed,
+                                                                                          Enabled = t2?.Allowed ?? t.Rule.Allowed
                                                                                   };
                                                                        }))
                                   .Where(t => t.Enabled)
@@ -256,17 +256,17 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
                                                                       return new
                                                                              {
-                                                                                 PermissionType = pt,
-                                                                                 Allowed = c.Allowed | n.Allowed
+                                                                                     PermissionType = pt,
+                                                                                     Allowed = c.Allowed | n.Allowed
                                                                              };
                                                                   });
 
                                               return new
                                                      {
-                                                         t.Key.FunctionId,
-                                                         t.Key.Priority,
-                                                         p.PermissionType,
-                                                         p.Allowed
+                                                             t.Key.FunctionId,
+                                                             t.Key.Priority,
+                                                             p.PermissionType,
+                                                             p.Allowed
                                                      };
                                           })
                                   .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
@@ -283,15 +283,15 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
                                                                       return new
                                                                              {
-                                                                                 PermissionType = pt,
-                                                                                 Allowed = pt != PermissionType.None
+                                                                                     PermissionType = pt,
+                                                                                     Allowed = pt != PermissionType.None
                                                                              };
                                                                   });
 
                                               return new
                                                      {
-                                                         FunctionId = t.Key,
-                                                         p.PermissionType
+                                                             FunctionId = t.Key,
+                                                             p.PermissionType
                                                      };
                                           })
                                   .ToArray();

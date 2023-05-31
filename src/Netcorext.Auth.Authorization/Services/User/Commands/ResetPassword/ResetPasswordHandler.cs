@@ -12,7 +12,7 @@ public class ResetPasswordHandler : IRequestHandler<ResetPassword, Result>
 {
     private readonly DatabaseContext _context;
 
-    public ResetPasswordHandler(DatabaseContext context)
+    public ResetPasswordHandler(DatabaseContextAdapter context)
     {
         _context = context;
     }

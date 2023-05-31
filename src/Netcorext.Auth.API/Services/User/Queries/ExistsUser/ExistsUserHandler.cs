@@ -11,9 +11,9 @@ public class ExistsUserHandler : IRequestHandler<ExistsUser, Result>
 {
     private readonly DatabaseContext _context;
 
-    public ExistsUserHandler(DatabaseContext context)
+    public ExistsUserHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public async Task<Result> Handle(ExistsUser request, CancellationToken cancellationToken = default)

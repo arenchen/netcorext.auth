@@ -8,7 +8,7 @@ public class DeleteClientHandler : IRequestHandler<DeleteClient, Result>
 {
     private readonly DatabaseContext _context;
 
-    public DeleteClientHandler(DatabaseContext context)
+    public DeleteClientHandler(DatabaseContextAdapter context)
     {
         _context = context;
     }

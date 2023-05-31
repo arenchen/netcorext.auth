@@ -13,9 +13,9 @@ public class ValidateUserHandler : IRequestHandler<ValidateUser, Result>
 {
     private readonly DatabaseContext _context;
 
-    public ValidateUserHandler(DatabaseContext context)
+    public ValidateUserHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public async Task<Result> Handle(ValidateUser request, CancellationToken cancellationToken = default)

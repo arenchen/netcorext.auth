@@ -15,14 +15,23 @@ public class DbConfig
 {
     public DbConfig(IServiceCollection services, IConfiguration config)
     {
-        var slowCommandLoggingThreshold = config.GetValue<long>("AppSettings:SlowCommandLoggingThreshold", 1000);
+        var slowCommandLoggingThreshold = config.GetValue("AppSettings:SlowCommandLoggingThreshold", 1000L);
+        var defaultPoolSize = config.GetValue("Connections:RelationalDb:Default:PoolSize", 1024);
+        var slavePoolSize = config.GetValue("Connections:RelationalDb:Slave:PoolSize", 1024);
 
-        services.AddIdentityDbContext((provider, builder) =>
-                                      {
-                                          var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+        services.AddIdentityDbContextPool((provider, builder) =>
+                                          {
+                                              var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
-                                          builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault().Connection);
-                                      }, slowCommandLoggingThreshold: slowCommandLoggingThreshold);
+                                              builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault().Connection);
+                                          }, defaultPoolSize, slowCommandLoggingThreshold);
+
+        services.AddIdentitySlaveDbContextPool((provider, builder) =>
+                                               {
+                                                   var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+
+                                                   builder.UseNpgsql(cfg.Connections.RelationalDb["Slave"].Connection);
+                                               }, slavePoolSize, slowCommandLoggingThreshold);
 
         services.TryAddSingleton<RedisClient>(provider =>
                                               {
@@ -31,9 +40,9 @@ public class DbConfig
 
                                                   return new RedisClientConnection<RedisClient>(() => new RedisClient(cfg.Connections.Redis.GetDefault().Connection)
                                                                                                       {
-                                                                                                          Serialize = serializer.Serialize,
-                                                                                                          Deserialize = serializer.Deserialize,
-                                                                                                          DeserializeRaw = serializer.Deserialize
+                                                                                                              Serialize = serializer.Serialize,
+                                                                                                              Deserialize = serializer.Deserialize,
+                                                                                                              DeserializeRaw = serializer.Deserialize
                                                                                                       }).Client;
                                               });
     }

@@ -26,7 +26,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
     private readonly ConfigSettings _config;
     private readonly AuthOptions _authOptions;
 
-    public ExternalSignInHandler(DatabaseContext context, RedisClient redis, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake, JwtGenerator jwtGenerator, IOptions<ConfigSettings> config, IOptions<AuthOptions> authOptions)
+    public ExternalSignInHandler(DatabaseContextAdapter context, RedisClient redis, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake, JwtGenerator jwtGenerator, IOptions<ConfigSettings> config, IOptions<AuthOptions> authOptions)
     {
         _context = context;
         _redis = redis;
@@ -72,8 +72,8 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
                     return new Result<TokenResult>
                            {
-                               Code = Result.RequiredTwoFactorAuthenticationBinding,
-                               Message = string.Format(_authOptions.OtpAuthScheme, _authOptions.Issuer, entity.Username, entity.Otp)
+                                   Code = Result.RequiredTwoFactorAuthenticationBinding,
+                                   Message = string.Format(_authOptions.OtpAuthScheme, _authOptions.Issuer, entity.Username, entity.Otp)
                            };
                 }
 
@@ -95,27 +95,27 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         entity ??= new Domain.Entities.User
                    {
-                       Id = id,
-                       Username = username,
-                       NormalizedUsername = username.ToUpper(),
-                       DisplayName = request.DisplayName ?? request.Username,
-                       NormalizedDisplayName = (request.DisplayName ?? request.Username).ToUpper(),
-                       Password = Guid.NewGuid().ToString().Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
-                       Email = request.Email,
-                       NormalizedEmail = request.Email?.ToUpper(),
-                       PhoneNumber = request.PhoneNumber,
-                       AllowedRefreshToken = request.AllowedRefreshToken,
-                       TokenExpireSeconds = request.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
-                       RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds,
-                       CodeExpireSeconds = request.CodeExpireSeconds ?? _authOptions.CodeExpireSeconds,
-                       Roles = request.Roles?
-                                      .Select(t => new Domain.Entities.UserRole
-                                                   {
-                                                       Id = id,
-                                                       RoleId = t.RoleId,
-                                                       ExpireDate = t.ExpireDate
-                                                   })
-                                      .ToArray() ?? Array.Empty<Domain.Entities.UserRole>()
+                           Id = id,
+                           Username = username,
+                           NormalizedUsername = username.ToUpper(),
+                           DisplayName = request.DisplayName ?? request.Username,
+                           NormalizedDisplayName = (request.DisplayName ?? request.Username).ToUpper(),
+                           Password = Guid.NewGuid().ToString().Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
+                           Email = request.Email,
+                           NormalizedEmail = request.Email?.ToUpper(),
+                           PhoneNumber = request.PhoneNumber,
+                           AllowedRefreshToken = request.AllowedRefreshToken,
+                           TokenExpireSeconds = request.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
+                           RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds,
+                           CodeExpireSeconds = request.CodeExpireSeconds ?? _authOptions.CodeExpireSeconds,
+                           Roles = request.Roles?
+                                          .Select(t => new Domain.Entities.UserRole
+                                                       {
+                                                               Id = id,
+                                                               RoleId = t.RoleId,
+                                                               ExpireDate = t.ExpireDate
+                                                       })
+                                          .ToArray() ?? Array.Empty<Domain.Entities.UserRole>()
                    };
 
         entity.AccessFailedCount = 0;
@@ -126,9 +126,9 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         {
             entity.ExternalLogins.Add(new Domain.Entities.UserExternalLogin
                                       {
-                                          Id = entity.Id,
-                                          Provider = request.Provider,
-                                          UniqueId = request.UniqueId
+                                              Id = entity.Id,
+                                              Provider = request.Provider,
+                                              UniqueId = request.UniqueId
                                       });
         }
 
@@ -148,40 +148,40 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         }
 
         var scope = entity.Roles.Any(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
-                        ? entity.Roles
-                                .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
-                                .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
-                        : null;
+                            ? entity.Roles
+                                    .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+                                    .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
+                            : null;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
-                                                           TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                           AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
-                                                                                                entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope)
-                                                                                      .Token,
-                                                           Scope = scope,
-                                                           RefreshToken = entity.AllowedRefreshToken
-                                                                              ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
-                                                                                                       entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope
-                                                                                                      )
-                                                                                             .Token
-                                                                              : null,
-                                                           ExpiresIn = entity.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
-                                                           NameId = entity.Id.ToString()
+                                                               TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
+                                                               AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
+                                                                                                    entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope)
+                                                                                          .Token,
+                                                               Scope = scope,
+                                                               RefreshToken = entity.AllowedRefreshToken
+                                                                                      ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
+                                                                                                               entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope
+                                                                                                              )
+                                                                                                     .Token
+                                                                                      : null,
+                                                               ExpiresIn = entity.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
+                                                               NameId = entity.Id.ToString()
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
 
         dsToken.Add(new Domain.Entities.Token
                     {
-                        Id = _snowflake.Generate(),
-                        ResourceType = ResourceType.User,
-                        ResourceId = entity.Id.ToString(),
-                        TokenType = result.Content?.TokenType!,
-                        AccessToken = result.Content?.AccessToken!,
-                        ExpiresIn = result.Content?.ExpiresIn,
-                        Scope = result.Content?.Scope,
-                        RefreshToken = result.Content?.RefreshToken
+                            Id = _snowflake.Generate(),
+                            ResourceType = ResourceType.User,
+                            ResourceId = entity.Id.ToString(),
+                            TokenType = result.Content?.TokenType!,
+                            AccessToken = result.Content?.AccessToken!,
+                            ExpiresIn = result.Content?.ExpiresIn,
+                            Scope = result.Content?.Scope,
+                            RefreshToken = result.Content?.RefreshToken
                     });
 
         await _context.SaveChangesAsync(cancellationToken);

@@ -13,9 +13,9 @@ public class ValidateOtpHandler : IRequestHandler<ValidateOtp, Result>
 {
     private readonly DatabaseContext _context;
 
-    public ValidateOtpHandler(DatabaseContext context)
+    public ValidateOtpHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public async Task<Result> Handle(ValidateOtp request, CancellationToken cancellationToken = default)

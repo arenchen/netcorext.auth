@@ -19,7 +19,7 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
     private readonly ILogger<RegisterRouteHandler> _logger;
     private readonly ConfigSettings _config;
 
-    public RegisterRouteHandler(DatabaseContext context, RedisClient redis, ISerializer serializer, ISnowflake snowflake, IOptions<ConfigSettings> config, ILogger<RegisterRouteHandler> logger)
+    public RegisterRouteHandler(DatabaseContextAdapter context, RedisClient redis, ISerializer serializer, ISnowflake snowflake, IOptions<ConfigSettings> config, ILogger<RegisterRouteHandler> logger)
     {
         _context = context;
         _redis = redis;
@@ -48,8 +48,8 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
                 {
                     entGroup = new RouteGroup
                                {
-                                   Id = _snowflake.Generate(),
-                                   Name = group.Name
+                                       Id = _snowflake.Generate(),
+                                       Name = group.Name
                                };
 
                     await ds.AddAsync(entGroup, cancellationToken);
@@ -71,24 +71,24 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 
                                                      return new Domain.Entities.Route
                                                             {
-                                                                Id = id,
-                                                                GroupId = entGroup.Id,
-                                                                Protocol = t2.Protocol.ToUpper(),
-                                                                HttpMethod = t2.HttpMethod.ToUpper(),
-                                                                RelativePath = t2.RelativePath,
-                                                                Template = t2.Template,
-                                                                FunctionId = t2.FunctionId,
-                                                                NativePermission = t2.NativePermission,
-                                                                AllowAnonymous = t2.AllowAnonymous,
-                                                                Tag = t2.Tag,
-                                                                RouteValues = (t2.RouteValues ?? Array.Empty<RegisterRoute.RouteValue>())
-                                                                             .Select(t3 => new RouteValue
-                                                                                           {
-                                                                                               Id = id,
-                                                                                               Key = t3.Key,
-                                                                                               Value = t3.Value
-                                                                                           })
-                                                                             .ToHashSet()
+                                                                    Id = id,
+                                                                    GroupId = entGroup.Id,
+                                                                    Protocol = t2.Protocol.ToUpper(),
+                                                                    HttpMethod = t2.HttpMethod.ToUpper(),
+                                                                    RelativePath = t2.RelativePath,
+                                                                    Template = t2.Template,
+                                                                    FunctionId = t2.FunctionId,
+                                                                    NativePermission = t2.NativePermission,
+                                                                    AllowAnonymous = t2.AllowAnonymous,
+                                                                    Tag = t2.Tag,
+                                                                    RouteValues = (t2.RouteValues ?? Array.Empty<RegisterRoute.RouteValue>())
+                                                                                 .Select(t3 => new RouteValue
+                                                                                               {
+                                                                                                       Id = id,
+                                                                                                       Key = t3.Key,
+                                                                                                       Value = t3.Value
+                                                                                               })
+                                                                                 .ToHashSet()
                                                             };
                                                  });
 

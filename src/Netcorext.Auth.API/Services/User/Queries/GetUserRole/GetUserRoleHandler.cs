@@ -13,9 +13,9 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
     private readonly DatabaseContext _context;
     private readonly int _dataSizeLimit;
 
-    public GetUserRoleHandler(DatabaseContext context, IOptions<ConfigSettings> config)
+    public GetUserRoleHandler(DatabaseContextAdapter context, IOptions<ConfigSettings> config)
     {
-        _context = context;
+        _context = context.Slave;
         _dataSizeLimit = config.Value.Connections.RelationalDb.GetDefault().DataSizeLimit;
     }
 
@@ -30,46 +30,46 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
 
         var content = queryEntities.Select(t => new Models.FullUserRole
                                                 {
-                                                    Id = t.Id,
-                                                    RoleId = t.RoleId,
-                                                    Name = t.Role.Name,
-                                                    ExpireDate = t.ExpireDate,
-                                                    ExtendData = t.Role.ExtendData.Select(t2 => new Models.RoleExtendData
-                                                                                                {
-                                                                                                    Key = t2.Key,
-                                                                                                    Value = t2.Value,
-                                                                                                    CreationDate = t2.CreationDate,
-                                                                                                    CreatorId = t2.CreatorId,
-                                                                                                    ModificationDate = t2.ModificationDate,
-                                                                                                    ModifierId = t2.ModifierId
-                                                                                                }),
-                                                    Permissions = t.Role.Permissions.Select(t2 => new Models.RolePermission
-                                                                                                  {
-                                                                                                      PermissionId = t2.PermissionId,
-                                                                                                      Name = t2.Permission.Name,
-                                                                                                      CreationDate = t2.CreationDate,
-                                                                                                      CreatorId = t2.CreatorId,
-                                                                                                      ModificationDate = t2.ModificationDate,
-                                                                                                      ModifierId = t2.ModifierId
-                                                                                                  }),
-                                                    PermissionConditions = t.Role.PermissionConditions.Select(t2 => new Models.RolePermissionCondition
-                                                                                                                    {
-                                                                                                                        Id = t2.Id,
-                                                                                                                        PermissionId = t2.PermissionId,
-                                                                                                                        Priority = t2.Priority,
-                                                                                                                        Group = t2.Group,
-                                                                                                                        Key = t2.Key,
-                                                                                                                        Value = t2.Value,
-                                                                                                                        Allowed = t2.Allowed,
-                                                                                                                        CreationDate = t2.CreationDate,
-                                                                                                                        CreatorId = t2.CreatorId,
-                                                                                                                        ModificationDate = t2.ModificationDate,
-                                                                                                                        ModifierId = t2.ModifierId
-                                                                                                                    }),
-                                                    CreationDate = t.Role.CreationDate,
-                                                    CreatorId = t.Role.CreatorId,
-                                                    ModificationDate = t.Role.ModificationDate,
-                                                    ModifierId = t.Role.ModifierId
+                                                        Id = t.Id,
+                                                        RoleId = t.RoleId,
+                                                        Name = t.Role.Name,
+                                                        ExpireDate = t.ExpireDate,
+                                                        ExtendData = t.Role.ExtendData.Select(t2 => new Models.RoleExtendData
+                                                                                                    {
+                                                                                                            Key = t2.Key,
+                                                                                                            Value = t2.Value,
+                                                                                                            CreationDate = t2.CreationDate,
+                                                                                                            CreatorId = t2.CreatorId,
+                                                                                                            ModificationDate = t2.ModificationDate,
+                                                                                                            ModifierId = t2.ModifierId
+                                                                                                    }),
+                                                        Permissions = t.Role.Permissions.Select(t2 => new Models.RolePermission
+                                                                                                      {
+                                                                                                              PermissionId = t2.PermissionId,
+                                                                                                              Name = t2.Permission.Name,
+                                                                                                              CreationDate = t2.CreationDate,
+                                                                                                              CreatorId = t2.CreatorId,
+                                                                                                              ModificationDate = t2.ModificationDate,
+                                                                                                              ModifierId = t2.ModifierId
+                                                                                                      }),
+                                                        PermissionConditions = t.Role.PermissionConditions.Select(t2 => new Models.RolePermissionCondition
+                                                                                                                        {
+                                                                                                                                Id = t2.Id,
+                                                                                                                                PermissionId = t2.PermissionId,
+                                                                                                                                Priority = t2.Priority,
+                                                                                                                                Group = t2.Group,
+                                                                                                                                Key = t2.Key,
+                                                                                                                                Value = t2.Value,
+                                                                                                                                Allowed = t2.Allowed,
+                                                                                                                                CreationDate = t2.CreationDate,
+                                                                                                                                CreatorId = t2.CreatorId,
+                                                                                                                                ModificationDate = t2.ModificationDate,
+                                                                                                                                ModifierId = t2.ModifierId
+                                                                                                                        }),
+                                                        CreationDate = t.Role.CreationDate,
+                                                        CreatorId = t.Role.CreatorId,
+                                                        ModificationDate = t.Role.ModificationDate,
+                                                        ModifierId = t.Role.ModifierId
                                                 });
 
         if (!await content.AnyAsync(cancellationToken)) content = null;

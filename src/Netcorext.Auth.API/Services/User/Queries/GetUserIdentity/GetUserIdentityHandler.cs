@@ -10,9 +10,9 @@ public class GetUserIdentityHandler : IRequestHandler<GetUserIdentity, Result<IE
 {
     private readonly DatabaseContext _context;
 
-    public GetUserIdentityHandler(DatabaseContext context)
+    public GetUserIdentityHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public Task<Result<IEnumerable<Models.UserIdentity>>> Handle(GetUserIdentity request, CancellationToken cancellationToken = new())
@@ -32,9 +32,9 @@ public class GetUserIdentityHandler : IRequestHandler<GetUserIdentity, Result<IE
         var users = ds.Where(predicate)
                       .Select(t => new Models.UserIdentity
                                    {
-                                       Id = t.Id,
-                                       Username = t.Username,
-                                       DisplayName = t.DisplayName
+                                           Id = t.Id,
+                                           Username = t.Username,
+                                           DisplayName = t.DisplayName
                                    });
 
         return Task.FromResult(Result<IEnumerable<Models.UserIdentity>>.Success.Clone(users));

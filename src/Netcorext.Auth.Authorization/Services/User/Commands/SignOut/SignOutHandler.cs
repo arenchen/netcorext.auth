@@ -17,7 +17,7 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
     private readonly RedisClient _redis;
     private readonly ConfigSettings _config;
 
-    public SignOutHandler(DatabaseContext context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
+    public SignOutHandler(DatabaseContextAdapter context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
     {
         _context = context;
         _serializer = serializer;

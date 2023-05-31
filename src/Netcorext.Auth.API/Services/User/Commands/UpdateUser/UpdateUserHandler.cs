@@ -16,7 +16,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
     private readonly DatabaseContext _context;
     private readonly ISnowflake _snowflake;
 
-    public UpdateUserHandler(DatabaseContext context, ISnowflake snowflake)
+    public UpdateUserHandler(DatabaseContextAdapter context, ISnowflake snowflake)
     {
         _context = context;
         _snowflake = snowflake;
@@ -83,14 +83,14 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
             var gRoles = request.Roles
                                 .GroupBy(t => t.Crud, (mode, data) => new
                                                                       {
-                                                                          Mode = mode,
-                                                                          Data = data.Select(t => new UserRole
-                                                                                                  {
-                                                                                                      Id = entity.Id,
-                                                                                                      RoleId = t.RoleId,
-                                                                                                      ExpireDate = t.ExpireDate
-                                                                                                  })
-                                                                                     .ToArray()
+                                                                              Mode = mode,
+                                                                              Data = data.Select(t => new UserRole
+                                                                                                      {
+                                                                                                              Id = entity.Id,
+                                                                                                              RoleId = t.RoleId,
+                                                                                                              ExpireDate = t.ExpireDate
+                                                                                                      })
+                                                                                         .ToArray()
                                                                       })
                                 .ToArray();
 
@@ -124,14 +124,14 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
             var gExtendData = request.ExtendData
                                      .GroupBy(t => t.Crud, (mode, data) => new
                                                                            {
-                                                                               Mode = mode,
-                                                                               Data = data.Select(t => new UserExtendData
-                                                                                                       {
-                                                                                                           Id = entity.Id,
-                                                                                                           Key = t.Key.ToUpper(),
-                                                                                                           Value = t.Value
-                                                                                                       })
-                                                                                          .ToArray()
+                                                                                   Mode = mode,
+                                                                                   Data = data.Select(t => new UserExtendData
+                                                                                                           {
+                                                                                                                   Id = entity.Id,
+                                                                                                                   Key = t.Key.ToUpper(),
+                                                                                                                   Value = t.Value
+                                                                                                           })
+                                                                                              .ToArray()
                                                                            })
                                      .ToArray();
 
@@ -166,14 +166,14 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
             var gExternalLogins = request.ExternalLogins
                                          .GroupBy(t => t.Crud, (mode, data) => new
                                                                                {
-                                                                                   Mode = mode,
-                                                                                   Data = data.Select(t => new UserExternalLogin
-                                                                                                           {
-                                                                                                               Id = entity.Id,
-                                                                                                               Provider = t.Provider,
-                                                                                                               UniqueId = t.UniqueId
-                                                                                                           })
-                                                                                              .ToArray()
+                                                                                       Mode = mode,
+                                                                                       Data = data.Select(t => new UserExternalLogin
+                                                                                                               {
+                                                                                                                       Id = entity.Id,
+                                                                                                                       Provider = t.Provider,
+                                                                                                                       UniqueId = t.UniqueId
+                                                                                                               })
+                                                                                                  .ToArray()
                                                                                })
                                          .ToArray();
 
@@ -207,20 +207,20 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
             var gPermissionCondition = request.PermissionConditions
                                               .GroupBy(t => t.Crud, (mode, permissionCondition) => new
                                                                                                    {
-                                                                                                       Mode = mode,
-                                                                                                       Data = permissionCondition.Select(t => new UserPermissionCondition
-                                                                                                                                              {
-                                                                                                                                                  Id = t.Id ?? _snowflake.Generate(),
-                                                                                                                                                  UserId = entity.Id,
-                                                                                                                                                  PermissionId = t.PermissionId,
-                                                                                                                                                  Priority = t.Priority,
-                                                                                                                                                  Group = t.Group?.ToUpper(),
-                                                                                                                                                  Key = t.Key.ToUpper(),
-                                                                                                                                                  Value = t.Value.ToUpper(),
-                                                                                                                                                  Allowed = t.Allowed,
-                                                                                                                                                  ExpireDate = t.ExpireDate
-                                                                                                                                              })
-                                                                                                                                 .ToArray()
+                                                                                                           Mode = mode,
+                                                                                                           Data = permissionCondition.Select(t => new UserPermissionCondition
+                                                                                                                                                  {
+                                                                                                                                                          Id = t.Id ?? _snowflake.Generate(),
+                                                                                                                                                          UserId = entity.Id,
+                                                                                                                                                          PermissionId = t.PermissionId,
+                                                                                                                                                          Priority = t.Priority,
+                                                                                                                                                          Group = t.Group?.ToUpper(),
+                                                                                                                                                          Key = t.Key.ToUpper(),
+                                                                                                                                                          Value = t.Value.ToUpper(),
+                                                                                                                                                          Allowed = t.Allowed,
+                                                                                                                                                          ExpireDate = t.ExpireDate
+                                                                                                                                                  })
+                                                                                                                                     .ToArray()
                                                                                                    })
                                               .ToArray();
 

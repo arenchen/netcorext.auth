@@ -16,9 +16,9 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
     private readonly DatabaseContext _context;
     private readonly int _dataSizeLimit;
 
-    public GetPermissionHandler(DatabaseContext context, IOptions<ConfigSettings> config)
+    public GetPermissionHandler(DatabaseContextAdapter context, IOptions<ConfigSettings> config)
     {
-        _context = context;
+        _context = context.Slave;
         _dataSizeLimit = config.Value.Connections.RelationalDb.GetDefault().DataSizeLimit;
     }
 
@@ -58,33 +58,33 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
         var pagination = await queryEntities.GroupBy(t => 0)
                                             .Select(t => new
                                                          {
-                                                             Count = t.Count(),
-                                                             Rows = t.OrderBy(t2 => t2.Id)
-                                                                     .Skip(request.Paging.Offset)
-                                                                     .Take(request.Paging.Limit)
-                                                                     .Select(t2 => new Models.Permission
-                                                                                   {
-                                                                                       Id = t2.Id,
-                                                                                       Name = t2.Name,
-                                                                                       Priority = t2.Priority,
-                                                                                       Disabled = t2.Disabled,
-                                                                                       CreationDate = t2.CreationDate,
-                                                                                       CreatorId = t2.CreatorId,
-                                                                                       ModificationDate = t2.ModificationDate,
-                                                                                       ModifierId = t2.ModifierId,
-                                                                                       Rules = t2.Rules.Select(t3 => new Models.Rule
-                                                                                                                     {
-                                                                                                                         Id = t3.Id,
-                                                                                                                         FunctionId = t3.FunctionId,
-                                                                                                                         PermissionType = t3.PermissionType,
-                                                                                                                         Allowed = t3.Allowed,
-                                                                                                                         CreationDate = t3.CreationDate,
-                                                                                                                         CreatorId = t3.CreatorId,
-                                                                                                                         ModificationDate = t3.ModificationDate,
-                                                                                                                         ModifierId = t3.ModifierId
-                                                                                                                     })
-                                                                                   }
-                                                                            )
+                                                                 Count = t.Count(),
+                                                                 Rows = t.OrderBy(t2 => t2.Id)
+                                                                         .Skip(request.Paging.Offset)
+                                                                         .Take(request.Paging.Limit)
+                                                                         .Select(t2 => new Models.Permission
+                                                                                       {
+                                                                                               Id = t2.Id,
+                                                                                               Name = t2.Name,
+                                                                                               Priority = t2.Priority,
+                                                                                               Disabled = t2.Disabled,
+                                                                                               CreationDate = t2.CreationDate,
+                                                                                               CreatorId = t2.CreatorId,
+                                                                                               ModificationDate = t2.ModificationDate,
+                                                                                               ModifierId = t2.ModifierId,
+                                                                                               Rules = t2.Rules.Select(t3 => new Models.Rule
+                                                                                                                             {
+                                                                                                                                     Id = t3.Id,
+                                                                                                                                     FunctionId = t3.FunctionId,
+                                                                                                                                     PermissionType = t3.PermissionType,
+                                                                                                                                     Allowed = t3.Allowed,
+                                                                                                                                     CreationDate = t3.CreationDate,
+                                                                                                                                     CreatorId = t3.CreatorId,
+                                                                                                                                     ModificationDate = t3.ModificationDate,
+                                                                                                                                     ModifierId = t3.ModifierId
+                                                                                                                             })
+                                                                                       }
+                                                                                )
                                                          })
                                             .FirstOrDefaultAsync(cancellationToken);
 

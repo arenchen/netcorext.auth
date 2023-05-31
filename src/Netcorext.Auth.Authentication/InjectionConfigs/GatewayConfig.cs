@@ -1,4 +1,3 @@
-using Netcorext.Auth.Authentication.Workers;
 using Yarp.ReverseProxy.Configuration;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
@@ -12,11 +11,5 @@ public class GatewayConfig
 
         services.AddReverseProxy()
                 .LoadFromMemory(Array.Empty<RouteConfig>(), Array.Empty<ClusterConfig>());
-
-        services.AddWorkerRunner<AuthWorker, TokenRunner>();
-        services.AddWorkerRunner<AuthWorker, RoleRunner>();
-        services.AddWorkerRunner<AuthWorker, UserRunner>();
-        services.AddWorkerRunner<AuthWorker, RouteRunner>();
-        services.AddWorkerRunner<AuthWorker, MaintainRunner>();
     }
 }

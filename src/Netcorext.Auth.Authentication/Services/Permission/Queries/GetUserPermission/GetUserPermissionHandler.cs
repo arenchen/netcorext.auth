@@ -11,9 +11,9 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
 {
     private readonly DatabaseContext _context;
 
-    public GetUserPermissionHandler(DatabaseContext context)
+    public GetUserPermissionHandler(DatabaseContextAdapter context)
     {
-        _context = context;
+        _context = context.Slave;
     }
 
     public Task<Result<Models.UserPermission>> Handle(GetUserPermission request, CancellationToken cancellationToken = default)
@@ -28,20 +28,20 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
         var condition = ds.Where(predicate)
                           .Select(t => new Models.UserPermissionCondition
                                        {
-                                           Id = t.Id,
-                                           UserId = t.UserId,
-                                           PermissionId = t.PermissionId,
-                                           Priority = t.Priority,
-                                           Group = t.Group,
-                                           Key = t.Key,
-                                           Value = t.Value,
-                                           Allowed = t.Allowed,
-                                           ExpireDate = t.ExpireDate
+                                               Id = t.Id,
+                                               UserId = t.UserId,
+                                               PermissionId = t.PermissionId,
+                                               Priority = t.Priority,
+                                               Group = t.Group,
+                                               Key = t.Key,
+                                               Value = t.Value,
+                                               Allowed = t.Allowed,
+                                               ExpireDate = t.ExpireDate
                                        });
 
         var result = new Models.UserPermission
                      {
-                         PermissionConditions = condition.ToArray()
+                             PermissionConditions = condition.ToArray()
                      };
 
         return Task.FromResult(Result<Models.UserPermission>.Success.Clone(result));

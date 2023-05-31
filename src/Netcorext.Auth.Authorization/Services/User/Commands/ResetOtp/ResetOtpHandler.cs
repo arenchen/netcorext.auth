@@ -15,7 +15,7 @@ public class ResetOtpHandler : IRequestHandler<ResetOtp, Result>
     private readonly DatabaseContext _context;
     private readonly AuthOptions _config;
 
-    public ResetOtpHandler(DatabaseContext context, IOptions<AuthOptions> config)
+    public ResetOtpHandler(DatabaseContextAdapter context, IOptions<AuthOptions> config)
     {
         _context = context;
         _config = config.Value;
@@ -44,8 +44,8 @@ public class ResetOtpHandler : IRequestHandler<ResetOtp, Result>
 
         return new Result
                {
-                   Code = Result.Success,
-                   Message = otpAuthScheme
+                       Code = Result.Success,
+                       Message = otpAuthScheme
                };
     }
 }

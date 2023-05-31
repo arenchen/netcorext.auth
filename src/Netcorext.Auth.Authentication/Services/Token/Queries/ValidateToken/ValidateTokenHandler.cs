@@ -15,9 +15,9 @@ public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
     private readonly DatabaseContext _context;
     private readonly TokenValidationParameters _tokenValidationParameters;
 
-    public ValidateTokenHandler(DatabaseContext context, IOptions<AuthOptions> authOptions)
+    public ValidateTokenHandler(DatabaseContextAdapter context, IOptions<AuthOptions> authOptions)
     {
-        _context = context;
+        _context = context.Slave;
         _tokenValidationParameters = authOptions.Value.GetTokenValidationParameters();
     }
 
@@ -52,9 +52,9 @@ public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
 
         var isResourceValid = entity.ResourceType switch
                               {
-                                  ResourceType.Client => await dsClient.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
-                                  ResourceType.User => await dsUser.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
-                                  _ => false
+                                      ResourceType.Client => await dsClient.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
+                                      ResourceType.User => await dsUser.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
+                                      _ => false
                               };
 
         return isResourceValid ? Result.Success : Result.Unauthorized;
