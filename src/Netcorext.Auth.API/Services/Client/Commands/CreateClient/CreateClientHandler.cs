@@ -43,7 +43,7 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
                                                                 {
                                                                         Id = id,
                                                                         RoleId = t.RoleId,
-                                                                        ExpireDate = t.ExpireDate
+                                                                        ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                                 })
                                                    .ToArray() ?? Array.Empty<Domain.Entities.ClientRole>(),
                                     ExtendData = request.ExtendData?

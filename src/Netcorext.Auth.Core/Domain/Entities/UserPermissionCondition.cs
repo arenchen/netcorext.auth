@@ -11,7 +11,7 @@ public class UserPermissionCondition : Entity
     public string Key { get; set; } = null!;
     public string Value { get; set; } = null!;
     public bool Allowed { get; set; }
-    public DateTimeOffset? ExpireDate { get; set; }
+    public DateTimeOffset ExpireDate { get; set; }
     public virtual User User { get; set; } = null!;
     public virtual Permission Permission { get; set; } = null!;
 }

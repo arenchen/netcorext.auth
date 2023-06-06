@@ -88,7 +88,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                                                                       {
                                                                                                               Id = entity.Id,
                                                                                                               RoleId = t.RoleId,
-                                                                                                              ExpireDate = t.ExpireDate
+                                                                                                              ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                                                                       })
                                                                                          .ToArray()
                                                                       })
@@ -218,7 +218,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                                                                                                                           Key = t.Key.ToUpper(),
                                                                                                                                                           Value = t.Value.ToUpper(),
                                                                                                                                                           Allowed = t.Allowed,
-                                                                                                                                                          ExpireDate = t.ExpireDate
+                                                                                                                                                          ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                                                                                                                   })
                                                                                                                                      .ToArray()
                                                                                                    })

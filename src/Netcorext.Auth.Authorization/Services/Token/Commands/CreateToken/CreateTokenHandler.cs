@@ -203,8 +203,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                   ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
                                                           });
 
-        var userScope = user.Roles.Any(t => t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow)
-                                ? user.Roles.Where(t => t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
+        var userScope = user.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow)
+                                ? user.Roles.Where(t => t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
                                 : null;
 
         if (!TokenHelper.ScopeCheck(userScope, request.Scope))

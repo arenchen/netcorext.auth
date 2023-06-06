@@ -99,9 +99,9 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var scope = entity.Roles.Any(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+        var scope = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
                             ? entity.Roles
-                                    .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+                                    .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
                                     .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
                             : null;
 

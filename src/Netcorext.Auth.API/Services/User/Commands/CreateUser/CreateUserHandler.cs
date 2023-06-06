@@ -67,7 +67,7 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                                 {
                                                                         Id = id,
                                                                         RoleId = t.RoleId,
-                                                                        ExpireDate = t.ExpireDate
+                                                                        ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                                 })
                                                    .ToArray() ?? Array.Empty<UserRole>(),
                                     ExtendData = request.ExtendData?
@@ -97,7 +97,7 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                                                        Key = t.Key.ToUpper(),
                                                                                        Value = t.Value.ToUpper(),
                                                                                        Allowed = t.Allowed,
-                                                                                       ExpireDate = t.ExpireDate
+                                                                                       ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                                                })
                                                                   .ToArray() ?? Array.Empty<UserPermissionCondition>()
                             });

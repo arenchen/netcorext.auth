@@ -57,7 +57,7 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
                                                                                                         {
                                                                                                                 Id = entity.Id,
                                                                                                                 RoleId = t.RoleId,
-                                                                                                                ExpireDate = t.ExpireDate
+                                                                                                                ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                                                                         })
                                                                                            .ToArray()
                                                                        })

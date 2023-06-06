@@ -113,7 +113,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                        {
                                                                Id = id,
                                                                RoleId = t.RoleId,
-                                                               ExpireDate = t.ExpireDate
+                                                               ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                        })
                                           .ToArray() ?? Array.Empty<Domain.Entities.UserRole>()
                    };
@@ -147,9 +147,9 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        var scope = entity.Roles.Any(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+        var scope = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
                             ? entity.Roles
-                                    .Where(t => (t.ExpireDate == null || t.ExpireDate > DateTimeOffset.UtcNow) && !t.Role.Disabled)
+                                    .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
                                     .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
                             : null;
 
