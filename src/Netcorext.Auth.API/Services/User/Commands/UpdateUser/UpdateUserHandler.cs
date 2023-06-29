@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Netcorext.Algorithms;
+using Netcorext.Auth.API.Settings;
 using Netcorext.Auth.Domain.Entities;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
@@ -14,11 +15,13 @@ namespace Netcorext.Auth.API.Services.User.Commands;
 public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
 {
     private readonly DatabaseContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ISnowflake _snowflake;
 
-    public UpdateUserHandler(DatabaseContextAdapter context, ISnowflake snowflake)
+    public UpdateUserHandler(DatabaseContextAdapter context, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake)
     {
         _context = context;
+        _httpContextAccessor = httpContextAccessor;
         _snowflake = snowflake;
     }
 
@@ -121,11 +124,19 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
             
             var stringId = entity.Id.ToString();
             var tokens = dsToken.Where(t => t.ResourceType == ResourceType.User && t.ResourceId == stringId);
+            var dicTokens = new Dictionary<string, string>();
 
             foreach (var token in tokens)
             {
+                dicTokens.TryAdd(token.AccessToken, string.Empty);
+                
+                if (!token.RefreshToken.IsEmpty())
+                    dicTokens.TryAdd(token.RefreshToken, string.Empty);
+                
                 _context.Entry(token).UpdateProperty(t => t.Disabled, true);
             }
+            
+            _httpContextAccessor.HttpContext?.Items.Add(ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT, dicTokens.Keys.ToArray());
         }
 
         if (request.ExtendData != null && request.ExtendData.Any())

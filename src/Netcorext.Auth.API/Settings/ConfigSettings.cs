@@ -10,6 +10,7 @@ public class ConfigSettings : Config<AppSettings>
     public const string QUEUES_USER_CHANGE_EVENT = "UserChangeEvent";
     public const string QUEUES_USER_ROLE_CHANGE_EVENT = "UserRoleChangeEvent";
     public const string QUEUES_ROLE_CHANGE_EVENT = "RoleChangeEvent";
+    public const string QUEUES_TOKEN_REVOKE_EVENT = "TokenRevokeEvent";
 }
 
 public class AppSettings

@@ -2,6 +2,7 @@ using FreeRedis;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.User.Commands;
 using Netcorext.Auth.API.Settings;
+using Netcorext.Configuration;
 using Netcorext.Contracts;
 using Netcorext.Mediator.Pipelines;
 using Netcorext.Serialization;
@@ -14,12 +15,14 @@ public class UserChangeNotifyPipeline : IRequestPipeline<CreateUser, Result<long
 {
     private readonly ISerializer _serializer;
     private readonly RedisClient _redis;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ConfigSettings _config;
 
-    public UserChangeNotifyPipeline(RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
+    public UserChangeNotifyPipeline(RedisClient redis, IHttpContextAccessor httpContextAccessor, ISerializer serializer, IOptions<ConfigSettings> config)
     {
         _serializer = serializer;
         _redis = redis;
+        _httpContextAccessor = httpContextAccessor;
         _config = config.Value;
     }
 
@@ -46,6 +49,9 @@ public class UserChangeNotifyPipeline : IRequestPipeline<CreateUser, Result<long
         if (result == Result.SuccessNoContent && (request.Roles ?? Array.Empty<UpdateUser.UserRole>()).Any())
             await NotifyAsync(_config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT], request.Id);
 
+        if (_httpContextAccessor.HttpContext != null && _httpContextAccessor.HttpContext.Items.TryGetValue(ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT, out var tokens))
+            await NotifyAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], tokens as string[] ?? Array.Empty<string>());
+        
         return result;
     }
 
@@ -61,9 +67,15 @@ public class UserChangeNotifyPipeline : IRequestPipeline<CreateUser, Result<long
         return result;
     }
 
-    private async Task NotifyAsync(string channelId, params long[] ids)
+    private async Task NotifyAsync(string channelId, params long[] values)
     {
-        var value = await _serializer.SerializeAsync(ids);
+        var value = await _serializer.SerializeAsync(values);
+
+        await _redis.PublishAsync(channelId, value);
+    }
+    private async Task NotifyAsync(string channelId, params string[] values)
+    {
+        var value = await _serializer.SerializeAsync(values);
 
         await _redis.PublishAsync(channelId, value);
     }

@@ -47,20 +47,14 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
 
             _logger.LogInformation(nameof(UpdateTokenAsync));
 
-            var cachePermissions = _cache.Get<Dictionary<string, bool>>(ConfigSettings.CACHE_TOKEN) ?? new Dictionary<string, bool>();
-
             var tokens = _serializer.Deserialize<string[]>(data);
 
-            if (tokens == null) return;
+            if (tokens == null || !tokens.Any()) return;
 
             foreach (var token in tokens)
             {
-                if (cachePermissions.TryAdd(token, false)) continue;
-
-                cachePermissions[token] = false;
+                _cache.Set(token, false, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
             }
-
-            _cache.Set(ConfigSettings.CACHE_TOKEN, cachePermissions, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
         }
         finally
         {
