@@ -2,6 +2,7 @@ using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Services.Permission.Queries;
+using Netcorext.Auth.Authentication.Services.Token.Commands;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
@@ -21,6 +22,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
     private readonly ConfigSettings _config;
     private readonly ILogger<UserRunner> _logger;
     private static readonly SemaphoreSlim UserUpdateLocker = new(1, 1);
+    private static readonly SemaphoreSlim TokenUpdateLocker = new(1, 1);
 
     public UserRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
     {
@@ -38,7 +40,20 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
         _subscriber?.Dispose();
 
-        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT], (s, o) => UpdateUserAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
+        async void Handler(string s, object o)
+        {
+            if (s == _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT])
+                await UpdateUserAsync(o.ToString(), cancellationToken);
+            else if (s == _config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT])
+                await BlockUserTokenAsync(o.ToString(), cancellationToken);
+        }
+
+        _subscriber = _redis.Subscribe(new[]
+                                       {
+                                           _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT],
+                                           // 目前在 Netcorext.Auth.API 異動時處理
+                                           // _config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT]
+                                       }, Handler);
 
         await UpdateUserAsync(null, cancellationToken);
     }
@@ -89,6 +104,40 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         finally
         {
             UserUpdateLocker.Release();
+        }
+    }
+
+    private async Task BlockUserTokenAsync(string? ids, CancellationToken cancellationToken = default)
+    {
+        if (ids == null)
+            return;
+
+        try
+        {
+            await TokenUpdateLocker.WaitAsync(cancellationToken);
+
+            _logger.LogInformation(nameof(BlockUserTokenAsync));
+
+            using var scope = _serviceProvider.CreateScope();
+            var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
+
+            var reqIds = _serializer.Deserialize<long[]>(ids);
+
+            if (reqIds == null || !reqIds.Any())
+                return;
+
+            await dispatcher.SendAsync(new BlockUserToken
+                                       {
+                                           Ids = reqIds
+                                       }, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "{Message}", e.Message);
+        }
+        finally
+        {
+            TokenUpdateLocker.Release();
         }
     }
 

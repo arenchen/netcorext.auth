@@ -351,6 +351,7 @@ CREATE INDEX "IX_UserPermissionCondition_Group" ON "UserPermissionCondition" ("G
 CREATE INDEX "IX_UserPermissionCondition_PermissionId" ON "UserPermissionCondition" ("PermissionId");
 CREATE INDEX "IX_UserPermissionCondition_UserId" ON "UserPermissionCondition" ("UserId");
 CREATE INDEX "IX_UserRole_RoleId" ON "UserRole" ("RoleId");
+CREATE INDEX "IX_UserRole_Id_ExpireDate" ON "UserRole" ("Id", "ExpireDate");
 CREATE INDEX "IX_User_Disabled" ON "User" ("Disabled");
 CREATE INDEX "IX_User_DisplayName" ON "User" ("DisplayName");
 CREATE INDEX "IX_User_Email" ON "User" ("Email");

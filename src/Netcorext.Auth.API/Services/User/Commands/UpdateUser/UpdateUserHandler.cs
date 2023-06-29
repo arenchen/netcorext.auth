@@ -30,7 +30,8 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         var dsExternalLogin = _context.Set<UserExternalLogin>();
         var dsPermission = _context.Set<Domain.Entities.Permission>();
         var dsPermissionCondition = _context.Set<UserPermissionCondition>();
-
+        var dsToken = _context.Set<Token>();
+        
         if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
         if (!request.Username.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.NormalizedUsername == request.Username.ToUpper(), cancellationToken)) return Result.Conflict;
 
@@ -117,6 +118,14 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                           .ToArray();
 
             dsRole.UpdateRange(roles);
+            
+            var stringId = entity.Id.ToString();
+            var tokens = dsToken.Where(t => t.ResourceType == ResourceType.User && t.ResourceId == stringId);
+
+            foreach (var token in tokens)
+            {
+                _context.Entry(token).UpdateProperty(t => t.Disabled, true);
+            }
         }
 
         if (request.ExtendData != null && request.ExtendData.Any())

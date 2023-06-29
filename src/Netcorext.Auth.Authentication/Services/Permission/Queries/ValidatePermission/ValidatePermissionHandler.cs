@@ -36,6 +36,9 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
         var roleIds = Array.Empty<long>();
 
+        if (request.RoleId != null && request.RoleId.Any())
+            roleIds = request.RoleId;
+
         if (request.UserId.HasValue)
         {
             if (_config.AppSettings.Owner?.Any(t => t == request.UserId) ?? false)
@@ -63,12 +66,9 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             if (!user.Roles.Any())
                 return Result.Forbidden;
 
-            roleIds = user.Roles.ToArray();
-        }
-
-        if (request.RoleId != null && request.RoleId.Any())
-        {
-            roleIds = roleIds.Union(request.RoleId).ToArray();
+            roleIds = user.Roles
+                          .Join(roleIds, o => o, i => i, (o, _) => o)
+                          .ToArray();
         }
 
         if (request.RoleExtendData != null && request.RoleExtendData.Any())
