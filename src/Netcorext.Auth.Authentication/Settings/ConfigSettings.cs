@@ -32,4 +32,6 @@ public class AppSettings
     public long SlowCommandLoggingThreshold { get; set; } = 1000;
     public int? WorkerTaskLimit { get; set; } = 5;
     public int? RetryLimit { get; set; } = 3;
+    public string RequestIdHeaderName { get; set; } = "X-Request-Id";
+    public string[] RequestIdFromHeaderNames { get; set; } = { "X-Request-Id" };
 }

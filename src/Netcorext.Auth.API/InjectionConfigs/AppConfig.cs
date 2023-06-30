@@ -15,8 +15,9 @@ public class AppConfig
     public AppConfig(WebApplication app)
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
-
+        
         app.UseMiddleware<CustomExceptionMiddleware>();
+        app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
         app.UseJwtAuthentication();
 
         app.UseCors(b =>
@@ -32,7 +33,7 @@ public class AppConfig
                          .AllowAnyMethod()
                          .AllowCredentials();
                     });
-
+        
         app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
 
         app.MapGrpcService<ClientServiceFacade>();

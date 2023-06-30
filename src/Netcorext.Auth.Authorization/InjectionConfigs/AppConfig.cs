@@ -12,8 +12,9 @@ public class AppConfig
     public AppConfig(WebApplication app)
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
-
+        
         app.UseMiddleware<CustomExceptionMiddleware>();
+        app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
         app.UseJwtAuthentication();
 
         app.UseCors(b =>

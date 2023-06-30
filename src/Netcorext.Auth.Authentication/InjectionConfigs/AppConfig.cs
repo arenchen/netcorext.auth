@@ -17,6 +17,7 @@ public class AppConfig
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
         app.UseMiddleware<CustomExceptionMiddleware>();
+        app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
 
         app.UseCors(b =>
                     {
