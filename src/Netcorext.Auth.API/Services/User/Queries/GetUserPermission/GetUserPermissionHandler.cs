@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Netcorext.Auth.API.Services.User.Queries.Models;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
@@ -56,7 +57,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
 
         if (user == null) return Result<IEnumerable<Models.UserPermission>>.NotFound;
 
-        var emptyContent = new Models.UserPermission[request.PermissionConditions?.Length ?? 0];
+        var emptyContent = Array.Empty<UserPermission>();
 
         var content = new List<Models.UserPermission>();
 
