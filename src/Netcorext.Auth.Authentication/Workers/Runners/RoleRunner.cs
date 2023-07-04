@@ -68,20 +68,12 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
 
             if (reqIds != null && reqIds.Any())
             {
-                var repIds = result.Content.PermissionRules.Select(t => t.RoleId);
-
-                var diffIds = reqIds.Except(repIds);
-
-                var rules = cacheRolePermissionRule.Where(t => diffIds.Contains(t.Value.RoleId))
+                var rules = cacheRolePermissionRule.Where(t => reqIds.Contains(t.Value.RoleId))
                                                    .ToArray();
 
                 rules.ForEach(t => cacheRolePermissionRule.Remove(t.Key));
-
-                repIds = result.Content.PermissionConditions.Select(t => t.RoleId);
-
-                diffIds = reqIds.Except(repIds);
-
-                var conditions = cacheRolePermissionCondition.Where(t => diffIds.Contains(t.Value.RoleId))
+                
+                var conditions = cacheRolePermissionCondition.Where(t => reqIds.Contains(t.Value.RoleId))
                                                              .ToArray();
 
                 conditions.ForEach(t => cacheRolePermissionCondition.Remove(t.Key));
