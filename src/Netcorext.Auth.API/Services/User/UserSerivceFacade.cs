@@ -87,6 +87,28 @@ public class UserServiceFacade : UserService.UserServiceBase
     }
 
     [Permission("AUTH", PermissionType.Read)]
+    public override async Task<GetUserFunctionRequest.Types.Result> GetUserFunction(GetUserFunctionRequest request, ServerCallContext context)
+    {
+        var req = request.Adapt<GetUserFunction>();
+        var rep = await _dispatcher.SendAsync(req);
+
+        var result = new GetUserFunctionRequest.Types.Result
+                     {
+                         Code = rep.Code,
+                         Message = rep.Message,
+                         Content =
+                         {
+                             rep.Content?.Select(t => new GetUserFunctionRequest.Types.Result.Types.UserFunction
+                                                      {
+                                                          Functions = { t.Functions.Select(t2 => t2.Adapt<GetUserFunctionRequest.Types.Result.Types.Function>()) }
+                                                      })
+                         }
+                     };
+        
+        return result;
+    }
+
+    [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetUserRoleRequest.Types.Result> GetUserRole(GetUserRoleRequest request, ServerCallContext context)
     {
         var req = request.Adapt<GetUserRole>();

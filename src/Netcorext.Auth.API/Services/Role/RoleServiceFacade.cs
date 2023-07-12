@@ -84,4 +84,25 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
 
         return rep.Adapt<Result>();
     }
+
+    public override async Task<GetRoleFunctionRequest.Types.Result> GetRoleFunction(GetRoleFunctionRequest request, ServerCallContext context)
+    {
+        var req = request.Adapt<GetRoleFunction>();
+        var rep = await _dispatcher.SendAsync(req);
+
+        var result = new GetRoleFunctionRequest.Types.Result
+                     {
+                         Code = rep.Code,
+                         Message = rep.Message,
+                         Content =
+                         {
+                             rep.Content?.Select(t => new GetRoleFunctionRequest.Types.Result.Types.RoleFunction
+                                                      {
+                                                          Functions = { t.Functions.Select(t2 => t2.Adapt<GetRoleFunctionRequest.Types.Result.Types.Function>()) }
+                                                      })
+                         }
+                     };
+        
+        return result;
+    }
 }

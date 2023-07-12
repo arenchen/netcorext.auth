@@ -1,3 +1,4 @@
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Mapster;
 using Netcorext.Auth.API.Services.Permission.Commands;
@@ -47,5 +48,20 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
         var rep = await _dispatcher.SendAsync(req);
 
         return rep.Adapt<Result>();
+    }
+
+    public override async Task<GetRouteFunctionResult> GetRouteFunction(Empty request, ServerCallContext context)
+    {
+        var req = new GetRouteFunction();
+        var rep = await _dispatcher.SendAsync(req);
+
+        var result = new GetRouteFunctionResult
+                     {
+                         Code = rep.Code,
+                         Message = rep.Message,
+                         Content = { rep.Content }
+                     };
+        
+        return result;
     }
 }
