@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
@@ -90,10 +89,10 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                                                              });
 
         Models.UserPermission[] content;
-        
+
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
-            content = new [] { await GetPermissionsWithoutConditionAsync(rules) };
+            content = new[] { await GetPermissionsWithoutConditionAsync(rules) };
 
             return Result<IEnumerable<Models.UserPermission>>.Success.Clone(content);
         }
@@ -176,7 +175,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                                    return new
                                                           {
                                                               FunctionId = t.Key,
-                                                              p.PermissionType
+                                                              PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                           };
                                                });
 
@@ -189,7 +188,9 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                  .Where(t => t.PermissionType != PermissionType.None)
                                  .Select(t => t.PermissionId)
                                  .Distinct()
-                                 .OrderBy(t => t);;
+                                 .OrderBy(t => t);
+
+        ;
 
         var content = new Models.UserPermission
                       {
@@ -379,7 +380,7 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                               return new
                                                      {
                                                          FunctionId = t.Key,
-                                                         p.PermissionType
+                                                         PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                      };
                                           })
                                   .ToArray();
@@ -393,7 +394,9 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                        .Where(t => t.PermissionType != PermissionType.None)
                        .Select(t => t.PermissionId)
                        .Distinct()
-                       .OrderBy(t => t);;
+                       .OrderBy(t => t);
+
+        ;
 
         var content = new Models.UserPermission
                       {

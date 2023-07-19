@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
@@ -25,7 +24,7 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
         var dsRolePermissionCondition = _context.Set<Domain.Entities.RolePermissionCondition>();
         var dsRule = _context.Set<Domain.Entities.Rule>();
         var emptyContent = Array.Empty<Models.RoleFunction>();
-        
+
         var roleIds = dsRole.Where(t => request.Ids.Contains(t.Id) && !t.Disabled)
                             .Select(t => t.Id)
                             .ToArray();
@@ -77,11 +76,11 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
 
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
-            content = new [] { await GetFunctionsWithoutConditionAsync(rules) };
+            content = new[] { await GetFunctionsWithoutConditionAsync(rules) };
 
             return Result<IEnumerable<Models.RoleFunction>>.Success.Clone(content);
         }
-        
+
         content = new Models.RoleFunction[request.PermissionConditions.Length];
 
         async void Handler(int i)
@@ -156,7 +155,7 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                                    return new
                                                           {
                                                               FunctionId = t.Key,
-                                                              p.PermissionType
+                                                              PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                           };
                                                });
 
@@ -172,7 +171,9 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                                   PermissionType = t.PermissionType
                                               })
                                  .DistinctBy(t => new { t.Id, t.PermissionType })
-                                 .OrderBy(t => t.Id);;
+                                 .OrderBy(t => t.Id);
+
+        ;
 
         var content = new Models.RoleFunction
                       {
@@ -362,7 +363,7 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                               return new
                                                      {
                                                          FunctionId = t.Key,
-                                                         p.PermissionType
+                                                         PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                      };
                                           })
                                   .ToArray();
@@ -380,7 +381,9 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                         PermissionType = t.PermissionType
                                     })
                        .DistinctBy(t => new { t.Id, t.PermissionType })
-                       .OrderBy(t => t.Id);;
+                       .OrderBy(t => t.Id);
+
+        ;
 
         var content = new Models.RoleFunction
                       {

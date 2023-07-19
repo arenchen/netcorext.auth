@@ -175,9 +175,9 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
                                                    return new
                                                           {
                                                               FunctionId = t.Key,
-                                                              p.PermissionType
+                                                              PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                           };
-                                               });
+                                               }).ToArray();
 
         var fns = permissionRules.Join(functions, r => r.FunctionId, f => f.FunctionId,
                                        (r, f) => f with
@@ -384,7 +384,7 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
                                               return new
                                                      {
                                                          FunctionId = t.Key,
-                                                         p.PermissionType
+                                                         PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                      };
                                           })
                                   .ToArray();
