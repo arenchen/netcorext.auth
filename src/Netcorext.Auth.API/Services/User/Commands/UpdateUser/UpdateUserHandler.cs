@@ -265,6 +265,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                   o.Group = i.Group;
                                                   o.Value = i.Value;
                                                   o.Allowed = i.Allowed;
+                                                  o.ExpireDate = i.ExpireDate;
 
                                                   return o;
                                               })
