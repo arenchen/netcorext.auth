@@ -88,11 +88,11 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
                                                                                  Allowed = t.Allowed
                                                                              });
 
-        var content = new List<Models.UserFunction>();
+        Models.UserFunction[] content;
 
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
-            content.Add(await GetFunctionsWithoutConditionAsync(rules));
+            content = new [] { await GetFunctionsWithoutConditionAsync(rules) };
 
             return Result<IEnumerable<Models.UserFunction>>.Success.Clone(content);
         }
@@ -101,10 +101,14 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
                                                  .Distinct()
                                                  .ToArray();
 
-        await Parallel.ForEachAsync(request.PermissionConditions, cancellationToken, async (permissionCondition, _) =>
-                                                                                     {
-                                                                                         content.Add(await GetFunctionsAsync(permissionCondition, rules, conditions));
-                                                                                     });
+        content = new Models.UserFunction[request.PermissionConditions.Length];
+
+        async void Handler(int i)
+        {
+            content[i] = await GetFunctionsAsync(request.PermissionConditions[i], rules, conditions);
+        }
+
+        Parallel.For(0, request.PermissionConditions.Length, Handler);
 
         return Result<IEnumerable<Models.UserFunction>>.Success.Clone(content);
     }

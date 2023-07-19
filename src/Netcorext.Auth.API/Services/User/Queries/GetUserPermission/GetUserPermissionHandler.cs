@@ -89,11 +89,11 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                                                                  Allowed = t.Allowed
                                                                              });
 
-        var content = new List<Models.UserPermission>();
-
+        Models.UserPermission[] content;
+        
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
-            content.Add(await GetPermissionsWithoutConditionAsync(rules));
+            content = new [] { await GetPermissionsWithoutConditionAsync(rules) };
 
             return Result<IEnumerable<Models.UserPermission>>.Success.Clone(content);
         }
@@ -102,10 +102,14 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                                  .Distinct()
                                                  .ToArray();
 
-        await Parallel.ForEachAsync(request.PermissionConditions, cancellationToken, async (permissionCondition, _) =>
-                                                                                     {
-                                                                                         content.Add(await GetPermissionsAsync(permissionCondition, rules, conditions));
-                                                                                     });
+        content = new Models.UserPermission[request.PermissionConditions.Length];
+
+        async void Handler(int i)
+        {
+            content[i] = await GetPermissionsAsync(request.PermissionConditions[i], rules, conditions);
+        }
+
+        Parallel.For(0, request.PermissionConditions.Length, Handler);
 
         return Result<IEnumerable<Models.UserPermission>>.Success.Clone(content);
     }

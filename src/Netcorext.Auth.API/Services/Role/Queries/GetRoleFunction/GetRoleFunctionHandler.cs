@@ -73,19 +73,23 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                                                              })
                                                                 .ToArray();
 
-        var content = new List<Models.RoleFunction>();
+        Models.RoleFunction[] content;
 
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
-            content.Add(await GetFunctionsWithoutConditionAsync(rules));
+            content = new [] { await GetFunctionsWithoutConditionAsync(rules) };
 
             return Result<IEnumerable<Models.RoleFunction>>.Success.Clone(content);
         }
+        
+        content = new Models.RoleFunction[request.PermissionConditions.Length];
 
-        await Parallel.ForEachAsync(request.PermissionConditions, cancellationToken, async (permissionCondition, _) =>
-                                                                                     {
-                                                                                         content.Add(await GetFunctionsAsync(permissionCondition, rules, rolePermissionConditions));
-                                                                                     });
+        async void Handler(int i)
+        {
+            content[i] = await GetFunctionsAsync(request.PermissionConditions[i], rules, rolePermissionConditions);
+        }
+
+        Parallel.For(0, request.PermissionConditions.Length, Handler);
 
         return Result<IEnumerable<Models.RoleFunction>>.Success.Clone(content);
     }
