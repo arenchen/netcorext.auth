@@ -12,6 +12,7 @@ public class CloneRole : IRequest<Result<long?>>
     public RolePermission[]? Permissions { get; set; }
     public RolePermissionCondition[]? PermissionConditions { get; set; }
     public DefaultPermissionCondition[]? DefaultPermissionConditions { get; set; }
+    public long? CustomId { get; set; }
 
     public class RoleExtendData
     {

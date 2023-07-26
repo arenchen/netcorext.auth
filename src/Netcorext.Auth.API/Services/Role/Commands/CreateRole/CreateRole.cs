@@ -14,6 +14,7 @@ public class CreateRole : IRequest<Result<IEnumerable<long>>>
         public RoleExtendData[]? ExtendData { get; set; }
         public RolePermission[]? Permissions { get; set; }
         public RolePermissionCondition[]? PermissionConditions { get; set; }
+        public long? CustomId { get; set; }
     }
 
     public class RoleExtendData

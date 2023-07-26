@@ -6,7 +6,7 @@ namespace Netcorext.Auth.API.Services.Permission.Queries;
 
 public class GetPermission : IRequest<Result<IEnumerable<Models.Permission>>>
 {
-    public long? Id { get; set; }
+    public long[]? Ids { get; set; }
     public string? Name { get; set; }
     public bool? Disabled { get; set; }
     public PermissionRule? Rule { get; set; }

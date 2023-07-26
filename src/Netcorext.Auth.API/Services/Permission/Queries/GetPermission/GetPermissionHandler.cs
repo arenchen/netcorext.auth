@@ -28,7 +28,7 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
 
         Expression<Func<Domain.Entities.Permission, bool>> predicate = p => true;
 
-        if (request.Id.HasValue) predicate = predicate.And(p => p.Id == request.Id.Value);
+        if (!request.Ids.IsEmpty()) predicate = predicate.And(p => request.Ids.Contains(p.Id));
 
         if (!request.Name.IsEmpty()) predicate = predicate.And(p => p.Name.ToUpper().Contains(request.Name.ToUpper()));
 

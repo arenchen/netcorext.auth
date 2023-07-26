@@ -42,7 +42,7 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
 
         var entities = request.Roles.Select(t =>
                                             {
-                                                var id = _snowflake.Generate();
+                                                var id = t.CustomId ?? _snowflake.Generate();
 
                                                 return new Domain.Entities.Role
                                                        {

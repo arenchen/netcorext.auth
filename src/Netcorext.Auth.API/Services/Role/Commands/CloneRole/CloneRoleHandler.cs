@@ -34,7 +34,7 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
                        .AsNoTracking()
                        .First(t => t.Id == request.SourceId);
 
-        entity.Id = _snowflake.Generate();
+        entity.Id = request.CustomId ?? _snowflake.Generate();
         entity.Name = request.Name;
         entity.Disabled = request.Disabled;
         entity.ExtendData.ForEach(t => t.Id = entity.Id);
