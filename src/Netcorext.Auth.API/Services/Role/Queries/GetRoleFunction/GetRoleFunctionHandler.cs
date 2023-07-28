@@ -173,8 +173,6 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                  .DistinctBy(t => new { t.Id, t.PermissionType })
                                  .OrderBy(t => t.Id);
 
-        ;
-
         var content = new Models.RoleFunction
                       {
                           Functions = fns
@@ -382,8 +380,6 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                     })
                        .DistinctBy(t => new { t.Id, t.PermissionType })
                        .OrderBy(t => t.Id);
-
-        ;
 
         var content = new Models.RoleFunction
                       {

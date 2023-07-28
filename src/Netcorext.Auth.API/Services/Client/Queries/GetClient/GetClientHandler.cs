@@ -111,7 +111,7 @@ public class GetClientHandler : IRequestHandler<GetClient, Result<IEnumerable<Mo
                                                                                        }
                                                                                 )
                                                          })
-                                            .FirstOrDefaultAsync(cancellationToken);
+                                            .SingleOrDefaultAsync(cancellationToken);
 
         request.Paging.Count = pagination?.Count ?? 0;
 

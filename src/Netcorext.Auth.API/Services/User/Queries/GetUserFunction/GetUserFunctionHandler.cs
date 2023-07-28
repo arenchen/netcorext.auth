@@ -92,7 +92,7 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
 
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
-            content = new [] { await GetFunctionsWithoutConditionAsync(rules) };
+            content = new[] { await GetFunctionsWithoutConditionAsync(rules) };
 
             return Result<IEnumerable<Models.UserFunction>>.Success.Clone(content);
         }
@@ -308,7 +308,7 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
                                                                                        Enabled = t2?.Allowed ?? t.Rule.Allowed //?? keyCount == 0
                                                                                    };
                                                                         }))
-                                   .Where(t => t.Enabled != false)
+                                   .Where(t => t.Enabled)
                                    .GroupBy(t => new { t.PermissionId, t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
                                    .Select(t =>
                                            {

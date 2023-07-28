@@ -190,8 +190,6 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                                  .Distinct()
                                  .OrderBy(t => t);
 
-        ;
-
         var content = new Models.UserPermission
                       {
                           PermissionIds = ids
@@ -395,8 +393,6 @@ public class GetUserPermissionHandler : IRequestHandler<GetUserPermission, Resul
                        .Select(t => t.PermissionId)
                        .Distinct()
                        .OrderBy(t => t);
-
-        ;
 
         var content = new Models.UserPermission
                       {

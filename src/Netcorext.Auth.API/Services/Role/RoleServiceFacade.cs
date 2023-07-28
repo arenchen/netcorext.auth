@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Grpc.Core;
 using Mapster;
 using Netcorext.Auth.API.Services.Role.Commands;
@@ -59,21 +58,10 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
     [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetRoleRequest.Types.Result> GetRole(GetRoleRequest request, ServerCallContext context)
     {
-        var time = new Stopwatch();
-
-        time.Start();
-
-
         var req = request.Adapt<GetRole>();
         var rep = await _dispatcher.SendAsync(req);
 
-        var r = rep.Adapt<GetRoleRequest.Types.Result>();
-
-        time.Stop();
-
-        Console.WriteLine(time.Elapsed.ToString());
-
-        return r;
+        return rep.Adapt<GetRoleRequest.Types.Result>();
     }
 
     [Permission("AUTH", PermissionType.Write)]
@@ -102,7 +90,7 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
                                                       })
                          }
                      };
-        
+
         return result;
     }
 }

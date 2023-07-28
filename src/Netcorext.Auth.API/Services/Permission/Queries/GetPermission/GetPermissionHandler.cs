@@ -86,7 +86,7 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
                                                                                        }
                                                                                 )
                                                          })
-                                            .FirstOrDefaultAsync(cancellationToken);
+                                            .SingleOrDefaultAsync(cancellationToken);
 
         request.Paging.Count = pagination?.Count ?? 0;
 

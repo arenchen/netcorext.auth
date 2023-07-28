@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
@@ -21,7 +20,43 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
     public async Task<Result<IEnumerable<Models.ClientPermission>>> Handle(GetClientPermission request, CancellationToken cancellationToken = default)
     {
         var ds = _context.Set<Domain.Entities.Client>();
-        var dsRole = _context.Set<Domain.Entities.Role>();
+        var dsClientRole = _context.Set<Domain.Entities.ClientRole>();
+        var dsRolePermission = _context.Set<Domain.Entities.RolePermission>();
+        var dsRolePermissionCondition = _context.Set<Domain.Entities.RolePermissionCondition>();
+        var dsRule = _context.Set<Domain.Entities.Rule>();
+        var emptyContent = Array.Empty<Models.ClientPermission>();
+
+        if (!ds.Any(t => t.Id == request.Id && !t.Disabled))
+            return Result<IEnumerable<Models.ClientPermission>>.NotFound;
+
+        var roleIds = dsClientRole.Where(t => t.Id == request.Id && !t.Role.Disabled && t.ExpireDate > DateTimeOffset.UtcNow)
+                                .Select(t => t.RoleId)
+                                .ToArray();
+
+        if (roleIds.Length == 0)
+            return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
+
+        var permissionIds = dsRolePermission.Where(t => roleIds.Contains(t.Id))
+                                            .Select(t => t.PermissionId)
+                                            .ToArray();
+
+        if (permissionIds.Length == 0)
+            return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
+
+        var rules = dsRule.Where(t => permissionIds.Contains(t.PermissionId))
+                          .Select(t => new Models.MixingPermissionRule
+                                       {
+                                           Id = t.Id,
+                                           PermissionId = t.PermissionId,
+                                           FunctionId = t.FunctionId,
+                                           Priority = t.Permission.Priority,
+                                           PermissionType = t.PermissionType,
+                                           Allowed = t.Allowed
+                                       })
+                          .ToArray();
+
+        if (rules.Length == 0)
+            return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
 
         var groups = request.PermissionConditions?
                             .Where(t => !t.Group.IsEmpty())
@@ -29,85 +64,38 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
                             .Distinct()
                             .ToArray() ?? Array.Empty<string>();
 
-        var client = await ds
-                          .AsNoTracking()
-                          .Where(t => t.Id == request.Id)
-                          .Select(t => new
-                                       {
-                                               t.Disabled,
-                                               Roles = t.Roles
-                                                        .Where(t2 => !t2.Role.Disabled)
-                                                        .Select(t2 => t2.RoleId)
-                                                        .ToArray()
-                                       })
-                          .FirstOrDefaultAsync(cancellationToken);
+        var rolePermissionConditions = dsRolePermissionCondition.Where(t => roleIds.Contains(t.RoleId) && (t.Group == null || groups.Contains(t.Group)))
+                                                                .Select(t => new Models.MixingPermissionCondition
+                                                                             {
+                                                                                 PermissionId = t.PermissionId,
+                                                                                 Priority = t.Priority,
+                                                                                 Group = t.Group,
+                                                                                 Key = t.Key,
+                                                                                 Value = t.Value,
+                                                                                 Allowed = t.Allowed
+                                                                             })
+                                                                .ToArray();
 
-        if (client == null) return Result<IEnumerable<Models.ClientPermission>>.NotFound;
-
-        var emptyContent = new Models.ClientPermission[request.PermissionConditions?.Length ?? 0];
-
-        var content = new List<Models.ClientPermission>();
-
-        if (client.Disabled) return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
-
-        var roleIds = client.Roles;
-
-        var roles = dsRole
-                   .AsSplitQuery()
-                   .AsNoTracking()
-                   .Where(t => roleIds.Contains(t.Id) && !t.Disabled)
-                   .Select(t => new
-                                {
-                                        RolePermissions = t.Permissions
-                                                           .Select(t2 => t2.Permission)
-                                                           .Where(t2 => !t2.Disabled)
-                                                           .SelectMany(t2 => t2.Rules.Select(t3 => new Models.MixingPermissionRule
-                                                                                                   {
-                                                                                                           Id = t3.Id,
-                                                                                                           PermissionId = t3.PermissionId,
-                                                                                                           FunctionId = t3.FunctionId,
-                                                                                                           Priority = t2.Priority,
-                                                                                                           PermissionType = t3.PermissionType,
-                                                                                                           Allowed = t3.Allowed
-                                                                                                   }))
-                                                           .ToArray(),
-                                        RolePermissionConditions = t.PermissionConditions
-                                                                    .Where(t2 => t2.Group == null || groups.Contains(t2.Group))
-                                                                    .Select(t2 => new Models.MixingPermissionCondition
-                                                                                  {
-                                                                                          PermissionId = t2.PermissionId,
-                                                                                          Priority = t2.Priority,
-                                                                                          Group = t2.Group,
-                                                                                          Key = t2.Key,
-                                                                                          Value = t2.Value,
-                                                                                          Allowed = t2.Allowed
-                                                                                  })
-                                                                    .ToArray()
-                                })
-                   .ToArray();
-
-        if (!roles.Any())
-            return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
-
-        var rolePermissions = roles.SelectMany(t => t.RolePermissions)
-                                   .ToArray();
-
-        if (!rolePermissions.Any()) return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(emptyContent);
+        Models.ClientPermission[] content;
 
         if (request.PermissionConditions == null || !request.PermissionConditions.Any())
         {
-            content.Add(await GetPermissionsWithoutConditionAsync(rolePermissions));
+            content = new[] { await GetPermissionsWithoutConditionAsync(rules) };
 
             return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(content);
         }
 
-        var conditions = roles.SelectMany(t => t.RolePermissionConditions)
-                              .ToArray();
+        var conditions = rolePermissionConditions.Distinct()
+                                                 .ToArray();
 
-        foreach (var permissionCondition in request.PermissionConditions)
+        content = new Models.ClientPermission[request.PermissionConditions.Length];
+
+        async void Handler(int i)
         {
-            content.Add(await GetPermissionsAsync(permissionCondition, rolePermissions, conditions));
+            content[i] = await GetPermissionsAsync(request.PermissionConditions[i], rules, conditions);
         }
+
+        Parallel.For(0, request.PermissionConditions.Length, Handler);
 
         return Result<IEnumerable<Models.ClientPermission>>.Success.Clone(content);
     }
@@ -116,12 +104,12 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
     {
         var permissionRules = permissions.Select(t => new
                                                       {
-                                                              t.Id,
-                                                              t.PermissionId,
-                                                              t.FunctionId,
-                                                              t.Priority,
-                                                              t.PermissionType,
-                                                              t.Allowed
+                                                          t.Id,
+                                                          t.PermissionId,
+                                                          t.FunctionId,
+                                                          t.Priority,
+                                                          t.PermissionType,
+                                                          t.Allowed
                                                       })
                                          .ToArray();
 
@@ -139,17 +127,17 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
 
                                                                            return new
                                                                                   {
-                                                                                          PermissionType = pt,
-                                                                                          Allowed = c.Allowed | n.Allowed
+                                                                                      PermissionType = pt,
+                                                                                      Allowed = c.Allowed | n.Allowed
                                                                                   };
                                                                        });
 
                                                    return new
                                                           {
-                                                                  t.Key.FunctionId,
-                                                                  t.Key.Priority,
-                                                                  p.PermissionType,
-                                                                  p.Allowed
+                                                              t.Key.FunctionId,
+                                                              t.Key.Priority,
+                                                              p.PermissionType,
+                                                              p.Allowed
                                                           };
                                                })
                                        .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
@@ -166,31 +154,32 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
 
                                                                            return new
                                                                                   {
-                                                                                          PermissionType = pt,
-                                                                                          Allowed = pt != PermissionType.None
+                                                                                      PermissionType = pt,
+                                                                                      Allowed = pt != PermissionType.None
                                                                                   };
                                                                        });
 
                                                    return new
                                                           {
-                                                                  FunctionId = t.Key,
-                                                                  p.PermissionType
+                                                              FunctionId = t.Key,
+                                                              PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                           };
                                                });
 
         var ids = permissionRules.Join(functions, r => r.FunctionId, f => f.FunctionId,
                                        (r, f) => new
                                                  {
-                                                         r.PermissionId,
-                                                         PermissionType = r.PermissionType & f.PermissionType
+                                                     r.PermissionId,
+                                                     PermissionType = r.PermissionType & f.PermissionType
                                                  })
                                  .Where(t => t.PermissionType != PermissionType.None)
                                  .Select(t => t.PermissionId)
-                                 .Distinct();
+                                 .Distinct()
+                                 .OrderBy(t => t);
 
         var content = new Models.ClientPermission
                       {
-                              PermissionIds = ids
+                          PermissionIds = ids
                       };
 
         return Task.FromResult(content);
@@ -201,8 +190,8 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
         Expression<Func<Models.MixingPermissionCondition, bool>> predicatePermissionCondition = t => true;
 
         predicatePermissionCondition = requestPermissionCondition.Group.IsEmpty()
-                                               ? predicatePermissionCondition.And(t => t.Group.IsEmpty())
-                                               : predicatePermissionCondition.And(t => t.Group.IsEmpty() || t.Group == requestPermissionCondition.Group);
+                                           ? predicatePermissionCondition.And(t => t.Group.IsEmpty())
+                                           : predicatePermissionCondition.And(t => t.Group.IsEmpty() || t.Group == requestPermissionCondition.Group);
 
         var conditions = mixingPermissionConditions.Where(predicatePermissionCondition.Compile())
                                                    .ToArray();
@@ -215,8 +204,8 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
             var reqConditions = requestPermissionCondition.Conditions
                                                           .GroupBy(t => t.Key.ToUpper(), t => t.Value.ToUpper(), (key, values) => new
                                                                                                                                   {
-                                                                                                                                          Key = key.ToUpper(),
-                                                                                                                                          Values = values.Select(t => t.ToUpper())
+                                                                                                                                      Key = key.ToUpper(),
+                                                                                                                                      Values = values.Select(t => t.ToUpper())
                                                                                                                                   })
                                                           .ToArray();
 
@@ -244,9 +233,9 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
 
                                                            return new
                                                                   {
-                                                                          t.Key.PermissionId,
-                                                                          t.Key.Priority,
-                                                                          Allowed = p
+                                                                      t.Key.PermissionId,
+                                                                      t.Key.Priority,
+                                                                      Allowed = p
                                                                   };
                                                        })
                                                .OrderBy(t => t.PermissionId).ThenBy(t => t.Priority)
@@ -259,16 +248,16 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
 
                                                            return new
                                                                   {
-                                                                          t.Key.PermissionId,
-                                                                          Allowed = p
+                                                                      t.Key.PermissionId,
+                                                                      Allowed = p
                                                                   };
                                                        })
                                                .GroupBy(t => t.PermissionId, t => t)
                                                .Select(t => new
                                                             {
-                                                                    PermissionId = t.Key,
-                                                                    Data = t,
-                                                                    Count = t.Count()
+                                                                PermissionId = t.Key,
+                                                                Data = t,
+                                                                Count = t.Count()
                                                             })
                                                .Where(t => t.Count >= keyCount)
                                                .Select(t =>
@@ -277,33 +266,59 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
 
                                                            return new Models.Condition
                                                                   {
-                                                                          PermissionId = t.PermissionId,
-                                                                          Allowed = p
+                                                                      PermissionId = t.PermissionId,
+                                                                      Allowed = p
                                                                   };
                                                        })
                                                .ToArray();
             }
         }
 
-        var rules = permissionRules as Models.MixingPermissionRule[] ?? permissionRules.ToArray();
+        var rules = permissionRules.GroupJoin(validatorCondition, t => t.PermissionId, t => t.PermissionId, (r, c) => new
+                                                                                                                      {
+                                                                                                                          Rule = r,
+                                                                                                                          Conditions = c.DefaultIfEmpty()
+                                                                                                                      })
+                                   .SelectMany(t => t.Conditions.Select(t2 => new
+                                                                              {
+                                                                                  t.Rule.PermissionId,
+                                                                                  RuleId = t.Rule.Id,
+                                                                                  t.Rule.FunctionId,
+                                                                                  t.Rule.PermissionType,
+                                                                                  t.Rule.Priority,
+                                                                                  t.Rule.Allowed,
+                                                                                  Enabled = t2?.Allowed // ?? keyCount == 0
+                                                                              }))
+                                   .Where(t => t.Enabled != false)
+                                   .GroupBy(t => new { t.PermissionId, t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
+                                   .Select(t =>
+                                           {
+                                               // 先將同權重的權限最大化
+                                               var p = t.Aggregate((c, n) =>
+                                                                   {
+                                                                       var pt = c.Allowed ? c.PermissionType : PermissionType.None;
 
-        var validatorRules = rules.GroupJoin(validatorCondition, t => t.PermissionId, t => t.PermissionId, (r, c) => new
-                                                                                                                     {
-                                                                                                                             Rule = r,
-                                                                                                                             Conditions = c.DefaultIfEmpty()
-                                                                                                                     })
-                                  .SelectMany(t => t.Conditions.Select(t2 => new
-                                                                             {
-                                                                                     t.Rule.PermissionId,
-                                                                                     RuleId = t.Rule.Id,
-                                                                                     t.Rule.FunctionId,
-                                                                                     t.Rule.PermissionType,
-                                                                                     t.Rule.Priority,
-                                                                                     t.Rule.Allowed,
-                                                                                     Enabled = t2?.Allowed ?? keyCount == 0
-                                                                             }))
-                                  .Where(t => t.Enabled)
-                                  .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
+                                                                       pt = n.Allowed ? pt | n.PermissionType : pt;
+
+                                                                       return new
+                                                                              {
+                                                                                  PermissionType = pt,
+                                                                                  Allowed = c.Allowed | n.Allowed
+                                                                              };
+                                                                   });
+
+                                               return new
+                                                      {
+                                                          t.Key.PermissionId,
+                                                          t.Key.FunctionId,
+                                                          t.Key.Priority,
+                                                          p.PermissionType,
+                                                          p.Allowed
+                                                      };
+                                           })
+                                   .ToArray();
+
+        var validatorRules = rules.GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
                                   .Select(t =>
                                           {
                                               // 先將同權重的權限最大化
@@ -315,17 +330,17 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
 
                                                                       return new
                                                                              {
-                                                                                     PermissionType = pt,
-                                                                                     Allowed = c.Allowed | n.Allowed
+                                                                                 PermissionType = pt,
+                                                                                 Allowed = c.Allowed | n.Allowed
                                                                              };
                                                                   });
 
                                               return new
                                                      {
-                                                             t.Key.FunctionId,
-                                                             t.Key.Priority,
-                                                             p.PermissionType,
-                                                             p.Allowed
+                                                         t.Key.FunctionId,
+                                                         t.Key.Priority,
+                                                         p.PermissionType,
+                                                         p.Allowed
                                                      };
                                           })
                                   .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
@@ -342,15 +357,15 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
 
                                                                       return new
                                                                              {
-                                                                                     PermissionType = pt,
-                                                                                     Allowed = pt != PermissionType.None
+                                                                                 PermissionType = pt,
+                                                                                 Allowed = pt != PermissionType.None
                                                                              };
                                                                   });
 
                                               return new
                                                      {
-                                                             FunctionId = t.Key,
-                                                             p.PermissionType
+                                                         FunctionId = t.Key,
+                                                         PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                      };
                                           })
                                   .ToArray();
@@ -358,16 +373,17 @@ public class GetClientPermissionHandler : IRequestHandler<GetClientPermission, R
         var ids = rules.Join(validatorRules, r => r.FunctionId, f => f.FunctionId,
                              (r, f) => new
                                        {
-                                               r.PermissionId,
-                                               PermissionType = r.PermissionType & f.PermissionType
+                                           r.PermissionId,
+                                           f.PermissionType
                                        })
                        .Where(t => t.PermissionType != PermissionType.None)
                        .Select(t => t.PermissionId)
-                       .Distinct();
+                       .Distinct()
+                       .OrderBy(t => t);
 
         var content = new Models.ClientPermission
                       {
-                              PermissionIds = ids
+                          PermissionIds = ids
                       };
 
         return Task.FromResult(content);

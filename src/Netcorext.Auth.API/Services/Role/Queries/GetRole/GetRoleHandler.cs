@@ -103,7 +103,7 @@ public class GetRoleHandler : IRequestHandler<GetRole, Result<IEnumerable<Models
                                                                                                ModifierId = t2.ModifierId
                                                                                        })
                                                          })
-                                            .FirstOrDefaultAsync(cancellationToken);
+                                            .SingleOrDefaultAsync(cancellationToken);
 
         request.Paging.Count = pagination?.Count ?? 0;
 

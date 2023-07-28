@@ -60,11 +60,11 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
             Expression<Func<Domain.Entities.UserExtendData, bool>> predicateExtendData = p => false;
 
             var extendData = request.ExtendData.GroupBy(t => t.Key, (k, values) =>
-                                                                            new
-                                                                            {
-                                                                                    Key = k.ToUpper(),
-                                                                                    Values = values.Select(t => t.Value.ToUpper())
-                                                                            });
+                                                                        new
+                                                                        {
+                                                                            Key = k.ToUpper(),
+                                                                            Values = values.Select(t => t.Value.ToUpper())
+                                                                        });
 
             predicateExtendData = extendData.Aggregate(predicateExtendData, (current, item) => current.Or(t => t.Key == item.Key && item.Values.Contains(t.Value)));
 
@@ -81,91 +81,90 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
             predicate = predicate.And(t => t.ExternalLogins.AsQueryable().Any(predicateExternalLogin));
         }
 
-        var queryEntities = ds.Where(predicate)
+        var queryEntities = ds.AsNoTracking()
+                              .Where(predicate)
                               .OrderBy(t => t.Id)
-                              .Take(_dataSizeLimit)
-                              .AsNoTracking();
+                              .Take(_dataSizeLimit);
 
-        var pagination = await queryEntities
-                              .GroupBy(t => 0)
-                              .Select(t => new
-                                           {
-                                                   Count = t.Count(),
-                                                   Rows = t.OrderBy(t2 => t2.Id)
-                                                           .Skip(request.Paging.Offset)
-                                                           .Take(request.Paging.Limit)
-                                                           .Select(t2 => new Models.User
-                                                                         {
-                                                                                 Id = t2.Id,
-                                                                                 Username = t2.Username,
-                                                                                 DisplayName = t2.DisplayName,
-                                                                                 Email = t2.Email,
-                                                                                 EmailConfirmed = t2.EmailConfirmed,
-                                                                                 PhoneNumber = t2.PhoneNumber,
-                                                                                 PhoneNumberConfirmed = t2.PhoneNumberConfirmed,
-                                                                                 Otp = t2.Otp,
-                                                                                 OtpBound = t2.OtpBound,
-                                                                                 TwoFactorEnabled = t2.TwoFactorEnabled,
-                                                                                 RequiredChangePassword = t2.RequiredChangePassword,
-                                                                                 AllowedRefreshToken = t2.AllowedRefreshToken,
-                                                                                 TokenExpireSeconds = t2.TokenExpireSeconds,
-                                                                                 RefreshTokenExpireSeconds = t2.RefreshTokenExpireSeconds,
-                                                                                 CodeExpireSeconds = t2.CodeExpireSeconds,
-                                                                                 LastSignInDate = t2.LastSignInDate,
-                                                                                 LastSignInIp = t2.LastSignInIp,
-                                                                                 Disabled = t2.Disabled,
-                                                                                 CreationDate = t2.CreationDate,
-                                                                                 CreatorId = t2.CreatorId,
-                                                                                 ModificationDate = t2.ModificationDate,
-                                                                                 ModifierId = t2.ModifierId,
-                                                                                 Roles = t2.Roles
-                                                                                           .Where(t3 => !t3.Role.Disabled)
-                                                                                           .Select(t3 => new Models.UserRole
-                                                                                                         {
-                                                                                                                 RoleId = t3.RoleId,
-                                                                                                                 Name = t3.Role.Name,
-                                                                                                                 ExpireDate = t3.ExpireDate,
-                                                                                                                 CreationDate = t3.CreationDate,
-                                                                                                                 CreatorId = t3.CreatorId,
-                                                                                                                 ModificationDate = t3.ModificationDate,
-                                                                                                                 ModifierId = t3.ModifierId
-                                                                                                         }),
-                                                                                 ExtendData = t2.ExtendData.Select(t3 => new Models.UserExtendData
-                                                                                                                         {
-                                                                                                                                 Key = t3.Key,
-                                                                                                                                 Value = t3.Value,
-                                                                                                                                 CreationDate = t3.CreationDate,
-                                                                                                                                 CreatorId = t3.CreatorId,
-                                                                                                                                 ModificationDate = t3.ModificationDate,
-                                                                                                                                 ModifierId = t3.ModifierId
-                                                                                                                         }),
-                                                                                 ExternalLogins = t2.ExternalLogins.Select(t3 => new Models.UserExternalLogin
-                                                                                                                                 {
-                                                                                                                                         Provider = t3.Provider,
-                                                                                                                                         UniqueId = t3.UniqueId,
-                                                                                                                                         CreationDate = t3.CreationDate,
-                                                                                                                                         CreatorId = t3.CreatorId,
-                                                                                                                                         ModificationDate = t3.ModificationDate,
-                                                                                                                                         ModifierId = t3.ModifierId
-                                                                                                                                 }),
-                                                                                 PermissionConditions = t2.PermissionConditions.Select(t3 => new Models.UserPermissionCondition
-                                                                                                                                             {
-                                                                                                                                                     Id = t3.Id,
-                                                                                                                                                     PermissionId = t3.PermissionId,
-                                                                                                                                                     Priority = t3.Priority,
-                                                                                                                                                     Group = t3.Group,
-                                                                                                                                                     Key = t3.Key,
-                                                                                                                                                     Value = t3.Value,
-                                                                                                                                                     Allowed = t3.Allowed,
-                                                                                                                                                     ExpireDate = t3.ExpireDate,
-                                                                                                                                                     CreationDate = t3.CreationDate,
-                                                                                                                                                     CreatorId = t3.CreatorId,
-                                                                                                                                                     ModificationDate = t3.ModificationDate,
-                                                                                                                                                     ModifierId = t3.ModifierId
-                                                                                                                                             })
-                                                                         })
-                                           })
-                              .FirstOrDefaultAsync(cancellationToken);
+        var pagination = await queryEntities.GroupBy(t => 0)
+                                            .Select(t => new
+                                                         {
+                                                             Count = t.Count(),
+                                                             Rows = t.OrderBy(t2 => t2.Id)
+                                                                     .Skip(request.Paging.Offset)
+                                                                     .Take(request.Paging.Limit)
+                                                                     .Select(t2 => new Models.User
+                                                                                   {
+                                                                                       Id = t2.Id,
+                                                                                       Username = t2.Username,
+                                                                                       DisplayName = t2.DisplayName,
+                                                                                       Email = t2.Email,
+                                                                                       EmailConfirmed = t2.EmailConfirmed,
+                                                                                       PhoneNumber = t2.PhoneNumber,
+                                                                                       PhoneNumberConfirmed = t2.PhoneNumberConfirmed,
+                                                                                       Otp = t2.Otp,
+                                                                                       OtpBound = t2.OtpBound,
+                                                                                       TwoFactorEnabled = t2.TwoFactorEnabled,
+                                                                                       RequiredChangePassword = t2.RequiredChangePassword,
+                                                                                       AllowedRefreshToken = t2.AllowedRefreshToken,
+                                                                                       TokenExpireSeconds = t2.TokenExpireSeconds,
+                                                                                       RefreshTokenExpireSeconds = t2.RefreshTokenExpireSeconds,
+                                                                                       CodeExpireSeconds = t2.CodeExpireSeconds,
+                                                                                       LastSignInDate = t2.LastSignInDate,
+                                                                                       LastSignInIp = t2.LastSignInIp,
+                                                                                       Disabled = t2.Disabled,
+                                                                                       CreationDate = t2.CreationDate,
+                                                                                       CreatorId = t2.CreatorId,
+                                                                                       ModificationDate = t2.ModificationDate,
+                                                                                       ModifierId = t2.ModifierId,
+                                                                                       Roles = t2.Roles
+                                                                                                 .Where(t3 => !t3.Role.Disabled)
+                                                                                                 .Select(t3 => new Models.UserRole
+                                                                                                               {
+                                                                                                                   RoleId = t3.RoleId,
+                                                                                                                   Name = t3.Role.Name,
+                                                                                                                   ExpireDate = t3.ExpireDate,
+                                                                                                                   CreationDate = t3.CreationDate,
+                                                                                                                   CreatorId = t3.CreatorId,
+                                                                                                                   ModificationDate = t3.ModificationDate,
+                                                                                                                   ModifierId = t3.ModifierId
+                                                                                                               }),
+                                                                                       ExtendData = t2.ExtendData.Select(t3 => new Models.UserExtendData
+                                                                                                                               {
+                                                                                                                                   Key = t3.Key,
+                                                                                                                                   Value = t3.Value,
+                                                                                                                                   CreationDate = t3.CreationDate,
+                                                                                                                                   CreatorId = t3.CreatorId,
+                                                                                                                                   ModificationDate = t3.ModificationDate,
+                                                                                                                                   ModifierId = t3.ModifierId
+                                                                                                                               }),
+                                                                                       ExternalLogins = t2.ExternalLogins.Select(t3 => new Models.UserExternalLogin
+                                                                                                                                       {
+                                                                                                                                           Provider = t3.Provider,
+                                                                                                                                           UniqueId = t3.UniqueId,
+                                                                                                                                           CreationDate = t3.CreationDate,
+                                                                                                                                           CreatorId = t3.CreatorId,
+                                                                                                                                           ModificationDate = t3.ModificationDate,
+                                                                                                                                           ModifierId = t3.ModifierId
+                                                                                                                                       }),
+                                                                                       PermissionConditions = t2.PermissionConditions.Select(t3 => new Models.UserPermissionCondition
+                                                                                                                                                   {
+                                                                                                                                                       Id = t3.Id,
+                                                                                                                                                       PermissionId = t3.PermissionId,
+                                                                                                                                                       Priority = t3.Priority,
+                                                                                                                                                       Group = t3.Group,
+                                                                                                                                                       Key = t3.Key,
+                                                                                                                                                       Value = t3.Value,
+                                                                                                                                                       Allowed = t3.Allowed,
+                                                                                                                                                       ExpireDate = t3.ExpireDate,
+                                                                                                                                                       CreationDate = t3.CreationDate,
+                                                                                                                                                       CreatorId = t3.CreatorId,
+                                                                                                                                                       ModificationDate = t3.ModificationDate,
+                                                                                                                                                       ModifierId = t3.ModifierId
+                                                                                                                                                   })
+                                                                                   })
+                                                         })
+                                            .SingleOrDefaultAsync(cancellationToken);
 
         request.Paging.Count = pagination?.Count ?? 0;
 
