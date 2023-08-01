@@ -123,7 +123,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
             dsRole.UpdateRange(roles);
             
             var stringId = entity.Id.ToString();
-            var tokens = dsToken.Where(t => t.ResourceType == ResourceType.User && t.ResourceId == stringId);
+            var tokens = dsToken.Where(t => !t.Disabled && t.ResourceType == ResourceType.User && t.ResourceId == stringId);
             var dicTokens = new Dictionary<string, string>();
 
             foreach (var token in tokens)

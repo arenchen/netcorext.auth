@@ -44,11 +44,13 @@ public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
         var dsUser = _context.Set<Domain.Entities.User>();
         var dsClient = _context.Set<Domain.Entities.Client>();
 
-        if (!await ds.AnyAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken)) return Result.Unauthorized;
+        if (!await ds.AnyAsync(t => !t.Disabled && (t.AccessToken == request.Token || t.RefreshToken == request.Token), cancellationToken))
+            return Result.Unauthorized;
 
         var entity = await ds.FirstAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken);
 
-        if (entity.Disabled) return Result.Unauthorized;
+        if (entity.Disabled)
+            return Result.Unauthorized;
 
         var isResourceValid = entity.ResourceType switch
                               {

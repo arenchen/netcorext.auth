@@ -105,19 +105,18 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                                     .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
                             : null;
 
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), null, entity.TokenExpireSeconds, scope);
+        var refreshToken = entity.AllowedRefreshToken
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
+                               : (null, null);
+        
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                                TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
-                                                               AccessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User,
-                                                                                                    entity.Id.ToString(), null, entity.TokenExpireSeconds, scope)
-                                                                                          .Token,
+                                                               AccessToken = accessToken.Token,
                                                                Scope = scope,
-                                                               RefreshToken = entity.AllowedRefreshToken
-                                                                                      ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User,
-                                                                                                               entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
-                                                                                                     .Token
-                                                                                      : null,
-                                                               ExpiresIn = entity.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
+                                                               RefreshToken = refreshToken.Token,
+                                                               ExpiresIn = entity.TokenExpireSeconds
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
@@ -130,8 +129,11 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                             TokenType = result.Content?.TokenType!,
                             AccessToken = result.Content?.AccessToken!,
                             ExpiresIn = result.Content?.ExpiresIn,
+                            ExpiresAt = accessToken.Jwt.Payload.Exp,
                             Scope = result.Content?.Scope,
-                            RefreshToken = result.Content?.RefreshToken
+                            RefreshToken = result.Content?.RefreshToken,
+                            RefreshExpiresIn = entity.RefreshTokenExpireSeconds,
+                            RefreshExpiresAt = refreshToken.Jwt?.Payload.Exp
                     });
 
         await _context.SaveChangesAsync(cancellationToken);

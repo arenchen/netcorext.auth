@@ -13,6 +13,7 @@ public class TokenMap : EntityMap<Token>
         Builder.HasIndex(t => t.TokenType);
         Builder.HasIndex(t => t.AccessToken);
         Builder.HasIndex(t => t.ExpiresIn);
+        Builder.HasIndex(t => t.ExpiresAt);
         Builder.HasIndex(t => t.RefreshToken);
         Builder.HasIndex(t => t.Disabled);
 
@@ -35,6 +36,9 @@ public class TokenMap : EntityMap<Token>
 
         Builder.Property(t => t.ExpiresIn)
                .HasColumnName(nameof(Token.ExpiresIn));
+        
+        Builder.Property(t => t.ExpiresAt)
+               .HasColumnName(nameof(Token.ExpiresAt));
 
         Builder.Property(t => t.Scope)
                .HasColumnName(nameof(Token.Scope))
@@ -43,6 +47,12 @@ public class TokenMap : EntityMap<Token>
         Builder.Property(t => t.RefreshToken)
                .HasColumnName(nameof(Token.RefreshToken))
                .HasMaxLength(2048);
+        
+        Builder.Property(t => t.RefreshExpiresIn)
+               .HasColumnName(nameof(Token.RefreshExpiresIn));
+        
+        Builder.Property(t => t.RefreshExpiresAt)
+               .HasColumnName(nameof(Token.RefreshExpiresAt));
 
         Builder.Property(t => t.Disabled)
                .HasColumnName(nameof(Token.Disabled));

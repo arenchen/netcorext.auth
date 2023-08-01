@@ -21,7 +21,7 @@ public class BlockUserTokenHandler : IRequestHandler<BlockUserToken, Result>
 
         var idStrings = request.Ids.Select(id => id.ToString()).ToArray();
 
-        var tokens = ds.Where(t => t.ResourceType == ResourceType.User && idStrings.Contains(t.ResourceId));
+        var tokens = ds.Where(t => !t.Disabled && t.ResourceType == ResourceType.User && idStrings.Contains(t.ResourceId));
 
         foreach (var token in tokens)
         {

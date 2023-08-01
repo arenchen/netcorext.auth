@@ -18,7 +18,7 @@ public class JwtGenerator
     {
         return TokenHelper.Generate(tokenType,
                                     resourceType,
-                                    DateTime.UtcNow.AddSeconds(tokenExpireSeconds ?? _config.TokenExpireSeconds),
+                                    DateTime.UtcNow.AddSeconds(tokenExpireSeconds ?? (tokenType == TokenType.AccessToken ? _config.TokenExpireSeconds : _config.RefreshTokenExpireSeconds)),
                                     resourceId,
                                     uniqueId,
                                     scope,

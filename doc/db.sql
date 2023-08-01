@@ -70,9 +70,12 @@ CREATE TABLE "Token" (
   "ResourceId" character varying(50) NOT NULL,
   "TokenType" character varying(50) NOT NULL,
   "AccessToken" character varying(2048) NOT NULL,
-  "ExpiresIn" integer NULL,
+  "ExpiresIn" integer NOT NULL,
+  "ExpiresAt" integer NULL,
   "Scope" character varying(2048) NULL,
   "RefreshToken" character varying(2048) NULL,
+  "RefreshExpiresIn" integer NULL,
+  "RefreshExpiresAt" integer NULL,
   "Disabled" boolean NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
@@ -338,7 +341,10 @@ CREATE INDEX "IX_Rule_PermissionType" ON "Rule" ("PermissionType");
 CREATE INDEX "IX_Token_AccessToken" ON "Token" ("AccessToken");
 CREATE INDEX "IX_Token_Disabled" ON "Token" ("Disabled");
 CREATE INDEX "IX_Token_ExpiresIn" ON "Token" ("ExpiresIn");
+CREATE INDEX "IX_Token_ExpiresAt" ON "Token" ("ExpiresAt");
 CREATE INDEX "IX_Token_RefreshToken" ON "Token" ("RefreshToken");
+CREATE INDEX "IX_Token_RefreshExpiresIn" ON "Token" ("RefreshExpiresIn");
+CREATE INDEX "IX_Token_RefreshExpiresAt" ON "Token" ("RefreshExpiresAt");
 CREATE INDEX "IX_Token_ResourceId" ON "Token" ("ResourceId");
 CREATE INDEX "IX_Token_ResourceType" ON "Token" ("ResourceType");
 CREATE INDEX "IX_Token_TokenType" ON "Token" ("TokenType");

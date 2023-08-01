@@ -108,18 +108,19 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                           });
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope);
-
         var refreshToken = client.AllowedRefreshToken || _authOptions.AllowedRefreshToken
-                                   ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
-                                   : (null, null);
-
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
+                               : (null, null);
+        var expiresIn = client.TokenExpireSeconds ?? MathHelper.DifferentBetween(accessToken.Jwt.Payload.Exp, accessToken.Jwt.Payload.Iat);
+        var refreshExpiresIn = client.RefreshTokenExpireSeconds ?? MathHelper.DifferentBetween(refreshToken.Jwt?.Payload.Exp, refreshToken.Jwt?.Payload.Iat);
+        
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                                TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
                                                                AccessToken = accessToken.Token,
                                                                Scope = request.Scope ?? clientScope,
                                                                RefreshToken = refreshToken.Token,
-                                                               ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
+                                                               ExpiresIn = expiresIn
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
@@ -131,9 +132,12 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                             ResourceId = client.Id.ToString(),
                             TokenType = result.Content?.TokenType!,
                             AccessToken = result.Content?.AccessToken!,
-                            ExpiresIn = result.Content?.ExpiresIn,
+                            ExpiresIn = expiresIn,
+                            ExpiresAt = accessToken.Jwt.Payload.Exp,
                             Scope = result.Content?.Scope,
-                            RefreshToken = result.Content?.RefreshToken
+                            RefreshToken = result.Content?.RefreshToken,
+                            RefreshExpiresIn = refreshExpiresIn,
+                            RefreshExpiresAt = refreshToken.Jwt?.Payload.Exp
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -224,18 +228,19 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                           });
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope);
-
         var refreshToken = user.AllowedRefreshToken
-                                   ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope)
-                                   : (null, null);
-
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope)
+                               : (null, null);
+        var expiresIn = user.TokenExpireSeconds ?? MathHelper.DifferentBetween(accessToken.Jwt.Payload.Exp, accessToken.Jwt.Payload.Iat);
+        var refreshExpiresIn = user.RefreshTokenExpireSeconds ?? MathHelper.DifferentBetween(refreshToken.Jwt?.Payload.Exp, refreshToken.Jwt?.Payload.Iat);
+        
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                                TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
                                                                AccessToken = accessToken.Token,
                                                                Scope = request.Scope ?? userScope,
                                                                RefreshToken = refreshToken.Token,
-                                                               ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
+                                                               ExpiresIn = expiresIn
                                                        });
 
         var dsToken = _context.Set<Domain.Entities.Token>();
@@ -247,9 +252,12 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                             ResourceId = user.Id.ToString(),
                             TokenType = result.Content?.TokenType!,
                             AccessToken = result.Content?.AccessToken!,
-                            ExpiresIn = result.Content?.ExpiresIn,
+                            ExpiresIn = expiresIn,
+                            ExpiresAt = accessToken.Jwt.Payload.Exp,
                             Scope = result.Content?.Scope,
-                            RefreshToken = result.Content?.RefreshToken
+                            RefreshToken = result.Content?.RefreshToken,
+                            RefreshExpiresIn = refreshExpiresIn,
+                            RefreshExpiresAt = refreshToken.Jwt?.Payload.Exp
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -370,10 +378,9 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               });
 
             var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType, resourceId!, uid, tokenExpireSeconds, request.Scope ?? role);
-
             var refreshToken = allowedRefreshToken
-                                       ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType, resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
-                                       : (null, null);
+                                   ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType, resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
+                                   : (null, null);
 
             var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                            {
@@ -381,7 +388,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                    AccessToken = accessToken.Token,
                                                                    Scope = request.Scope ?? role,
                                                                    RefreshToken = refreshToken.Token,
-                                                                   ExpiresIn = client.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds
+                                                                   ExpiresIn = tokenExpireSeconds
                                                            });
 
             var token = await dsToken.FirstOrDefaultAsync(t => !t.Disabled && t.RefreshToken == request.RefreshToken, cancellationToken);
@@ -400,9 +407,12 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                 ResourceId = resourceId!,
                                 TokenType = result.Content?.TokenType!,
                                 AccessToken = result.Content?.AccessToken!,
-                                ExpiresIn = result.Content?.ExpiresIn,
+                                ExpiresIn = tokenExpireSeconds,
+                                ExpiresAt = accessToken.Jwt.Payload.Exp,
                                 Scope = result.Content?.Scope,
-                                RefreshToken = result.Content?.RefreshToken
+                                RefreshToken = result.Content?.RefreshToken,
+                                RefreshExpiresIn = refreshTokenExpireSeconds,
+                                RefreshExpiresAt = refreshToken.Jwt?.Payload.Exp,
                         });
 
             await _context.SaveChangesAsync(cancellationToken);

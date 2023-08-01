@@ -29,7 +29,8 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
     {
         var dsToken = _context.Set<Domain.Entities.Token>();
 
-        if (!await dsToken.AnyAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken)) return Result.Success;
+        if (!await dsToken.AnyAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken))
+            return Result.Success;
 
         var token = await dsToken.FirstOrDefaultAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken);
 
@@ -38,11 +39,13 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        if (token == null) return Result.Success;
+        if (token == null)
+            return Result.Success;
 
         var lsToken = new List<string> { token.AccessToken };
 
-        if (!string.IsNullOrWhiteSpace(token.RefreshToken)) lsToken.Add(token.RefreshToken);
+        if (!string.IsNullOrWhiteSpace(token.RefreshToken))
+            lsToken.Add(token.RefreshToken);
 
         await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], await _serializer.SerializeAsync(lsToken.ToArray(), cancellationToken));
 

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
@@ -11,11 +12,13 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
 {
     private readonly DatabaseContext _context;
     private readonly ISnowflake _snowflake;
-
-    public CreateClientHandler(DatabaseContextAdapter context, ISnowflake snowflake)
+    private readonly AuthOptions _authOptions;
+    
+    public CreateClientHandler(DatabaseContextAdapter context, ISnowflake snowflake, IOptions<AuthOptions> authOptions)
     {
         _context = context;
         _snowflake = snowflake;
+        _authOptions = authOptions.Value;
     }
 
     public async Task<Result<long?>> Handle(CreateClient request, CancellationToken cancellationToken = default)
@@ -34,9 +37,9 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
                                     Secret = request.Secret.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
                                     CallbackUrl = request.CallbackUrl,
                                     AllowedRefreshToken = request.AllowedRefreshToken,
-                                    TokenExpireSeconds = request.TokenExpireSeconds,
-                                    RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds,
-                                    CodeExpireSeconds = request.CodeExpireSeconds,
+                                    TokenExpireSeconds = request.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
+                                    RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds,
+                                    CodeExpireSeconds = request.CodeExpireSeconds ?? _authOptions.CodeExpireSeconds,
                                     Disabled = request.Disabled,
                                     Roles = request.Roles?
                                                    .Select(t => new Domain.Entities.ClientRole
