@@ -71,18 +71,19 @@ CREATE TABLE "Token" (
   "TokenType" character varying(50) NOT NULL,
   "AccessToken" character varying(2048) NOT NULL,
   "ExpiresIn" integer NOT NULL,
-  "ExpiresAt" integer NULL,
+  "ExpiresAt" bigint NULL,
   "Scope" character varying(2048) NULL,
   "RefreshToken" character varying(2048) NULL,
   "RefreshExpiresIn" integer NULL,
-  "RefreshExpiresAt" integer NULL,
+  "RefreshExpiresAt" bigint NULL,
   "Disabled" boolean NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
   "ModifierId" bigint NOT NULL,
-  "Version" bigint NOT NULL
-) PARTITION BY RANGE ("CreationDate");
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_Token" PRIMARY KEY ("Id")
+);
 
 
 CREATE TABLE "User" (
