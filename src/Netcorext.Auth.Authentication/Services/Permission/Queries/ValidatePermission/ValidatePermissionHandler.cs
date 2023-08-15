@@ -28,7 +28,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
     public async Task<Result> Handle(ValidatePermission request, CancellationToken cancellationToken = default)
     {
         var cachePermissionRule = _cache.Get<Dictionary<long, Models.PermissionRule>>(ConfigSettings.CACHE_PERMISSION_RULE) ?? new Dictionary<long, Models.PermissionRule>();
-        var cacheRolePermission = _cache.Get<Dictionary<long, Models.RolePermission>>(ConfigSettings.CACHE_ROLE_PERMISSION) ?? new Dictionary<long, Models.RolePermission>();
+        var cacheRolePermission = _cache.Get<Dictionary<string, Models.RolePermission>>(ConfigSettings.CACHE_ROLE_PERMISSION) ?? new Dictionary<string, Models.RolePermission>();
         var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Models.RolePermissionCondition>();
         var cacheUserPermissionCondition = _cache.Get<Dictionary<long, Models.UserPermissionCondition>>(ConfigSettings.CACHE_USER_PERMISSION_CONDITION) ?? new Dictionary<long, Models.UserPermissionCondition>();
 
@@ -102,7 +102,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
         Expression<Func<KeyValuePair<long, Models.PermissionRule>, bool>> predicatePermissionRule = t => t.Value.FunctionId == request.FunctionId.ToUpper();
 
-        Expression<Func<KeyValuePair<long, Models.RolePermission>, bool>> predicateRolePermission = t => roleIds.Contains(t.Value.RoleId);
+        Expression<Func<KeyValuePair<string, Models.RolePermission>, bool>> predicateRolePermission = t => roleIds.Contains(t.Value.RoleId);
         Expression<Func<KeyValuePair<long, Models.RolePermissionCondition>, bool>> predicateRolePermissionCondition = t => roleIds.Contains(t.Value.RoleId);
         Expression<Func<KeyValuePair<long, Models.UserPermissionCondition>, bool>> predicateUserPermissionCondition = t => t.Value.UserId == request.UserId && (t.Value.ExpireDate == null || t.Value.ExpireDate > DateTimeOffset.UtcNow);
 

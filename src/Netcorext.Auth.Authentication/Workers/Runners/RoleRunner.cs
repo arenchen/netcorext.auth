@@ -57,7 +57,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
 
             var reqIds = ids == null ? null : _serializer.Deserialize<long[]>(ids);
 
-            var cacheRolePermission = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.RolePermission>>(ConfigSettings.CACHE_ROLE_PERMISSION) ?? new Dictionary<long, Services.Permission.Queries.Models.RolePermission>();
+            var cacheRolePermission = _cache.Get<Dictionary<string, Services.Permission.Queries.Models.RolePermission>>(ConfigSettings.CACHE_ROLE_PERMISSION) ?? new Dictionary<string, Services.Permission.Queries.Models.RolePermission>();
             var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>();
 
             if (reqIds != null && reqIds.Any())
@@ -83,7 +83,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
             {
                 foreach (var i in result.Content)
                 {
-                    var id = i.Id;
+                    var id = $"{i.Id}-${i.PermissionId}";
 
                     if (cacheRolePermission.TryAdd(id, i)) continue;
 
