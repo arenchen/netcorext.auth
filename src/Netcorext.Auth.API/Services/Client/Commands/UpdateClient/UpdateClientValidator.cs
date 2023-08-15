@@ -7,6 +7,7 @@ public class UpdateClientValidator : AbstractValidator<UpdateClient>
     public UpdateClientValidator()
     {
         RuleFor(t => t.Id).NotEmpty();
+
         RuleForEach(t => t.ExtendData).ChildRules(c =>
                                                   {
                                                       c.RuleFor(t => t.Key).NotEmpty();

@@ -50,7 +50,8 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
         _subscriber = _redis.Subscribe(new[]
                                        {
-                                           _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT],
+                                           _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT]
+
                                            // 目前在 Netcorext.Auth.API 異動時處理
                                            // _config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT]
                                        }, Handler);
@@ -71,7 +72,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
             var reqIds = ids == null ? null : _serializer.Deserialize<long[]>(ids);
 
-            var result = await dispatcher.SendAsync(new GetUserPermission
+            var result = await dispatcher.SendAsync(new GetUserPermissionCondition
                                                     {
                                                         Ids = reqIds
                                                     }, cancellationToken);
@@ -82,7 +83,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
             if (reqIds != null && reqIds.Any())
             {
-                var repIds = result.Content.PermissionConditions.Select(t => t.UserId);
+                var repIds = result.Content.Select(t => t.UserId);
 
                 var diffIds = reqIds.Except(repIds);
 
@@ -92,7 +93,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
                 conditions.ForEach(t => cacheUserPermissionCondition.Remove(t.Key));
             }
 
-            foreach (var i in result.Content.PermissionConditions)
+            foreach (var i in result.Content)
             {
                 if (cacheUserPermissionCondition.TryAdd(i.Id, i)) continue;
 

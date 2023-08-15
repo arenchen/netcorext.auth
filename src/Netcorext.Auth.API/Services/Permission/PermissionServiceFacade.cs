@@ -61,7 +61,7 @@ public class PermissionServiceFacade : PermissionService.PermissionServiceBase
                          Message = rep.Message,
                          Content = { rep.Content }
                      };
-        
+
         return result;
     }
 }

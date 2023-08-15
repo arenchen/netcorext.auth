@@ -61,7 +61,7 @@ public class PermissionChangeNotifyPipeline : IRequestPipeline<CreatePermission,
     {
         var value = await _serializer.SerializeAsync(ids);
 
-        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], value);
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_PERMISSION_CHANGE_EVENT], value);
     }
 
     private IEnumerable<long> GetRoleId(params long[] permissionIds)

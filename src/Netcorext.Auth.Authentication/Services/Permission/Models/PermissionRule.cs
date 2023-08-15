@@ -1,8 +1,8 @@
 using Netcorext.Auth.Enums;
 
-namespace Netcorext.Auth.API.Services.Role.Queries.Models;
+namespace Netcorext.Auth.Authentication.Services.Permission.Queries.Models;
 
-public class MixingPermissionRule
+public class PermissionRule
 {
     public long Id { get; set; }
     public long PermissionId { get; set; }

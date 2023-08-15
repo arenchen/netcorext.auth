@@ -8,7 +8,7 @@ public class UserPermissionConditionMap : EntityMap<UserPermissionCondition>
     public UserPermissionConditionMap(ModelBuilder modelBuilder) : base(modelBuilder)
     {
         // Indexes
-        Builder.HasIndex(t => new { t.UserId, t.PermissionId, t.Priority, t.Group, t.Key, t.Value })
+        Builder.HasIndex(t => new { t.UserId, t.PermissionId, t.Group, t.Key, t.Value })
                .IsUnique();
 
         Builder.HasIndex(t => t.UserId);
@@ -22,9 +22,6 @@ public class UserPermissionConditionMap : EntityMap<UserPermissionCondition>
         Builder.Property(t => t.PermissionId)
                .HasColumnName(nameof(UserPermissionCondition.PermissionId));
 
-        Builder.Property(t => t.Priority)
-               .HasColumnName(nameof(UserPermissionCondition.Priority));
-
         Builder.Property(t => t.Group)
                .HasColumnName(nameof(UserPermissionCondition.Group))
                .HasMaxLength(50);
@@ -36,12 +33,6 @@ public class UserPermissionConditionMap : EntityMap<UserPermissionCondition>
         Builder.Property(t => t.Value)
                .HasColumnName(nameof(UserPermissionCondition.Value))
                .HasMaxLength(200);
-
-        Builder.Property(t => t.Allowed)
-               .HasColumnName(nameof(UserPermissionCondition.Allowed));
-
-        Builder.Property(t => t.Priority)
-               .HasColumnName(nameof(UserPermissionCondition.Priority));
 
         Builder.Property(t => t.ExpireDate)
                .HasColumnName(nameof(UserRole.ExpireDate));

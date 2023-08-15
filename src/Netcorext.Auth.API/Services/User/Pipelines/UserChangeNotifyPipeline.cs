@@ -2,7 +2,6 @@ using FreeRedis;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.User.Commands;
 using Netcorext.Auth.API.Settings;
-using Netcorext.Configuration;
 using Netcorext.Contracts;
 using Netcorext.Mediator.Pipelines;
 using Netcorext.Serialization;
@@ -26,7 +25,7 @@ public class UserChangeNotifyPipeline : IRequestPipeline<CreateUser, Result<long
         _config = config.Value;
     }
 
-    public async Task<Result<long?>?> InvokeAsync(CreateUser request, PipelineDelegate<Result<long?>> next, CancellationToken cancellationToken = new())
+    public async Task<Result<long?>?> InvokeAsync(CreateUser request, PipelineDelegate<Result<long?>> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
 
@@ -39,7 +38,7 @@ public class UserChangeNotifyPipeline : IRequestPipeline<CreateUser, Result<long
         return result;
     }
 
-    public async Task<Result?> InvokeAsync(UpdateUser request, PipelineDelegate<Result> next, CancellationToken cancellationToken = new())
+    public async Task<Result?> InvokeAsync(UpdateUser request, PipelineDelegate<Result> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
 
@@ -51,11 +50,11 @@ public class UserChangeNotifyPipeline : IRequestPipeline<CreateUser, Result<long
 
         if (_httpContextAccessor.HttpContext != null && _httpContextAccessor.HttpContext.Items.TryGetValue(ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT, out var tokens))
             await NotifyAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], tokens as string[] ?? Array.Empty<string>());
-        
+
         return result;
     }
 
-    public async Task<Result?> InvokeAsync(DeleteUser request, PipelineDelegate<Result> next, CancellationToken cancellationToken = new())
+    public async Task<Result?> InvokeAsync(DeleteUser request, PipelineDelegate<Result> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
 
@@ -73,6 +72,7 @@ public class UserChangeNotifyPipeline : IRequestPipeline<CreateUser, Result<long
 
         await _redis.PublishAsync(channelId, value);
     }
+
     private async Task NotifyAsync(string channelId, params string[] values)
     {
         var value = await _serializer.SerializeAsync(values);

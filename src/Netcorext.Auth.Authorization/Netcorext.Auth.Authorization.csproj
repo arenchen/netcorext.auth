@@ -6,10 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Netcorext.Extensions.Swagger" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Swagger" Version="1.0.0-dev.*"/>
   </ItemGroup>
 
-  <Import Project="../Packages.targets" />
-  <Import Project="../Versioning.targets" />
+  <Import Project="../Packages.targets"/>
+  <Import Project="../Versioning.targets"/>
 
 </Project>

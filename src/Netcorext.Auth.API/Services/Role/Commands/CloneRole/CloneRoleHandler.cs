@@ -51,9 +51,9 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
             entity.ExtendData = request.ExtendData
                                        .Select(t => new Domain.Entities.RoleExtendData
                                                     {
-                                                            Id = entity.Id,
-                                                            Key = t.Key.ToUpper(),
-                                                            Value = t.Value.ToUpper()
+                                                        Id = entity.Id,
+                                                        Key = t.Key.ToUpper(),
+                                                        Value = t.Value.ToUpper()
                                                     })
                                        .Union(entity.ExtendData)
                                        .DistinctBy(t => t.Key)
@@ -64,8 +64,8 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
         {
             entity.Permissions = request.Permissions.Select(t => new Domain.Entities.RolePermission
                                                                  {
-                                                                         Id = entity.Id,
-                                                                         PermissionId = t.PermissionId
+                                                                     Id = entity.Id,
+                                                                     PermissionId = t.PermissionId
                                                                  })
                                         .Union(entity.Permissions)
                                         .DistinctBy(t => t.PermissionId)
@@ -80,19 +80,17 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
             {
                 defaultPermissionConditions.AddRange(request.DefaultPermissionConditions.Select(t => new CloneRole.RolePermissionCondition
                                                                                                      {
-                                                                                                             PermissionId = permission.PermissionId,
-                                                                                                             Priority = t.Priority,
-                                                                                                             Group = t.Group?.ToUpper(),
-                                                                                                             Key = t.Key.ToUpper(),
-                                                                                                             Value = t.Value.ToUpper(),
-                                                                                                             Allowed = t.Allowed
+                                                                                                         PermissionId = permission.PermissionId,
+                                                                                                         Group = t.Group?.ToUpper(),
+                                                                                                         Key = t.Key.ToUpper(),
+                                                                                                         Value = t.Value.ToUpper()
                                                                                                      }));
             }
 
             var permissionConditions = request.PermissionConditions ?? Array.Empty<CloneRole.RolePermissionCondition>();
 
             request.PermissionConditions = permissionConditions.Union(defaultPermissionConditions)
-                                                               .DistinctBy(t => new { t.PermissionId, t.Priority, t.Group, t.Key, t.Value, t.Allowed })
+                                                               .DistinctBy(t => new { t.PermissionId, t.Group, t.Key, t.Value })
                                                                .ToArray();
         }
 
@@ -100,17 +98,15 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
         {
             entity.PermissionConditions = request.PermissionConditions.Select(t => new Domain.Entities.RolePermissionCondition
                                                                                    {
-                                                                                           Id = _snowflake.Generate(),
-                                                                                           RoleId = entity.Id,
-                                                                                           PermissionId = t.PermissionId,
-                                                                                           Priority = t.Priority,
-                                                                                           Group = t.Group?.ToUpper(),
-                                                                                           Key = t.Key.ToUpper(),
-                                                                                           Value = t.Value.ToUpper(),
-                                                                                           Allowed = t.Allowed
+                                                                                       Id = _snowflake.Generate(),
+                                                                                       RoleId = entity.Id,
+                                                                                       PermissionId = t.PermissionId,
+                                                                                       Group = t.Group?.ToUpper(),
+                                                                                       Key = t.Key.ToUpper(),
+                                                                                       Value = t.Value.ToUpper()
                                                                                    })
                                                  .Union(entity.PermissionConditions)
-                                                 .DistinctBy(t => new { t.PermissionId, t.Priority, t.Group, t.Key, t.Value, t.Allowed })
+                                                 .DistinctBy(t => new { t.PermissionId, t.Group, t.Key, t.Value })
                                                  .ToArray();
         }
 

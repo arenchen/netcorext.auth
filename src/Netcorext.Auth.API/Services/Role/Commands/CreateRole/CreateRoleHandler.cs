@@ -40,43 +40,58 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
                 return Result<IEnumerable<long>>.DependencyNotFound;
         }
 
+        var states = request.Roles
+                            .SelectMany(t => t.PermissionFromStates ?? Array.Empty<string>())
+                            .Where(t => !string.IsNullOrWhiteSpace(t))
+                            .ToArray();
+
+        var permissionExtends = dsPermission.Where(t => !t.Disabled && states.Contains(t.State))
+                                            .ToDictionary(t => t.State ?? "", t => t.Id);
+
         var entities = request.Roles.Select(t =>
                                             {
                                                 var id = t.CustomId ?? _snowflake.Generate();
 
+                                                var permissions = permissionExtends.Where(t2 => (t.PermissionFromStates ?? Array.Empty<string>()).Contains(t2.Key))
+                                                                                   .Select(t2 => new RolePermission
+                                                                                                 {
+                                                                                                     Id = id,
+                                                                                                     PermissionId = t2.Value
+                                                                                                 })
+                                                                                   .ToArray();
+
                                                 return new Domain.Entities.Role
                                                        {
-                                                               Id = id,
-                                                               Name = t.Name,
-                                                               Disabled = t.Disabled,
-                                                               ExtendData = t.ExtendData?
-                                                                             .Select(t2 => new RoleExtendData
-                                                                                           {
-                                                                                                   Id = id,
-                                                                                                   Key = t2.Key.ToUpper(),
-                                                                                                   Value = t2.Value.ToUpper()
-                                                                                           })
-                                                                             .ToArray() ?? Array.Empty<RoleExtendData>(),
-                                                               Permissions = t.Permissions?
-                                                                              .Select(t2 => new RolePermission
-                                                                                            {
-                                                                                                    Id = id,
-                                                                                                    PermissionId = t2.PermissionId
-                                                                                            })
-                                                                              .ToArray() ?? Array.Empty<RolePermission>(),
-                                                               PermissionConditions = t.PermissionConditions?
-                                                                                       .Select(t => new RolePermissionCondition
-                                                                                                    {
-                                                                                                            Id = _snowflake.Generate(),
-                                                                                                            RoleId = id,
-                                                                                                            PermissionId = t.PermissionId,
-                                                                                                            Priority = t.Priority,
-                                                                                                            Group = t.Group?.ToUpper(),
-                                                                                                            Key = t.Key.ToUpper(),
-                                                                                                            Value = t.Value.ToUpper(),
-                                                                                                            Allowed = t.Allowed
-                                                                                                    })
-                                                                                       .ToArray() ?? Array.Empty<RolePermissionCondition>()
+                                                           Id = id,
+                                                           Name = t.Name,
+                                                           Disabled = t.Disabled,
+                                                           ExtendData = t.ExtendData?
+                                                                         .Select(t2 => new RoleExtendData
+                                                                                       {
+                                                                                           Id = id,
+                                                                                           Key = t2.Key.ToUpper(),
+                                                                                           Value = t2.Value.ToUpper()
+                                                                                       })
+                                                                         .ToArray() ?? Array.Empty<RoleExtendData>(),
+                                                           Permissions = permissions.Union(t.Permissions?
+                                                                                            .Select(t2 => new RolePermission
+                                                                                                          {
+                                                                                                              Id = id,
+                                                                                                              PermissionId = t2.PermissionId
+                                                                                                          })
+                                                                                            .ToArray() ?? Array.Empty<RolePermission>())
+                                                                                    .ToArray(),
+                                                           PermissionConditions = t.PermissionConditions?
+                                                                                   .Select(t => new RolePermissionCondition
+                                                                                                {
+                                                                                                    Id = _snowflake.Generate(),
+                                                                                                    RoleId = id,
+                                                                                                    PermissionId = t.PermissionId,
+                                                                                                    Group = t.Group?.ToUpper(),
+                                                                                                    Key = t.Key.ToUpper(),
+                                                                                                    Value = t.Value.ToUpper()
+                                                                                                })
+                                                                                   .ToArray() ?? Array.Empty<RolePermissionCondition>()
                                                        };
                                             })
                               .ToArray();

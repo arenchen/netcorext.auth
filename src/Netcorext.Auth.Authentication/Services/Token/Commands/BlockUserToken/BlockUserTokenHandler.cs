@@ -29,7 +29,7 @@ public class BlockUserTokenHandler : IRequestHandler<BlockUserToken, Result>
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        
+
         return Result.Success;
     }
 }

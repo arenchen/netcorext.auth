@@ -44,8 +44,8 @@ public class ResetOtpHandler : IRequestHandler<ResetOtp, Result>
 
         return new Result
                {
-                       Code = Result.Success,
-                       Message = otpAuthScheme
+                   Code = Result.Success,
+                   Message = otpAuthScheme
                };
     }
 }

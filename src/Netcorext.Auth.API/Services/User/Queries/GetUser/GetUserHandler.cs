@@ -151,11 +151,9 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                                                                                                    {
                                                                                                                                                        Id = t3.Id,
                                                                                                                                                        PermissionId = t3.PermissionId,
-                                                                                                                                                       Priority = t3.Priority,
                                                                                                                                                        Group = t3.Group,
                                                                                                                                                        Key = t3.Key,
                                                                                                                                                        Value = t3.Value,
-                                                                                                                                                       Allowed = t3.Allowed,
                                                                                                                                                        ExpireDate = t3.ExpireDate,
                                                                                                                                                        CreationDate = t3.CreationDate,
                                                                                                                                                        CreatorId = t3.CreatorId,

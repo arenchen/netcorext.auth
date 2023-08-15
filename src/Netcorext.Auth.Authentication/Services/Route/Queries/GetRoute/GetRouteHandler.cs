@@ -17,7 +17,7 @@ public class GetRouteHandler : IRequestHandler<GetRoute, Result<IEnumerable<Mode
         _context = context.Slave;
     }
 
-    public Task<Result<IEnumerable<Models.RouteGroup>>> Handle(GetRoute request, CancellationToken cancellationToken = new())
+    public Task<Result<IEnumerable<Models.RouteGroup>>> Handle(GetRoute request, CancellationToken cancellationToken = default)
     {
         var ds = _context.Set<Domain.Entities.RouteGroup>();
 
@@ -33,38 +33,38 @@ public class GetRouteHandler : IRequestHandler<GetRoute, Result<IEnumerable<Mode
 
         var content = queryEntities.Select(t => new Models.RouteGroup
                                                 {
-                                                        Id = t.Id,
-                                                        Name = t.Name,
-                                                        BaseUrl = t.BaseUrl,
-                                                        ForwarderRequestConfig = t.ForwarderRequestVersion == null
-                                                                                         ? null
-                                                                                         : new ForwarderRequestConfig
-                                                                                           {
-                                                                                                   Version = new Version(t.ForwarderRequestVersion),
-                                                                                                   VersionPolicy = t.ForwarderHttpVersionPolicy,
-                                                                                                   ActivityTimeout = t.ForwarderActivityTimeout,
-                                                                                                   AllowResponseBuffering = t.ForwarderAllowResponseBuffering
-                                                                                           },
-                                                        Routes = t.Routes.Select(t2 => new Models.Route
-                                                                                       {
-                                                                                               Protocol = t2.Protocol,
-                                                                                               HttpMethod = t2.HttpMethod,
-                                                                                               RelativePath = t2.RelativePath,
-                                                                                               Template = t2.Template,
-                                                                                               FunctionId = t2.FunctionId,
-                                                                                               NativePermission = t2.NativePermission,
-                                                                                               AllowAnonymous = t2.AllowAnonymous,
-                                                                                               Tag = t2.Tag,
-                                                                                               RouteValues = t2.RouteValues.Select(t3 => new Models.RouteValue
-                                                                                                                                         {
-                                                                                                                                                 Key = t3.Key,
-                                                                                                                                                 Value = t3.Value
-                                                                                                                                         })
-                                                                                       })
+                                                    Id = t.Id,
+                                                    Name = t.Name,
+                                                    BaseUrl = t.BaseUrl,
+                                                    ForwarderRequestConfig = t.ForwarderRequestVersion == null
+                                                                                 ? null
+                                                                                 : new ForwarderRequestConfig
+                                                                                   {
+                                                                                       Version = new Version(t.ForwarderRequestVersion),
+                                                                                       VersionPolicy = t.ForwarderHttpVersionPolicy,
+                                                                                       ActivityTimeout = t.ForwarderActivityTimeout,
+                                                                                       AllowResponseBuffering = t.ForwarderAllowResponseBuffering
+                                                                                   },
+                                                    Routes = t.Routes.Select(t2 => new Models.Route
+                                                                                   {
+                                                                                       Protocol = t2.Protocol,
+                                                                                       HttpMethod = t2.HttpMethod,
+                                                                                       RelativePath = t2.RelativePath,
+                                                                                       Template = t2.Template,
+                                                                                       FunctionId = t2.FunctionId,
+                                                                                       NativePermission = t2.NativePermission,
+                                                                                       AllowAnonymous = t2.AllowAnonymous,
+                                                                                       Tag = t2.Tag,
+                                                                                       RouteValues = t2.RouteValues.Select(t3 => new Models.RouteValue
+                                                                                                                                 {
+                                                                                                                                     Key = t3.Key,
+                                                                                                                                     Value = t3.Value
+                                                                                                                                 })
+                                                                                   })
                                                 });
 
         return Task.FromResult(!content.Any()
-                                       ? Result<IEnumerable<Models.RouteGroup>>.Success
-                                       : Result<IEnumerable<Models.RouteGroup>>.Success.Clone(content.ToArray()));
+                                   ? Result<IEnumerable<Models.RouteGroup>>.Success
+                                   : Result<IEnumerable<Models.RouteGroup>>.Success.Clone(content.ToArray()));
     }
 }

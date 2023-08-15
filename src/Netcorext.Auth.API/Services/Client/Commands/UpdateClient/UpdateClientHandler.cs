@@ -52,14 +52,14 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
             var gRoles = request.Roles
                                 .GroupBy(t => t.Crud, (mode, roles) => new
                                                                        {
-                                                                               Mode = mode,
-                                                                               Data = roles.Select(t => new Domain.Entities.ClientRole
-                                                                                                        {
-                                                                                                                Id = entity.Id,
-                                                                                                                RoleId = t.RoleId,
-                                                                                                                ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
-                                                                                                        })
-                                                                                           .ToArray()
+                                                                           Mode = mode,
+                                                                           Data = roles.Select(t => new Domain.Entities.ClientRole
+                                                                                                    {
+                                                                                                        Id = entity.Id,
+                                                                                                        RoleId = t.RoleId,
+                                                                                                        ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
+                                                                                                    })
+                                                                                       .ToArray()
                                                                        })
                                 .ToArray();
 
@@ -93,14 +93,14 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
             var gExtendData = request.ExtendData
                                      .GroupBy(t => t.Crud, (mode, extendData) => new
                                                                                  {
-                                                                                         Mode = mode,
-                                                                                         Data = extendData.Select(t => new Domain.Entities.ClientExtendData
-                                                                                                                       {
-                                                                                                                               Id = entity.Id,
-                                                                                                                               Key = t.Key.ToUpper(),
-                                                                                                                               Value = t.Value.ToUpper()
-                                                                                                                       })
-                                                                                                          .ToArray()
+                                                                                     Mode = mode,
+                                                                                     Data = extendData.Select(t => new Domain.Entities.ClientExtendData
+                                                                                                                   {
+                                                                                                                       Id = entity.Id,
+                                                                                                                       Key = t.Key.ToUpper(),
+                                                                                                                       Value = t.Value.ToUpper()
+                                                                                                                   })
+                                                                                                      .ToArray()
                                                                                  })
                                      .ToArray();
 

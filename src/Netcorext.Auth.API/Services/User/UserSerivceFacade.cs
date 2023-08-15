@@ -65,28 +65,6 @@ public class UserServiceFacade : UserService.UserServiceBase
     }
 
     [Permission("AUTH", PermissionType.Read)]
-    public override async Task<GetUserPermissionRequest.Types.Result> GetUserPermission(GetUserPermissionRequest request, ServerCallContext context)
-    {
-        var req = request.Adapt<GetUserPermission>();
-        var rep = await _dispatcher.SendAsync(req);
-
-        var result = new GetUserPermissionRequest.Types.Result
-                     {
-                         Code = rep.Code,
-                         Message = rep.Message,
-                         Content =
-                         {
-                             rep.Content?.Select(t => new GetUserPermissionRequest.Types.Result.Types.UserPermission
-                                                      {
-                                                          PermissionIds = { t.PermissionIds ?? Array.Empty<long>() }
-                                                      })
-                         }
-                     };
-
-        return result;
-    }
-
-    [Permission("AUTH", PermissionType.Read)]
     public override async Task<GetUserFunctionRequest.Types.Result> GetUserFunction(GetUserFunctionRequest request, ServerCallContext context)
     {
         var req = request.Adapt<GetUserFunction>();
@@ -104,7 +82,7 @@ public class UserServiceFacade : UserService.UserServiceBase
                                                       })
                          }
                      };
-        
+
         return result;
     }
 

@@ -20,14 +20,6 @@ public class RoleServiceFacade : RoleService.RoleServiceBase
         _dispatcher = dispatcher;
     }
 
-    public override async Task<CloneRoleRequest.Types.Result> CloneRole(CloneRoleRequest request, ServerCallContext context)
-    {
-        var req = request.Adapt<CloneRole>();
-        var rep = await _dispatcher.SendAsync(req);
-
-        return rep.Adapt<CloneRoleRequest.Types.Result>();
-    }
-
     [Permission("AUTH", PermissionType.Write)]
     public override async Task<CreateRoleRequest.Types.Result> CreateRole(CreateRoleRequest request, ServerCallContext context)
     {

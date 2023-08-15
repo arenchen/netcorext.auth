@@ -12,6 +12,7 @@ public class PermissionMap : EntityMap<Permission>
                .IsUnique();
 
         Builder.HasIndex(t => t.Disabled);
+        Builder.HasIndex(t => t.State);
 
         // Properties
         Builder.Property(t => t.Name)
@@ -23,5 +24,9 @@ public class PermissionMap : EntityMap<Permission>
 
         Builder.Property(t => t.Disabled)
                .HasColumnName(nameof(Permission.Disabled));
+
+        Builder.Property(t => t.State)
+               .HasColumnName(nameof(Permission.State))
+               .HasMaxLength(50);
     }
 }

@@ -47,27 +47,6 @@ public class ClientServiceFacade : ClientService.ClientServiceBase
         return rep.Adapt<GetClientRequest.Types.Result>();
     }
 
-    public override async Task<GetClientPermissionRequest.Types.Result> GetClientPermission(GetClientPermissionRequest request, ServerCallContext context)
-    {
-        var req = request.Adapt<GetClientPermission>();
-        var rep = await _dispatcher.SendAsync(req);
-
-        var result = new GetClientPermissionRequest.Types.Result
-                     {
-                         Code = rep.Code,
-                         Message = rep.Message,
-                         Content =
-                         {
-                             rep.Content?.Select(t => new GetClientPermissionRequest.Types.Result.Types.ClientPermission
-                                                      {
-                                                          PermissionIds = { t.PermissionIds ?? Array.Empty<long>() }
-                                                      })
-                         }
-                     };
-
-        return result;
-    }
-
     [Permission("AUTH", PermissionType.Write)]
     public override async Task<Result> UpdateClient(UpdateClientRequest request, ServerCallContext context)
     {
