@@ -9,6 +9,7 @@ public class GetPermission : IRequest<Result<IEnumerable<Models.Permission>>>
     public long[]? Ids { get; set; }
     public string? Name { get; set; }
     public bool? Disabled { get; set; }
+    public string[] States { get; set; } = null!;
     public PermissionRule? Rule { get; set; }
     public Paging Paging { get; set; } = null!;
 

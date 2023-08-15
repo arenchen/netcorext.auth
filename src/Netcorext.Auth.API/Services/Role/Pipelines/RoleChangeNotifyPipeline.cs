@@ -10,8 +10,7 @@ namespace Netcorext.Auth.API.Services.Role.Pipelines;
 
 public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnumerable<long>>>,
                                         IRequestPipeline<UpdateRole, Result>,
-                                        IRequestPipeline<DeleteRole, Result>,
-                                        IRequestPipeline<CloneRole, Result<long?>>
+                                        IRequestPipeline<DeleteRole, Result>
 {
     private readonly ISerializer _serializer;
     private readonly RedisClient _redis;
@@ -59,15 +58,5 @@ public class RoleChangeNotifyPipeline : IRequestPipeline<CreateRole, Result<IEnu
         var value = await _serializer.SerializeAsync(ids);
 
         await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_ROLE_CHANGE_EVENT], value);
-    }
-
-    public async Task<Result<long?>?> InvokeAsync(CloneRole request, PipelineDelegate<Result<long?>> next, CancellationToken cancellationToken = new())
-    {
-        var result = await next(request, cancellationToken);
-
-        if (result == Result.SuccessCreated && result.Content != null)
-            await NotifyAsync(result.Content.Value);
-
-        return result;
     }
 }

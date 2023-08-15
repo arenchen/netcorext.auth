@@ -23,7 +23,7 @@ public class ClientChangeNotifyPipeline : IRequestPipeline<CreateClient, Result<
         _config = config.Value;
     }
 
-    public async Task<Result<long?>?> InvokeAsync(CreateClient request, PipelineDelegate<Result<long?>> next, CancellationToken cancellationToken = new())
+    public async Task<Result<long?>?> InvokeAsync(CreateClient request, PipelineDelegate<Result<long?>> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
 
@@ -36,7 +36,7 @@ public class ClientChangeNotifyPipeline : IRequestPipeline<CreateClient, Result<
         return result;
     }
 
-    public async Task<Result?> InvokeAsync(UpdateClient request, PipelineDelegate<Result> next, CancellationToken cancellationToken = new())
+    public async Task<Result?> InvokeAsync(UpdateClient request, PipelineDelegate<Result> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
 
@@ -49,7 +49,7 @@ public class ClientChangeNotifyPipeline : IRequestPipeline<CreateClient, Result<
         return result;
     }
 
-    public async Task<Result?> InvokeAsync(DeleteClient request, PipelineDelegate<Result> next, CancellationToken cancellationToken = new())
+    public async Task<Result?> InvokeAsync(DeleteClient request, PipelineDelegate<Result> next, CancellationToken cancellationToken = default)
     {
         var result = await next(request, cancellationToken);
 

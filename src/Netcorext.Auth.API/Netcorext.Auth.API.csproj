@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
-  <Import Project="../Packages.targets" />
-  <Import Project="../Versioning.targets" />
+  <Import Project="../Packages.targets"/>
+  <Import Project="../Versioning.targets"/>
 
 </Project>

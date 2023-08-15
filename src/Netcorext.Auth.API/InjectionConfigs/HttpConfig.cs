@@ -9,7 +9,7 @@ public class HttpConfig
     {
         var requestIdHeaderName = configuration.GetValue<string>("AppSettings:RequestIdHeaderName");
         var requestIdFromHeaderNames = configuration.GetSection("AppSettings:RequestIdFromHeaderNames").Get<string[]>();
-        
+
         services.AddHttpContextAccessor();
 
         services.AddHttpClient("")

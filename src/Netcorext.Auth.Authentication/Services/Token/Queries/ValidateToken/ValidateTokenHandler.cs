@@ -54,9 +54,9 @@ public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
 
         var isResourceValid = entity.ResourceType switch
                               {
-                                      ResourceType.Client => await dsClient.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
-                                      ResourceType.User => await dsUser.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
-                                      _ => false
+                                  ResourceType.Client => await dsClient.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
+                                  ResourceType.User => await dsUser.AnyAsync(t => t.Id == long.Parse(entity.ResourceId) && !t.Disabled, cancellationToken),
+                                  _ => false
                               };
 
         return isResourceValid ? Result.Success : Result.Unauthorized;

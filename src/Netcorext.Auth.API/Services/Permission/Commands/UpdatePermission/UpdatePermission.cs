@@ -10,6 +10,7 @@ public class UpdatePermission : IRequest<Result>
     public string? Name { get; set; } = null!;
     public int? Priority { get; set; }
     public bool? Disabled { get; set; }
+    public string? State { get; set; }
     public Rule[]? Rules { get; set; }
 
     public class Rule

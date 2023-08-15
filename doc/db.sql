@@ -71,7 +71,7 @@ CREATE TABLE "Token" (
   "TokenType" character varying(50) NOT NULL,
   "AccessToken" character varying(2048) NOT NULL,
   "ExpiresIn" integer NOT NULL,
-  "ExpiresAt" bigint NULL,
+  "ExpiresAt" bigint NOT NULL,
   "Scope" character varying(2048) NULL,
   "RefreshToken" character varying(2048) NULL,
   "RefreshExpiresIn" integer NULL,

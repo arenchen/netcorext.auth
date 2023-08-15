@@ -28,19 +28,15 @@ public class CloneRole : IRequest<Result<long?>>
     public class RolePermissionCondition
     {
         public long PermissionId { get; set; }
-        public int Priority { get; set; }
         public string? Group { get; set; }
         public string Key { get; set; } = null!;
         public string Value { get; set; } = null!;
-        public bool Allowed { get; set; }
     }
 
     public class DefaultPermissionCondition
     {
-        public int Priority { get; set; }
         public string? Group { get; set; }
         public string Key { get; set; } = null!;
         public string Value { get; set; } = null!;
-        public bool Allowed { get; set; }
     }
 }

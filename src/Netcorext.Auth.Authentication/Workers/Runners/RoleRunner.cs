@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Services.Permission.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
+using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
@@ -15,11 +16,11 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly RedisClient _redis;
-    private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<RoleRunner> _logger;
+    private IDisposable? _subscriber;
     private static readonly SemaphoreSlim RoleUpdateLocker = new(1, 1);
 
     public RoleRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<RoleRunner> logger)
@@ -56,48 +57,60 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
 
             var reqIds = ids == null ? null : _serializer.Deserialize<long[]>(ids);
 
-            var result = await dispatcher.SendAsync(new GetRolePermission
-                                                    {
-                                                        Ids = reqIds
-                                                    }, cancellationToken);
-
-            if (result.Content == null || result.Code != Result.Success) return;
-
-            var cacheRolePermissionRule = _cache.Get<Dictionary<string, Services.Permission.Queries.Models.RolePermissionRule>>(ConfigSettings.CACHE_ROLE_PERMISSION_RULE) ?? new Dictionary<string, Services.Permission.Queries.Models.RolePermissionRule>();
+            var cacheRolePermission = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.RolePermission>>(ConfigSettings.CACHE_ROLE_PERMISSION) ?? new Dictionary<long, Services.Permission.Queries.Models.RolePermission>();
             var cacheRolePermissionCondition = _cache.Get<Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>>(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION) ?? new Dictionary<long, Services.Permission.Queries.Models.RolePermissionCondition>();
 
             if (reqIds != null && reqIds.Any())
             {
-                var rules = cacheRolePermissionRule.Where(t => reqIds.Contains(t.Value.RoleId))
-                                                   .ToArray();
+                var permissions = cacheRolePermission.Where(t => reqIds.Contains(t.Value.RoleId))
+                                                     .ToArray();
 
-                rules.ForEach(t => cacheRolePermissionRule.Remove(t.Key));
-                
+                permissions.ForEach(t => cacheRolePermission.Remove(t.Key));
+
+
                 var conditions = cacheRolePermissionCondition.Where(t => reqIds.Contains(t.Value.RoleId))
                                                              .ToArray();
 
                 conditions.ForEach(t => cacheRolePermissionCondition.Remove(t.Key));
             }
 
-            foreach (var i in result.Content.PermissionRules)
+            var result = await dispatcher.SendAsync(new GetRolePermission
+                                                    {
+                                                        Ids = reqIds
+                                                    }, cancellationToken);
+
+            if (result.Code == Result.Success && !result.Content.IsEmpty())
             {
-                var id = $"{i.RoleId}-{i.PermissionId}-{i.Id}";
+                foreach (var i in result.Content)
+                {
+                    var id = i.Id;
 
-                if (cacheRolePermissionRule.TryAdd(id, i)) continue;
+                    if (cacheRolePermission.TryAdd(id, i)) continue;
 
-                cacheRolePermissionRule[id] = i;
+                    cacheRolePermission[id] = i;
+                }
+
+                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION, cacheRolePermission);
             }
 
-            _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_RULE, cacheRolePermissionRule);
+            var resultCondition = await dispatcher.SendAsync(new GetRolePermissionCondition
+                                                             {
+                                                                 Ids = reqIds
+                                                             }, cancellationToken);
 
-            foreach (var i in result.Content.PermissionConditions)
+            if (resultCondition.Code == Result.Success && !resultCondition.Content.IsEmpty())
             {
-                if (cacheRolePermissionCondition.TryAdd(i.Id, i)) continue;
+                foreach (var i in resultCondition.Content)
+                {
+                    var id = i.Id;
 
-                cacheRolePermissionCondition[i.Id] = i;
+                    if (cacheRolePermissionCondition.TryAdd(id, i)) continue;
+
+                    cacheRolePermissionCondition[id] = i;
+                }
+
+                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION, cacheRolePermissionCondition);
             }
-
-            _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION, cacheRolePermissionCondition);
         }
         finally
         {

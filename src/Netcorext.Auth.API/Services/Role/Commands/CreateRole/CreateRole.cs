@@ -12,6 +12,7 @@ public class CreateRole : IRequest<Result<IEnumerable<long>>>
         public string Name { get; set; } = null!;
         public bool Disabled { get; set; }
         public RoleExtendData[]? ExtendData { get; set; }
+        public string[]? PermissionFromStates { get; set; }
         public RolePermission[]? Permissions { get; set; }
         public RolePermissionCondition[]? PermissionConditions { get; set; }
         public long? CustomId { get; set; }
@@ -31,10 +32,8 @@ public class CreateRole : IRequest<Result<IEnumerable<long>>>
     public class RolePermissionCondition
     {
         public long PermissionId { get; set; }
-        public int Priority { get; set; }
         public string? Group { get; set; }
         public string Key { get; set; } = null!;
         public string Value { get; set; } = null!;
-        public bool Allowed { get; set; }
     }
 }

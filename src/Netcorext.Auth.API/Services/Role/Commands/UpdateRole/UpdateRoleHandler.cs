@@ -69,14 +69,14 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
             var gExtendData = request.ExtendData
                                      .GroupBy(t => t.Crud, (mode, data) => new
                                                                            {
-                                                                                   Mode = mode,
-                                                                                   Data = data.Select(t => new Domain.Entities.RoleExtendData
-                                                                                                           {
-                                                                                                                   Id = entity.Id,
-                                                                                                                   Key = t.Key.ToUpper(),
-                                                                                                                   Value = t.Value.ToUpper()
-                                                                                                           })
-                                                                                              .ToArray()
+                                                                               Mode = mode,
+                                                                               Data = data.Select(t => new Domain.Entities.RoleExtendData
+                                                                                                       {
+                                                                                                           Id = entity.Id,
+                                                                                                           Key = t.Key.ToUpper(),
+                                                                                                           Value = t.Value.ToUpper()
+                                                                                                       })
+                                                                                          .ToArray()
                                                                            })
                                      .ToArray();
 
@@ -111,13 +111,13 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
             var gPermissions = request.Permissions
                                       .GroupBy(t => t.Crud, (mode, data) => new
                                                                             {
-                                                                                    Mode = mode,
-                                                                                    Data = data.Select(t => new Domain.Entities.RolePermission
-                                                                                                            {
-                                                                                                                    Id = request.Id,
-                                                                                                                    PermissionId = t.PermissionId
-                                                                                                            })
-                                                                                               .ToArray()
+                                                                                Mode = mode,
+                                                                                Data = data.Select(t => new Domain.Entities.RolePermission
+                                                                                                        {
+                                                                                                            Id = request.Id,
+                                                                                                            PermissionId = t.PermissionId
+                                                                                                        })
+                                                                                           .ToArray()
                                                                             })
                                       .ToArray();
 
@@ -147,19 +147,17 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
             var gPermissionCondition = request.PermissionConditions
                                               .GroupBy(t => t.Crud, (mode, permissionCondition) => new
                                                                                                    {
-                                                                                                           Mode = mode,
-                                                                                                           Data = permissionCondition.Select(t => new Domain.Entities.RolePermissionCondition
-                                                                                                                                                  {
-                                                                                                                                                          Id = t.Id ?? _snowflake.Generate(),
-                                                                                                                                                          RoleId = entity.Id,
-                                                                                                                                                          PermissionId = t.PermissionId,
-                                                                                                                                                          Priority = t.Priority,
-                                                                                                                                                          Group = t.Group?.ToUpper(),
-                                                                                                                                                          Key = t.Key.ToUpper(),
-                                                                                                                                                          Value = t.Value.ToUpper(),
-                                                                                                                                                          Allowed = t.Allowed
-                                                                                                                                                  })
-                                                                                                                                     .ToArray()
+                                                                                                       Mode = mode,
+                                                                                                       Data = permissionCondition.Select(t => new Domain.Entities.RolePermissionCondition
+                                                                                                                                              {
+                                                                                                                                                  Id = t.Id ?? _snowflake.Generate(),
+                                                                                                                                                  RoleId = entity.Id,
+                                                                                                                                                  PermissionId = t.PermissionId,
+                                                                                                                                                  Group = t.Group?.ToUpper(),
+                                                                                                                                                  Key = t.Key.ToUpper(),
+                                                                                                                                                  Value = t.Value.ToUpper()
+                                                                                                                                              })
+                                                                                                                                 .ToArray()
                                                                                                    })
                                               .ToArray();
 
@@ -180,10 +178,8 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                                               (o, i) =>
                                               {
                                                   o.PermissionId = i.PermissionId;
-                                                  o.Priority = i.Priority;
                                                   o.Group = i.Group;
                                                   o.Value = i.Value;
-                                                  o.Allowed = i.Allowed;
 
                                                   return o;
                                               })

@@ -6,6 +6,7 @@ public class Permission
     public string Name { get; set; } = null!;
     public int Priority { get; set; }
     public bool Disabled { get; set; }
+    public string? State { get; set; }
     public IEnumerable<Rule> Rules { get; set; } = null!;
     public DateTimeOffset CreationDate { get; set; }
     public long CreatorId { get; set; }

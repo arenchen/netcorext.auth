@@ -40,9 +40,9 @@ public class DbConfig
 
                                                   return new RedisClientConnection<RedisClient>(() => new RedisClient(cfg.Connections.Redis.GetDefault().Connection)
                                                                                                       {
-                                                                                                              Serialize = serializer.Serialize,
-                                                                                                              Deserialize = serializer.Deserialize,
-                                                                                                              DeserializeRaw = serializer.Deserialize
+                                                                                                          Serialize = serializer.Serialize,
+                                                                                                          Deserialize = serializer.Deserialize,
+                                                                                                          DeserializeRaw = serializer.Deserialize
                                                                                                       }).Client;
                                               });
 
