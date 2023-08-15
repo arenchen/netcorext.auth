@@ -264,7 +264,7 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                                         return new
                                                                {
                                                                    FunctionId = t.Key,
-                                                                   p.PermissionType
+                                                                   PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                                };
                                                     })
                                             .ToArray();

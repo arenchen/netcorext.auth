@@ -231,7 +231,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                                               return new
                                                      {
                                                          FunctionId = t.Key,
-                                                         p.PermissionType
+                                                         PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
                                                      };
                                           })
                                   .ToArray();
