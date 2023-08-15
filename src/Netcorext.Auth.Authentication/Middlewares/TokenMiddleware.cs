@@ -89,7 +89,8 @@ internal class TokenMiddleware
                          _ => false
                      };
 
-        _logger.LogWarning("Unauthorized, token is invalid");
+        if (!result)
+            _logger.LogWarning("Unauthorized, token is invalid");
 
         return result;
     }

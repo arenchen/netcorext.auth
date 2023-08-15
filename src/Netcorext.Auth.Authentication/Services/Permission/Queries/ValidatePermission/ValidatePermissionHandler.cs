@@ -67,9 +67,11 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             if (!user.Roles.Any())
                 return Result.Forbidden;
 
-            roleIds = user.Roles
-                          .Join(roleIds, o => o, i => i, (o, _) => o)
-                          .ToArray();
+            roleIds = roleIds.Any()
+                          ? user.Roles
+                                .Join(roleIds, o => o, i => i, (o, _) => o)
+                                .ToArray()
+                          : user.Roles.ToArray();
         }
 
         if (request.RoleExtendData != null && request.RoleExtendData.Any())
@@ -98,7 +100,7 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
 
         if (!roleIds.Any()) return Result.Forbidden;
 
-        Expression<Func<KeyValuePair<long, Models.PermissionRule>, bool>> predicatePermissionRule = t => t.Value.FunctionId == request.FunctionId;
+        Expression<Func<KeyValuePair<long, Models.PermissionRule>, bool>> predicatePermissionRule = t => t.Value.FunctionId == request.FunctionId.ToUpper();
 
         Expression<Func<KeyValuePair<long, Models.RolePermission>, bool>> predicateRolePermission = t => roleIds.Contains(t.Value.RoleId);
         Expression<Func<KeyValuePair<long, Models.RolePermissionCondition>, bool>> predicateRolePermissionCondition = t => roleIds.Contains(t.Value.RoleId);
@@ -160,16 +162,17 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
                 predicateCondition = predicateCondition.Or(predicateKey);
             }
 
-
             if (reqConditions.Any())
             {
                 conditions = conditions.Where(predicateCondition.Compile()).ToArray();
             }
         }
 
-        var permissions = conditions.Select(t => t.PermissionId)
-                                    .Union(rolePermission)
-                                    .Distinct();
+        var permissions = request.PermissionConditions.IsEmpty()
+                              ? rolePermission
+                              : conditions.Select(t => t.PermissionId)
+                                          .Union(rolePermission)
+                                          .Distinct();
 
         predicatePermissionRule = predicatePermissionRule.And(t => permissions.Contains(t.Value.PermissionId));
 

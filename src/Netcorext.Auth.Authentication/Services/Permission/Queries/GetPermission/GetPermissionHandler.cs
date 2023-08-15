@@ -33,7 +33,7 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
                                                                       {
                                                                           PermissionId = t.Id,
                                                                           Id = t2.Id,
-                                                                          FunctionId = t2.FunctionId,
+                                                                          FunctionId = t2.FunctionId.ToUpper(),
                                                                           Priority = t.Priority,
                                                                           PermissionType = t2.PermissionType,
                                                                           Allowed = t2.Allowed

@@ -372,7 +372,7 @@ CREATE UNIQUE INDEX "IX_Permission_Name" ON "Permission" ("Name");
 CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Group_~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Group", "Key", "Value");
 CREATE UNIQUE INDEX "IX_Role_Name" ON "Role" ("Name");
 CREATE UNIQUE INDEX "IX_Route_HttpMethod_RelativePath" ON "Route" ("HttpMethod", "RelativePath");
-CREATE UNIQUE INDEX "IX_Rule_Id_FunctionId_PermissionType_Allowed" ON "Rule" ("Id", "FunctionId", "PermissionType", "Allowed");
+CREATE UNIQUE INDEX "IX_Rule_PermissionId_FunctionId_PermissionType_Allowed" ON "Rule" ("PermissionId", "FunctionId", "PermissionType", "Allowed");
 CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Priority_Group_~" ON "UserPermissionCondition" ("UserId", "PermissionId", "Priority", "Group", "Key", "Value");
 
 
