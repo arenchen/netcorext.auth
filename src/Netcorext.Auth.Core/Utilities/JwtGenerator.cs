@@ -14,11 +14,11 @@ public class JwtGenerator
         _config = config.Value;
     }
 
-    public (string Token, JwtSecurityToken Jwt) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, int? tokenExpireSeconds = null, string? scope = null, string? originScope = null)
+    public (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, int? tokenExpireSeconds = null, string? scope = null, string? originScope = null)
     {
         return TokenHelper.Generate(tokenType,
                                     resourceType,
-                                    DateTime.UtcNow.AddSeconds(tokenExpireSeconds ?? (tokenType == TokenType.AccessToken ? _config.TokenExpireSeconds : _config.RefreshTokenExpireSeconds)),
+                                    DateTimeOffset.UtcNow.AddSeconds(tokenExpireSeconds ?? (tokenType == TokenType.AccessToken ? _config.TokenExpireSeconds : _config.RefreshTokenExpireSeconds)),
                                     resourceId,
                                     uniqueId,
                                     scope,

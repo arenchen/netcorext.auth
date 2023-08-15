@@ -108,7 +108,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), null, entity.TokenExpireSeconds, scope);
         var refreshToken = entity.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
-                               : (null, null);
+                               : (null, null, 0, 0);
         
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
@@ -127,13 +127,13 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                             ResourceType = ResourceType.User,
                             ResourceId = entity.Id.ToString(),
                             TokenType = result.Content?.TokenType!,
-                            AccessToken = result.Content?.AccessToken!,
-                            ExpiresIn = result.Content?.ExpiresIn,
-                            ExpiresAt = accessToken.Jwt.Payload.Exp,
+                            AccessToken = accessToken.Token,
+                            ExpiresIn = accessToken.ExpiresIn,
+                            ExpiresAt = accessToken.ExpiresAt,
                             Scope = result.Content?.Scope,
-                            RefreshToken = result.Content?.RefreshToken,
-                            RefreshExpiresIn = entity.RefreshTokenExpireSeconds,
-                            RefreshExpiresAt = refreshToken.Jwt?.Payload.Exp
+                            RefreshToken = refreshToken.Token,
+                            RefreshExpiresIn = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresIn,
+                            RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt
                     });
 
         await _context.SaveChangesAsync(cancellationToken);

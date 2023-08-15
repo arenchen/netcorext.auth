@@ -14,9 +14,10 @@ public static class TokenHelper
     public const string CLAIM_TYPES_TOKEN_TYPE = "tt";
     public const string CLAIM_TOKEN_HASH = "th";
     public const string CLAIM_UNIQUE_ID = "uid";
+    private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
     public static string GenerateJwt(TokenType type, ResourceType resourceType,
-                                     DateTime? expires, string resourceId, string? uniqueId, string? scope,
+                                     DateTimeOffset expires, string resourceId, string? uniqueId, string? scope,
                                      string? issuer,
                                      string? audience,
                                      string signingKey,
@@ -25,14 +26,15 @@ public static class TokenHelper
                                      string? originScope = null) =>
         Generate(type, resourceType, expires, resourceId, uniqueId, scope, issuer, audience, signingKey, nameClaimType, roleClaimType, originScope).Token;
 
-    public static (string Token, JwtSecurityToken Jwt) Generate(TokenType type, ResourceType resourceType,
-                                                                DateTime? expires, string resourceId, string? uniqueId, string? scope,
-                                                                string? issuer,
-                                                                string? audience,
-                                                                string signingKey,
-                                                                string nameClaimType = ClaimTypes.NameIdentifier,
-                                                                string roleClaimType = ClaimTypes.Role,
-                                                                string? originScope = null)
+    public static (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt)
+        Generate(TokenType type, ResourceType resourceType,
+                 DateTimeOffset expires, string resourceId, string? uniqueId, string? scope,
+                 string? issuer,
+                 string? audience,
+                 string signingKey,
+                 string nameClaimType = ClaimTypes.NameIdentifier,
+                 string roleClaimType = ClaimTypes.Role,
+                 string? originScope = null)
     {
         var claims = new List<Claim>
                      {
@@ -44,17 +46,19 @@ public static class TokenHelper
 
         if (!string.IsNullOrWhiteSpace(uniqueId)) claims.Add(new Claim(CLAIM_UNIQUE_ID, uniqueId));
         if (!string.IsNullOrWhiteSpace(scope)) claims.Add(new Claim(roleClaimType, scope));
-
         if (!string.IsNullOrWhiteSpace(originScope)) claims.Add(new Claim("origin-scope", originScope));
+
+        var issuedAt = DateTimeOffset.UtcNow;
+        var expiresIn = (int)expires.Subtract(issuedAt).TotalSeconds;
 
         var tokenDescriptor = new SecurityTokenDescriptor
                               {
                                   Issuer = issuer,
                                   Audience = audience,
                                   Subject = new ClaimsIdentity(claims),
-                                  IssuedAt = DateTime.UtcNow,
-                                  NotBefore = expires.HasValue ? (DateTime?)DateTime.UtcNow : default,
-                                  Expires = expires ?? default,
+                                  IssuedAt = issuedAt.DateTime,
+                                  NotBefore = issuedAt.DateTime,
+                                  Expires = expires.DateTime,
                                   SigningCredentials = string.IsNullOrWhiteSpace(signingKey)
                                                            ? null
                                                            : new SigningCredentials(GetSymmetricSecurityKey(signingKey),
@@ -67,7 +71,7 @@ public static class TokenHelper
 
         var token = jwtHandler.WriteToken(jwt);
 
-        return (token, jwt);
+        return (token, jwt, expiresIn, expires.ToUnixTimeSeconds());
     }
 
     public static string GenerateCode(string signingKey)
@@ -79,18 +83,14 @@ public static class TokenHelper
 
     public static ClaimsPrincipal ValidateJwt(string token, TokenValidationParameters parameters)
     {
-        var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-
-        var principal = jwtSecurityTokenHandler.ValidateToken(token, parameters, out _);
+        var principal = TokenHandler.ValidateToken(token, parameters, out _);
 
         return principal;
     }
 
     public static JwtSecurityToken GetJwtInfo(string token)
     {
-        var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-
-        var securityToken = jwtSecurityTokenHandler.ReadJwtToken(token);
+        var securityToken = TokenHandler.ReadJwtToken(token);
 
         return securityToken;
     }

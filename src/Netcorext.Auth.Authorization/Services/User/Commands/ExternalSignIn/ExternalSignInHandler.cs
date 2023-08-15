@@ -156,7 +156,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope);
         var refreshToken = entity.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope)
-                               : (null, null);
+                               : (null, null, 0, 0);
         
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
@@ -164,7 +164,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                                AccessToken = accessToken.Token,
                                                                Scope = scope,
                                                                RefreshToken = refreshToken.Token,
-                                                               ExpiresIn = entity.TokenExpireSeconds,
+                                                               ExpiresIn = accessToken.ExpiresIn,
                                                                NameId = entity.Id.ToString()
                                                        });
 
@@ -176,13 +176,13 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                             ResourceType = ResourceType.User,
                             ResourceId = entity.Id.ToString(),
                             TokenType = result.Content?.TokenType!,
-                            AccessToken = result.Content?.AccessToken!,
-                            ExpiresIn = result.Content?.ExpiresIn,
-                            ExpiresAt = accessToken.Jwt.Payload.Exp,
+                            AccessToken = accessToken.Token,
+                            ExpiresIn = accessToken.ExpiresIn,
+                            ExpiresAt = accessToken.ExpiresAt,
                             Scope = result.Content?.Scope,
-                            RefreshToken = result.Content?.RefreshToken,
-                            RefreshExpiresIn = entity.RefreshTokenExpireSeconds,
-                            RefreshExpiresAt = refreshToken.Jwt?.Payload.Exp
+                            RefreshToken = refreshToken.Token,
+                            RefreshExpiresIn = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresIn,
+                            RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
