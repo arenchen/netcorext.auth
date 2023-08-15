@@ -214,7 +214,7 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                     .Union(rolePermissions)
                                     .Distinct();
 
-        var permissionRules = rules.Where(t => permissions.Contains(t.Id))
+        var permissionRules = rules.Where(t => permissions.Contains(t.PermissionId))
                                    .ToArray();
 
         var validatorRules = permissionRules.GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
