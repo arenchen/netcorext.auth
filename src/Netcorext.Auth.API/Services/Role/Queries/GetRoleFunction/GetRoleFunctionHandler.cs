@@ -77,10 +77,10 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
         var conditions = rolePermissionConditions.Distinct()
                                                  .ToArray();
 
-        rolePermissions = rolePermissions.Union(conditions.Select(t => t.PermissionId))
-                                         .ToArray();
+        var maxRangePermissions = rolePermissions.Union(conditions.Select(t => t.PermissionId))
+                                                 .ToArray();
 
-        rules = dsPermission.Where(t => rolePermissions.Contains(t.Id))
+        rules = dsPermission.Where(t => maxRangePermissions.Contains(t.Id))
                             .SelectMany(t => t.Rules.Select(t2 => new Models.PermissionRule
                                                                   {
                                                                       Id = t2.Id,
