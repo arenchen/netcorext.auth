@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Client.Commands;
 using Netcorext.Auth.API.Services.Client.Pipelines;
+using Netcorext.Auth.API.Services.Permission.Commands;
+using Netcorext.Auth.API.Services.Permission.Pipelines;
 using Netcorext.Auth.API.Services.Role.Commands;
 using Netcorext.Auth.API.Services.Role.Pipelines;
 using Netcorext.Auth.API.Services.User.Commands;
@@ -30,6 +32,9 @@ public class ServiceConfig
                 .AddRequestPipeline<UserChangeNotifyPipeline, CreateUser, Result<long?>>()
                 .AddRequestPipeline<UserChangeNotifyPipeline, UpdateUser, Result>()
                 .AddRequestPipeline<UserChangeNotifyPipeline, DeleteUser, Result>()
+                .AddRequestPipeline<PermissionChangeNotifyPipeline, CreatePermission, Result<IEnumerable<long>>>()
+                .AddRequestPipeline<PermissionChangeNotifyPipeline, UpdatePermission, Result>()
+                .AddRequestPipeline<PermissionChangeNotifyPipeline, DeletePermission, Result>()
                 .AddRequestPipeline<RoleChangeNotifyPipeline, CreateRole, Result<IEnumerable<long>>>()
                 .AddRequestPipeline<RoleChangeNotifyPipeline, UpdateRole, Result>()
                 .AddRequestPipeline<RoleChangeNotifyPipeline, DeleteRole, Result>();
