@@ -32,27 +32,27 @@ jobs:
           APP_AUTHENTICATION="Netcorext.Auth.Authentication"
           APP_AUTHORIZATION="Netcorext.Auth.Authorization"
           APP_CORE="Netcorext.Auth.Core"
-          
+
           CHANGE_FILES=`git diff --no-commit-id --name-only HEAD^`
-          
+
           CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP}|${APP_CORE}" || true`
           if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
             echo "No changes in ${APP}"
             APP=""
           fi
-          
+
           CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP_AUTHENTICATION}|${APP_CORE}" || true`
           if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
             echo "No changes in ${APP_AUTHENTICATION}"
             APP_AUTHENTICATION=""
           fi
-          
+
           CHANGED=`echo "$CHANGE_FILES" | grep -Em 1 "${APP_AUTHORIZATION}|${APP_CORE}" || true`
           if [ -z "$CHANGED" ] && [ "${{ inputs.force }}" != true ]; then
             echo "No changes in ${APP_AUTHORIZATION}"
             APP_AUTHORIZATION=""
           fi
-          
+
           echo "app=${APP}" >> $GITHUB_OUTPUT
           echo "app-authentication=${APP_AUTHENTICATION}" >> $GITHUB_OUTPUT
           echo "app-authorization=${APP_AUTHORIZATION}" >> $GITHUB_OUTPUT
@@ -78,7 +78,7 @@ jobs:
         uses: netcorext/dotnet-version-action@dev
         with:
           app: ${{ env.app }}
-          image-prefix: ${{ secrets.IMAGE_PREFIX }}
+          image-prefix: ${{ vars.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -118,7 +118,7 @@ jobs:
         uses: netcorext/dotnet-version-action@dev
         with:
           app: ${{ env.app }}
-          image-prefix: ${{ secrets.IMAGE_PREFIX }}
+          image-prefix: ${{ vars.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -158,7 +158,7 @@ jobs:
         uses: netcorext/dotnet-version-action@dev
         with:
           app: ${{ env.app }}
-          image-prefix: ${{ secrets.IMAGE_PREFIX }}
+          image-prefix: ${{ vars.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
         uses: docker/login-action@v2

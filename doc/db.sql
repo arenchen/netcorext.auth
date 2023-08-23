@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+--CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 
 CREATE TABLE "Client" (
@@ -25,6 +25,7 @@ CREATE TABLE "Permission" (
   "Name" character varying(50) NOT NULL,
   "Priority" integer NOT NULL,
   "Disabled" boolean NOT NULL,
+  "State" character varying(50) NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -196,11 +197,9 @@ CREATE TABLE "RolePermissionCondition" (
   "Id" bigint NOT NULL,
   "RoleId" bigint NOT NULL,
   "PermissionId" bigint NOT NULL,
-  "Priority" integer NOT NULL,
   "Group" character varying(50) NULL,
   "Key" character varying(50) NOT NULL,
   "Value" character varying(200) NOT NULL,
-  "Allowed" boolean NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -280,11 +279,9 @@ CREATE TABLE "UserPermissionCondition" (
   "Id" bigint NOT NULL,
   "UserId" bigint NOT NULL,
   "PermissionId" bigint NOT NULL,
-  "Priority" integer NOT NULL,
   "Group" character varying(50) NULL,
   "Key" character varying(50) NOT NULL,
   "Value" character varying(200) NOT NULL,
-  "Allowed" boolean NOT NULL,
   "ExpireDate" timestamp with time zone NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
@@ -316,6 +313,7 @@ CREATE INDEX "IX_ClientExtendData_Value" ON "ClientExtendData" ("Value");
 CREATE INDEX "IX_ClientRole_RoleId" ON "ClientRole" ("RoleId");
 CREATE INDEX "IX_Client_Disabled" ON "Client" ("Disabled");
 CREATE INDEX "IX_Permission_Disabled" ON "Permission" ("Disabled");
+CREATE INDEX "IX_Permission_State" ON "Permission" ("State");
 CREATE INDEX "IX_RoleExtendData_Key" ON "RoleExtendData" ("Key");
 CREATE INDEX "IX_RoleExtendData_Value" ON "RoleExtendData" ("Value");
 CREATE INDEX "IX_RolePermissionCondition_Group" ON "RolePermissionCondition" ("Group");
@@ -363,17 +361,16 @@ CREATE INDEX "IX_User_Disabled" ON "User" ("Disabled");
 CREATE INDEX "IX_User_DisplayName" ON "User" ("DisplayName");
 CREATE INDEX "IX_User_Email" ON "User" ("Email");
 CREATE INDEX "IX_User_NormalizedEmail" ON "User" ("NormalizedEmail");
-CREATE INDEX "IX_User_NormalizedDisplayName" ON "User" ("IX_NormalizedDisplayName");
 CREATE INDEX "IX_User_PhoneNumber" ON "User" ("PhoneNumber");
 CREATE UNIQUE INDEX "IX_User_Username" ON "User" ("Username");
 CREATE UNIQUE INDEX "IX_User_NormalizedUsername" ON "User" ("NormalizedUsername");
 CREATE UNIQUE INDEX "IX_Client_Name" ON "Client" ("Name");
 CREATE UNIQUE INDEX "IX_Permission_Name" ON "Permission" ("Name");
-CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Priority_Group_~" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Priority", "Group", "Key", "Value");
+CREATE UNIQUE INDEX "IX_RolePermissionCondition_RoleId_PermissionId_Group_Key_Value" ON "RolePermissionCondition" ("RoleId", "PermissionId", "Group", "Key", "Value");
 CREATE UNIQUE INDEX "IX_Role_Name" ON "Role" ("Name");
 CREATE UNIQUE INDEX "IX_Route_HttpMethod_RelativePath" ON "Route" ("HttpMethod", "RelativePath");
 CREATE UNIQUE INDEX "IX_Rule_PermissionId_FunctionId_PermissionType_Allowed" ON "Rule" ("PermissionId", "FunctionId", "PermissionType", "Allowed");
-CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Priority_Group_~" ON "UserPermissionCondition" ("UserId", "PermissionId", "Priority", "Group", "Key", "Value");
+CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Group_Key_Value" ON "UserPermissionCondition" ("UserId", "PermissionId", "Group", "Key", "Value");
 
 
 /* Functions */

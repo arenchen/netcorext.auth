@@ -23,14 +23,14 @@ public class DbConfig
                                           {
                                               var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
-                                              builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault().Connection);
+                                              builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault().Connection, options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery));
                                           }, defaultPoolSize, slowCommandLoggingThreshold);
 
         services.AddIdentitySlaveDbContextPool((provider, builder) =>
                                                {
                                                    var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
-                                                   builder.UseNpgsql(cfg.Connections.RelationalDb["Slave"].Connection);
+                                                   builder.UseNpgsql(cfg.Connections.RelationalDb["Slave"].Connection, options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery));
                                                }, slavePoolSize, slowCommandLoggingThreshold);
 
         services.TryAddSingleton<RedisClient>(provider =>
