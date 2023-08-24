@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Routing.Template;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Extensions;
@@ -71,7 +73,23 @@ internal class PermissionMiddleware
             break;
         }
 
-        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId) || await IsValidAsync(dispatcher, _config.AppSettings.ValidationPassUserId && rt == "1" ? id : null, role, functionId, method, context.Request.RouteValues))
+        var rv = context.Request.RouteValues
+                        .ToDictionary(t => t.Key, t => new ValidatePermission.PermissionCondition
+                                                       {
+                                                              Key = t.Key,
+                                                              Value = t.Value?.ToString() ?? ""
+                                                       });
+
+        foreach (var q in context.Request.Query)
+        {
+            rv.TryAdd(q.Key, new ValidatePermission.PermissionCondition
+                             {
+                                 Key = q.Key,
+                                 Value = q.Value.ToString() ?? ""
+                             });
+        }
+
+        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId) || await IsValidAsync(dispatcher, _config.AppSettings.ValidationPassUserId && rt == "1" ? id : null, role, functionId, method, rv.Values.ToArray()))
         {
             await _next(context);
 
@@ -97,7 +115,7 @@ internal class PermissionMiddleware
         await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
     }
 
-    private async Task<bool> IsValidAsync(IDispatcher dispatcher, long? userId, string? role, string functionId, string httpMethod, RouteValueDictionary routeValues)
+    private static async Task<bool> IsValidAsync(IDispatcher dispatcher, long? userId, string? role, string functionId, string httpMethod, IEnumerable<ValidatePermission.PermissionCondition> permissionConditions)
     {
         var roleIds = role?.Split(" ", StringSplitOptions.RemoveEmptyEntries)
                            .Where(t => !t.IsEmpty() && long.TryParse(t, out var _))
@@ -112,12 +130,7 @@ internal class PermissionMiddleware
                                                     RoleId = roleIds,
                                                     FunctionId = functionId,
                                                     PermissionType = httpMethod.ToPermissionType(),
-                                                    PermissionConditions = routeValues.Select(t => new ValidatePermission.PermissionCondition
-                                                                                                   {
-                                                                                                       Key = t.Key,
-                                                                                                       Value = t.Value?.ToString()!
-                                                                                                   })
-                                                                                      .ToArray()
+                                                    PermissionConditions = permissionConditions.ToArray()
                                                 });
 
         return result == Result.Success;
