@@ -29,7 +29,7 @@ public class GetRoleHandler : IRequestHandler<GetRole, Result<IEnumerable<Models
         Expression<Func<Domain.Entities.Role, bool>> predicate = p => true;
 
         if (request.Ids?.Any() == true) predicate = predicate.And(p => request.Ids.Contains(p.Id));
-        if (!request.Name.IsEmpty()) predicate = predicate.And(p => p.Name.Contains(request.Name));
+        if (!request.Name.IsEmpty()) predicate = predicate.And(p => p.Name == request.Name);
         if (request.Disabled.HasValue) predicate = predicate.And(p => p.Disabled == request.Disabled);
 
         if (request.ExtendData != null && request.ExtendData.Any())
