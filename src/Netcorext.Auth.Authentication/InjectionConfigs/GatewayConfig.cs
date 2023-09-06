@@ -16,6 +16,8 @@ public class GatewayConfig
                 .LoadFromMemory(Array.Empty<RouteConfig>(), Array.Empty<ClusterConfig>())
                 .AddTransforms(builder =>
                                {
+                                   builder.AddXForwarded(ForwardedTransformActions.Off);
+                                   builder.AddXForwardedFor(action: ForwardedTransformActions.Append);
                                    builder.AddResponseTransform(ctx =>
                                                                 {
                                                                     if (ctx.ProxyResponse == null || !ctx.ProxyResponse.Headers.TryGetValues(requestIdHeaderName, out var requestIds))

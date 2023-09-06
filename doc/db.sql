@@ -374,6 +374,22 @@ CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Group_Key_Va
 
 
 /* Functions */
+CREATE OR REPLACE FUNCTION public.fn_prune_token()
+ RETURNS int
+ LANGUAGE plpgsql
+AS $function$
+DECLARE currentDate DECIMAL; result int;
+BEGIN
+  currentDate = EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);
+
+  WITH deleted AS (
+    DELETE FROM "Token" WHERE ("ExpiresAt" < currentDate AND "RefreshExpiresAt" IS NULL) OR ("ExpiresAt" < currentDate AND "RefreshExpiresAt" < currentDate) RETURNING *
+  ) SELECT count(*) into result FROM deleted;
+
+  return result;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.fn_token_partition_table(_customdate timestamp with time zone DEFAULT NULL::timestamp with time zone, _months bigint DEFAULT NULL::bigint)
   RETURNS bigint
   LANGUAGE plpgsql
@@ -409,7 +425,7 @@ END;
 $function$
 
 
-select public.fn_token_partition_table();
+-- select public.fn_token_partition_table();
 
 
 -- Please switch to Db: postgres
@@ -421,3 +437,8 @@ select public.fn_token_partition_table();
 -- -- command = 'SELECT fn_token_partition_table(null, 1)',
 -- -- jobname = '建立分表'
 -- WHERE jobname = 'token_partition_table';
+
+-- SELECT cron.schedule('prune_token', '0 19 * * *', 'SELECT fn_prune_token()');
+-- UPDATE cron.job SET
+-- database = 'lctech_auth'
+-- WHERE jobname = 'prune_token';
