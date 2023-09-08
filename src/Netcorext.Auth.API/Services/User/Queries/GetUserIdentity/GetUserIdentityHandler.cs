@@ -35,7 +35,8 @@ public class GetUserIdentityHandler : IRequestHandler<GetUserIdentity, Result<IE
                                        Id = t.Id,
                                        Username = t.Username,
                                        DisplayName = t.DisplayName
-                                   });
+                                   })
+                      .ToArray();
 
         return Task.FromResult(Result<IEnumerable<Models.UserIdentity>>.Success.Clone(users));
     }
