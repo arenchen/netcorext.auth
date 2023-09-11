@@ -15,7 +15,7 @@ public class TokenMap : EntityMap<Token>
         Builder.HasIndex(t => t.ExpiresIn);
         Builder.HasIndex(t => t.ExpiresAt);
         Builder.HasIndex(t => t.RefreshToken);
-        Builder.HasIndex(t => t.Disabled);
+        Builder.HasIndex(t => t.Revoked);
 
         // Properties
         Builder.Property(t => t.ResourceType)
@@ -54,7 +54,7 @@ public class TokenMap : EntityMap<Token>
         Builder.Property(t => t.RefreshExpiresAt)
                .HasColumnName(nameof(Token.RefreshExpiresAt));
 
-        Builder.Property(t => t.Disabled)
-               .HasColumnName(nameof(Token.Disabled));
+        Builder.Property(t => t.Revoked)
+               .HasColumnName(nameof(Token.Revoked));
     }
 }

@@ -21,11 +21,11 @@ public class BlockUserTokenHandler : IRequestHandler<BlockUserToken, Result>
 
         var idStrings = request.Ids.Select(id => id.ToString()).ToArray();
 
-        var tokens = ds.Where(t => !t.Disabled && t.ResourceType == ResourceType.User && idStrings.Contains(t.ResourceId));
+        var tokens = ds.Where(t => t.Revoked != TokenRevoke.Both && t.ResourceType == ResourceType.User && idStrings.Contains(t.ResourceId));
 
         foreach (var token in tokens)
         {
-            _context.Entry(token).UpdateProperty(t => t.Disabled, true);
+            _context.Entry(token).UpdateProperty(t => t.Revoked, TokenRevoke.Both);
         }
 
         await _context.SaveChangesAsync(cancellationToken);

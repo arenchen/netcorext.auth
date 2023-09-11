@@ -21,20 +21,20 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
     private readonly DatabaseContext _context;
     private readonly RedisClient _redis;
     private readonly ISnowflake _snowflake;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly JwtGenerator _jwtGenerator;
     private readonly ConfigSettings _config;
     private readonly AuthOptions _authOptions;
-    private readonly HttpContext? _httpContext;
 
     public SignInHandler(DatabaseContextAdapter context, RedisClient redis, ISnowflake snowflake, IHttpContextAccessor httpContextAccessor, JwtGenerator jwtGenerator, IOptions<ConfigSettings> config, IOptions<AuthOptions> autoOptions)
     {
         _context = context;
         _redis = redis;
         _snowflake = snowflake;
+        _httpContextAccessor = httpContextAccessor;
         _jwtGenerator = jwtGenerator;
         _config = config.Value;
         _authOptions = autoOptions.Value;
-        _httpContext = httpContextAccessor.HttpContext;
     }
 
     public async Task<Result<TokenResult>> Handle(SignIn request, CancellationToken cancellationToken = default)
@@ -49,7 +49,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                              .FirstAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken);
 
         _context.Entry(entity).UpdateProperty(t => t.LastSignInDate, DateTimeOffset.UtcNow);
-        _context.Entry(entity).UpdateProperty(t => t.LastSignInIp, _httpContext?.GetIp());
+        _context.Entry(entity).UpdateProperty(t => t.LastSignInIp, _httpContextAccessor.HttpContext?.GetIp());
 
         if (entity.Disabled)
         {
@@ -109,7 +109,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
         var refreshToken = entity.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
-                               : (null, null, 0, 0);
+                               : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
@@ -134,7 +134,8 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                         Scope = result.Content?.Scope,
                         RefreshToken = refreshToken.Token,
                         RefreshExpiresIn = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresIn,
-                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt
+                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt,
+                        Revoked = TokenRevoke.None
                     });
 
         await _context.SaveChangesAsync(cancellationToken);

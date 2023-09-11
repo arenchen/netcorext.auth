@@ -9,12 +9,14 @@ public class JwtGenerator
 {
     private readonly AuthOptions _config;
 
+    public static readonly (string? Token, JwtSecurityToken? Jwt, int ExpiresIn, long ExpiresAt, string? Signature) DefaultGenerateEmpty = (null, null, 0, 0, null);
+
     public JwtGenerator(IOptions<AuthOptions> config)
     {
         _config = config.Value;
     }
 
-    public (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, int? tokenExpireSeconds = null, string? scope = null, string? originScope = null)
+    public (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, int? tokenExpireSeconds = null, string? scope = null, string? originScope = null)
     {
         return TokenHelper.Generate(tokenType,
                                     resourceType,

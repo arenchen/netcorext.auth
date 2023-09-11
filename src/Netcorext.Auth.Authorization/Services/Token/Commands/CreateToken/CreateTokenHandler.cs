@@ -11,6 +11,7 @@ using Netcorext.Auth.Helpers;
 using Netcorext.Auth.Utilities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
+using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
 using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
@@ -73,21 +74,21 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         var dsClient = _context.Set<Domain.Entities.Client>();
 
         if (!await dsClient.AnyAsync(t => t.Id == clientId, cancellationToken))
-            return Result<TokenResult>.InvalidInput.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.INVALID_REQUEST,
-                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
-                                                          });
+            return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
+                                                                         {
+                                                                             Error = Constants.OAuth.INVALID_REQUEST,
+                                                                             ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
+                                                                         });
 
         var client = await dsClient.Include(t => t.Roles)
                                    .FirstAsync(t => t.Id == clientId, cancellationToken);
 
         if (client.Disabled)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.ACCESS_DENIED,
-                                                              ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
-                                                          });
+            return Result<TokenResult>.AccountIsDisabled.Clone(new TokenResult
+                                                               {
+                                                                   Error = Constants.OAuth.ACCESS_DENIED,
+                                                                   ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
+                                                               });
 
         var clientScope = client.Roles.Any() ? client.Roles.Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n) : null;
 
@@ -101,17 +102,17 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         var secret = request.ClientSecret!.Pbkdf2HashCode(client.CreationDate.ToUnixTimeMilliseconds());
 
         if (client.Secret != secret)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
-                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
-                                                          });
+            return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
+                                                                         {
+                                                                             Error = Constants.OAuth.INVALID_REQUEST,
+                                                                             ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
+                                                                         });
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope);
 
         var refreshToken = client.AllowedRefreshToken || _authOptions.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
-                               : (null, null, 0, 0);
+                               : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
@@ -136,7 +137,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         Scope = result.Content?.Scope,
                         RefreshToken = refreshToken.Token,
                         RefreshExpiresIn = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresIn,
-                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt
+                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt,
+                        Revoked = TokenRevoke.None
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -149,8 +151,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         if (request.ClientId.IsEmpty() || !long.TryParse(request.ClientId, out var clientId) || request.ClientSecret.IsEmpty())
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
-                                                              Error = Constants.OAuth.INVALID_REQUEST,
-                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
+                                                              Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
+                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
                                                           });
 
         if (request.Username.IsEmpty() || request.Password.IsEmpty())
@@ -165,46 +167,46 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         if (!await dsClient.AnyAsync(t => t.Id == clientId, cancellationToken))
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
-                                                              Error = Constants.OAuth.INVALID_REQUEST,
-                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
+                                                              Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
+                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
                                                           });
 
         var client = await dsClient.FirstAsync(t => t.Id == clientId, cancellationToken);
 
         if (client.Disabled)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.ACCESS_DENIED,
-                                                              ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
-                                                          });
+            return Result<TokenResult>.Forbidden.Clone(new TokenResult
+                                                       {
+                                                           Error = Constants.OAuth.ACCESS_DENIED,
+                                                           ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
+                                                       });
 
         var secret = request.ClientSecret!.Pbkdf2HashCode(client.CreationDate.ToUnixTimeMilliseconds());
 
         if (client.Secret != secret)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
-                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
-                                                          });
+            return Result<TokenResult>.Forbidden.Clone(new TokenResult
+                                                       {
+                                                           Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
+                                                           ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
+                                                       });
 
         var dsUser = _context.Set<Domain.Entities.User>();
 
         if (!await dsUser.AnyAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken))
-            return Result<TokenResult>.InvalidInput.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.INVALID_REQUEST,
-                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_USERNAME_OR_PASSWORD_MESSAGE
-                                                          });
+            return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
+                                                                         {
+                                                                             Error = Constants.OAuth.INVALID_REQUEST,
+                                                                             ErrorDescription = Constants.OAuth.INVALID_REQUEST_USERNAME_OR_PASSWORD_MESSAGE
+                                                                         });
 
         var user = await dsUser.Include(t => t.Roles)
                                .FirstAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken);
 
         if (user.Disabled)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.ACCESS_DENIED,
-                                                              ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
-                                                          });
+            return Result<TokenResult>.AccountIsDisabled.Clone(new TokenResult
+                                                               {
+                                                                   Error = Constants.OAuth.ACCESS_DENIED,
+                                                                   ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
+                                                               });
 
         var userScope = user.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow)
                             ? user.Roles.Where(t => t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
@@ -220,17 +222,17 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         var password = request.Password!.Pbkdf2HashCode(user.CreationDate.ToUnixTimeMilliseconds());
 
         if (user.Password != password)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.UNAUTHORIZED_USER,
-                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_USER_MESSAGE
-                                                          });
+            return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
+                                                                         {
+                                                                             Error = Constants.OAuth.UNAUTHORIZED_USER,
+                                                                             ErrorDescription = Constants.OAuth.UNAUTHORIZED_USER_MESSAGE
+                                                                         });
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope);
 
         var refreshToken = user.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope)
-                               : (null, null, 0, 0);
+                               : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
@@ -255,7 +257,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         Scope = result.Content?.Scope,
                         RefreshToken = refreshToken.Token,
                         RefreshExpiresIn = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresIn,
-                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt
+                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt,
+                        Revoked = TokenRevoke.None
                     });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -273,8 +276,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         if (request.ClientId.IsEmpty() || !long.TryParse(request.ClientId, out var clientId) || request.ClientSecret.IsEmpty())
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
-                                                              Error = Constants.OAuth.INVALID_REQUEST,
-                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
+                                                              Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
+                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
                                                           });
 
         if (request.RefreshToken.IsEmpty())
@@ -284,7 +287,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               ErrorDescription = Constants.OAuth.INVALID_REQUEST_TOKEN
                                                           });
 
-        if (await dsToken.AnyAsync(t => t.Disabled && t.RefreshToken == request.RefreshToken, cancellationToken))
+        if (await dsToken.AnyAsync(t => t.RefreshToken == request.RefreshToken && (t.Revoked & TokenRevoke.RefreshToken) == TokenRevoke.RefreshToken, cancellationToken))
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
                                                               Error = Constants.OAuth.INVALID_REQUEST,
@@ -294,27 +297,27 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         if (!await dsClient.AnyAsync(t => t.Id == clientId, cancellationToken))
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
-                                                              Error = Constants.OAuth.INVALID_REQUEST,
-                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
+                                                              Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
+                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
                                                           });
 
         var client = await dsClient.FirstAsync(t => t.Id == clientId, cancellationToken);
 
         if (client.Disabled)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.ACCESS_DENIED,
-                                                              ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
-                                                          });
+            return Result<TokenResult>.Forbidden.Clone(new TokenResult
+                                                       {
+                                                           Error = Constants.OAuth.ACCESS_DENIED,
+                                                           ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
+                                                       });
 
         var secret = request.ClientSecret!.Pbkdf2HashCode(client.CreationDate.ToUnixTimeMilliseconds());
 
         if (client.Secret != secret)
-            return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
-                                                              ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
-                                                          });
+            return Result<TokenResult>.Forbidden.Clone(new TokenResult
+                                                       {
+                                                           Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
+                                                           ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
+                                                       });
 
         var tokenValidationParameters = _authOptions.GetTokenValidationParameters();
 
@@ -342,11 +345,14 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         try
         {
-            if (string.IsNullOrWhiteSpace(rt)) throw new ArgumentNullException(TokenHelper.CLAIM_TYPES_RESOURCE_TYPE);
+            if (string.IsNullOrWhiteSpace(rt))
+                throw new ArgumentNullException(TokenHelper.CLAIM_TYPES_RESOURCE_TYPE);
 
-            if (!Enum.TryParse(rt, out resourceType) || (resourceType != ResourceType.Client && resourceType != ResourceType.User)) throw new NotSupportedException("ResourceType not supported");
+            if (!Enum.TryParse(rt, out resourceType) || (resourceType != ResourceType.Client && resourceType != ResourceType.User))
+                throw new NotSupportedException("ResourceType not supported");
 
-            if (tt == null || !Enum.TryParse(tt, out TokenType tokenType) || tokenType != TokenType.RefreshToken) throw new NotSupportedException("TokenType not supported");
+            if (tt == null || !Enum.TryParse(tt, out TokenType tokenType) || tokenType != TokenType.RefreshToken)
+                throw new NotSupportedException("TokenType not supported");
         }
         catch
         {
@@ -369,17 +375,17 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
             var (disabled, allowedRefreshToken, tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
 
             if (disabled)
-                return Result<TokenResult>.Unauthorized.Clone(new TokenResult
-                                                              {
-                                                                  Error = Constants.OAuth.ACCESS_DENIED,
-                                                                  ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
-                                                              });
+                return Result<TokenResult>.Forbidden.Clone(new TokenResult
+                                                           {
+                                                               Error = Constants.OAuth.ACCESS_DENIED,
+                                                               ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
+                                                           });
 
             var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType, resourceId!, uid, tokenExpireSeconds, request.Scope ?? role);
 
             var refreshToken = allowedRefreshToken
                                    ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType, resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
-                                   : (null, null, 0, 0);
+                                   : JwtGenerator.DefaultGenerateEmpty;
 
             var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                            {
@@ -390,13 +396,13 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                ExpiresIn = accessToken.ExpiresIn
                                                            });
 
-            var token = await dsToken.FirstOrDefaultAsync(t => !t.Disabled && t.RefreshToken == request.RefreshToken, cancellationToken);
+            var token = await dsToken.FirstOrDefaultAsync(t => t.RefreshToken == request.RefreshToken && (t.Revoked & TokenRevoke.RefreshToken) != TokenRevoke.RefreshToken, cancellationToken);
 
             if (token != null)
             {
-                token.Disabled = true;
+                var revoked = token.Revoked | TokenRevoke.RefreshToken;
 
-                _context.Entry(token).Property(t => t.Disabled).IsModified = true;
+                _context.Entry(token).UpdateProperty(t => t.Revoked, revoked);
             }
 
             dsToken.Add(new Domain.Entities.Token
@@ -411,7 +417,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                             Scope = result.Content?.Scope,
                             RefreshToken = refreshToken.Token,
                             RefreshExpiresIn = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresIn,
-                            RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt
+                            RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt,
+                            Revoked = TokenRevoke.None
                         });
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -421,11 +428,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
             if (token == null) return result;
 
-            var lsToken = new List<string> { token.AccessToken };
-
-            if (!string.IsNullOrWhiteSpace(token.RefreshToken)) lsToken.Add(token.RefreshToken);
-
-            await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], await _serializer.SerializeAsync(lsToken.ToArray(), cancellationToken));
+            await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], await _serializer.SerializeAsync(new[] { request.RefreshToken }, cancellationToken));
 
             return result;
         }

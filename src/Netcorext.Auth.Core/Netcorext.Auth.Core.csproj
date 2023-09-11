@@ -25,4 +25,5 @@
     <PackageReference Include="Netcorext.EntityFramework.UserIdentityPattern.AspNetCore" Version="1.0.0-dev.*"/>
   </ItemGroup>
 
+
 </Project>

@@ -20,7 +20,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 {
     private readonly DatabaseContext _context;
     private readonly RedisClient _redis;
-    private readonly HttpContext? _httpContext;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ISnowflake _snowflake;
     private readonly JwtGenerator _jwtGenerator;
     private readonly ConfigSettings _config;
@@ -30,7 +30,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
     {
         _context = context;
         _redis = redis;
-        _httpContext = httpContextAccessor.HttpContext;
+        _httpContextAccessor = httpContextAccessor;
         _snowflake = snowflake;
         _jwtGenerator = jwtGenerator;
         _config = config.Value;
@@ -120,7 +120,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         entity.AccessFailedCount = 0;
         entity.LastSignInDate = creationDate;
-        entity.LastSignInIp = _httpContext?.GetIp();
+        entity.LastSignInIp = _httpContextAccessor.HttpContext?.GetIp();
 
         if (!await dsExternalLogin.AnyAsync(t => t.Provider == request.Provider && t.UniqueId == request.UniqueId, cancellationToken))
         {
@@ -157,7 +157,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         var refreshToken = entity.AllowedRefreshToken
                                ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope)
-                               : (null, null, 0, 0);
+                               : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
@@ -183,7 +183,8 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                         Scope = result.Content?.Scope,
                         RefreshToken = refreshToken.Token,
                         RefreshExpiresIn = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresIn,
-                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt
+                        RefreshExpiresAt = refreshToken.Token.IsEmpty() ? null : refreshToken.ExpiresAt,
+                        Revoked = TokenRevoke.None
                     });
 
         await _context.SaveChangesAsync(cancellationToken);

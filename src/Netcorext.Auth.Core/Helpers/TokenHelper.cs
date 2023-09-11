@@ -26,7 +26,7 @@ public static class TokenHelper
                                      string? originScope = null) =>
         Generate(type, resourceType, expires, resourceId, uniqueId, scope, issuer, audience, signingKey, nameClaimType, roleClaimType, originScope).Token;
 
-    public static (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt)
+    public static (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature)
         Generate(TokenType type, ResourceType resourceType,
                  DateTimeOffset expires, string resourceId, string? uniqueId, string? scope,
                  string? issuer,
@@ -49,7 +49,7 @@ public static class TokenHelper
         if (!string.IsNullOrWhiteSpace(originScope)) claims.Add(new Claim("origin-scope", originScope));
 
         var issuedAt = DateTimeOffset.UtcNow;
-        var expiresIn = (int)expires.Subtract(issuedAt).TotalSeconds;
+        var expiresIn = (int)expires.Subtract(issuedAt).TotalSeconds + 1;
 
         var tokenDescriptor = new SecurityTokenDescriptor
                               {
@@ -71,7 +71,7 @@ public static class TokenHelper
 
         var token = jwtHandler.WriteToken(jwt);
 
-        return (token, jwt, expiresIn, expires.ToUnixTimeSeconds());
+        return (token, jwt, expiresIn, expires.ToUnixTimeSeconds(), jwt.RawSignature);
     }
 
     public static string GenerateCode(string signingKey)
@@ -93,6 +93,19 @@ public static class TokenHelper
         var securityToken = TokenHandler.ReadJwtToken(token);
 
         return securityToken;
+    }
+
+    public static string? GetJwtSignature(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var jwt = token.Split(".");
+
+        if (jwt.Length != 3)
+            return null;
+
+        return jwt[2];
     }
 
     public static SecurityKey GetSymmetricSecurityKey(string privateKey)

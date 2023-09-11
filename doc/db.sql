@@ -77,7 +77,7 @@ CREATE TABLE "Token" (
   "RefreshToken" character varying(2048) NULL,
   "RefreshExpiresIn" integer NULL,
   "RefreshExpiresAt" bigint NULL,
-  "Disabled" boolean NOT NULL,
+  "Revoked" integer NOT NULL,
   "CreationDate" timestamp with time zone NOT NULL,
   "CreatorId" bigint NOT NULL,
   "ModificationDate" timestamp with time zone NOT NULL,
@@ -338,7 +338,7 @@ CREATE INDEX "IX_Rule_FunctionId" ON "Rule" ("FunctionId");
 CREATE INDEX "IX_Rule_PermissionId" ON "Rule" ("PermissionId");
 CREATE INDEX "IX_Rule_PermissionType" ON "Rule" ("PermissionType");
 CREATE INDEX "IX_Token_AccessToken" ON "Token" ("AccessToken");
-CREATE INDEX "IX_Token_Disabled" ON "Token" ("Disabled");
+CREATE INDEX "IX_Token_Revoked" ON "Token" ("Revoked");
 CREATE INDEX "IX_Token_ExpiresIn" ON "Token" ("ExpiresIn");
 CREATE INDEX "IX_Token_ExpiresAt" ON "Token" ("ExpiresAt");
 CREATE INDEX "IX_Token_RefreshToken" ON "Token" ("RefreshToken");

@@ -123,7 +123,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
             dsRole.UpdateRange(roles);
 
             var stringId = entity.Id.ToString();
-            var tokens = dsToken.Where(t => !t.Disabled && t.ResourceType == ResourceType.User && t.ResourceId == stringId);
+            var tokens = dsToken.Where(t => t.Revoked != TokenRevoke.Both && t.ResourceType == ResourceType.User && t.ResourceId == stringId);
             var dicTokens = new Dictionary<string, string>();
 
             foreach (var token in tokens)
@@ -133,7 +133,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                 if (!token.RefreshToken.IsEmpty())
                     dicTokens.TryAdd(token.RefreshToken, string.Empty);
 
-                _context.Entry(token).UpdateProperty(t => t.Disabled, true);
+                _context.Entry(token).UpdateProperty(t => t.Revoked, TokenRevoke.Both);
             }
 
             _httpContextAccessor.HttpContext?.Items.Add(ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT, dicTokens.Keys.ToArray());

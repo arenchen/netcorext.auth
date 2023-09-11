@@ -47,7 +47,9 @@ internal class TokenMiddleware
 
         var headerValue = context.Request.Headers["Authorization"];
 
-        if (await IsValid(dispatcher, headerValue))
+        var result = await IsValid(dispatcher, headerValue);
+
+        if (result == Result.Success)
         {
             await _next(context);
 
@@ -57,20 +59,20 @@ internal class TokenMiddleware
         await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus);
     }
 
-    private async Task<bool> IsValid(IDispatcher dispatcher, string headerValue)
+    private async Task<Result> IsValid(IDispatcher dispatcher, string headerValue)
     {
         if (headerValue.IsEmpty())
         {
             _logger.LogWarning("Unauthorized, no authorization header");
 
-            return true;
+            return Result.Success;
         }
 
         if (!AuthenticationHeaderValue.TryParse(headerValue, out var authHeader))
         {
             _logger.LogWarning("Unauthorized, header 'Authorization' is invalid");
 
-            return false;
+            return Result.Unauthorized;
         }
 
         var token = authHeader.Parameter;
@@ -79,29 +81,30 @@ internal class TokenMiddleware
         {
             _logger.LogWarning("Token is empty");
 
-            return false;
+            return Result.Unauthorized;
         }
 
         var result = authHeader.Scheme.ToUpper() switch
                      {
                          Constants.OAuth.TOKEN_TYPE_BASIC_NORMALIZED => await IsBasicValid(dispatcher, token),
                          Constants.OAuth.TOKEN_TYPE_BEARER_NORMALIZED => await IsBearerValid(dispatcher, token),
-                         _ => false
+                         _ => Result.Unauthorized
                      };
 
-        if (!result)
+        if (result.Code != Result.Success)
             _logger.LogWarning("Unauthorized, token is invalid");
 
         return result;
     }
 
-    private async Task<bool> IsBasicValid(IDispatcher dispatcher, string token)
+    private async Task<Result> IsBasicValid(IDispatcher dispatcher, string token)
     {
         var raw = Encoding.UTF8.GetString(Convert.FromBase64String(token));
 
         var client = raw.Split(":", StringSplitOptions.RemoveEmptyEntries);
 
-        if (client.Length != 2 || !long.TryParse(client[0], out var clientId)) return false;
+        if (client.Length != 2 || !long.TryParse(client[0], out var clientId))
+            return Result.Unauthorized;
 
         var result = await dispatcher.SendAsync(new ValidateClient
                                                 {
@@ -109,35 +112,35 @@ internal class TokenMiddleware
                                                     Secret = client[1]
                                                 });
 
-        return result.Code == Result.Success;
+        return result;
     }
 
-    private async Task<bool> IsBearerValid(IDispatcher dispatcher, string token)
+    private async Task<Result> IsBearerValid(IDispatcher dispatcher, string token)
     {
         try
         {
             TokenHelper.ValidateJwt(token, _tokenValidationParameters);
 
-            if (_cache.TryGetValue(token, out bool cacheResult)) return cacheResult;
+            if (_cache.TryGetValue(token, out Result cacheResult)) return cacheResult;
 
             var result = await dispatcher.SendAsync(new ValidateToken
                                                     {
                                                         Token = token
                                                     });
 
-            _cache.Set(token, result.Code == Result.Success, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+            _cache.Set(token, result, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
 
-            return result.Code == Result.Success;
+            return result;
         }
         catch (SecurityTokenExpiredException)
         {
             _cache.Remove(token);
 
-            return false;
+            return Result.Unauthorized;
         }
         catch
         {
-            return false;
+            return Result.Unauthorized;
         }
     }
 }

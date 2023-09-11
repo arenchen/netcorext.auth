@@ -15,5 +15,5 @@ public class Token : Entity
     public string? RefreshToken { get; set; }
     public int? RefreshExpiresIn { get; set; }
     public long? RefreshExpiresAt { get; set; }
-    public bool Disabled { get; set; }
+    public TokenRevoke Revoked { get; set; }
 }
