@@ -27,9 +27,10 @@ public class TokenController : ControllerBase
 
     [HttpPost]
     [Consumes("application/x-www-form-urlencoded", "application/json")]
-    [ProducesResponseType(typeof(TokenResult), 200, "application/json")]
-    [ProducesResponseType(typeof(TokenResult), 400, "application/json")]
-    [ProducesResponseType(typeof(TokenResult), 401, "application/json")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(TokenResult), 200)]
+    [ProducesResponseType(typeof(TokenResult), 400)]
+    [ProducesResponseType(typeof(TokenResult), 401)]
     public async Task<IActionResult> PostAsync(CreateToken request, CancellationToken cancellationToken = default)
     {
         return await ExecuteAsync(request, cancellationToken);
