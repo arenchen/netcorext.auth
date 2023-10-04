@@ -16,6 +16,7 @@ public class GetUser : IRequest<Result<IEnumerable<Models.User>>>
     public UserRole? Role { get; set; }
     public UserExtendData[]? ExtendData { get; set; }
     public UserExternalLogin? ExternalLogin { get; set; }
+    public string[]? LastSignInIps { get; set; }
     public Paging Paging { get; set; } = new();
 
     public class UserRole

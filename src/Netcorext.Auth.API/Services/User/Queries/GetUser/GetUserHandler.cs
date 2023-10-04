@@ -81,6 +81,11 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
             predicate = predicate.And(t => t.ExternalLogins.AsQueryable().Any(predicateExternalLogin));
         }
 
+        if (request.LastSignInIps != null && request.LastSignInIps.Any())
+        {
+            predicate = predicate.And(t => t.LastSignInIp != null && request.LastSignInIps.Contains(t.LastSignInIp));
+        }
+
         var queryEntities = ds.AsNoTracking()
                               .Where(predicate)
                               .OrderBy(t => t.Id)
