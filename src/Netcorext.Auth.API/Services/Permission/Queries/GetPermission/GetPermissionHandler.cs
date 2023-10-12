@@ -46,7 +46,7 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
             if (request.Rule.Allowed.HasValue)
                 predicateRule = predicateRule.And(t => t.Allowed == request.Rule.Allowed);
 
-            predicate = predicate.And(p => p.Rules.AsQueryable().Any(predicateRule.Compile()));
+            predicate = predicate.And(p => p.Rules.AsQueryable().Any(predicateRule));
         }
 
         var queryEntities = ds.Where(predicate)

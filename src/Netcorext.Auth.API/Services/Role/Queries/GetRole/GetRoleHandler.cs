@@ -78,6 +78,7 @@ public class GetRoleHandler : IRequestHandler<GetRole, Result<IEnumerable<Models
                                                                                                                                  {
                                                                                                                                      PermissionId = t3.PermissionId,
                                                                                                                                      Name = t3.Permission.Name,
+                                                                                                                                     State = t3.Permission.State,
                                                                                                                                      CreationDate = t3.CreationDate,
                                                                                                                                      CreatorId = t3.CreatorId,
                                                                                                                                      ModificationDate = t3.ModificationDate,
