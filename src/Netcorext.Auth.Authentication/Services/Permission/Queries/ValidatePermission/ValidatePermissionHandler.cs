@@ -184,7 +184,21 @@ public class ValidatePermissionHandler : IRequestHandler<ValidatePermission, Res
             return Result.Forbidden;
 
 
-        var validatorRules = rules.GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
+        var validatorRules = rules.GroupBy(t => new { t.FunctionId, t.Priority, t.Allowed }, t => t.PermissionType)
+                                  .Select(t =>
+                                          {
+                                              // 先將同權重允許/不允許的權限最大化
+                                              var p = t.Aggregate((c, n) => c | n);
+
+                                              return new
+                                                     {
+                                                         t.Key.FunctionId,
+                                                         t.Key.Priority,
+                                                         PermissionType = p,
+                                                         t.Key.Allowed
+                                                     };
+                                          })
+                                  .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
                                   .Select(t =>
                                           {
                                               // 先將同權重的權限最大化
