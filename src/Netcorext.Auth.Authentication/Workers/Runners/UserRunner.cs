@@ -83,11 +83,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
             if (reqIds != null && reqIds.Any())
             {
-                var repIds = result.Content.Select(t => t.UserId);
-
-                var diffIds = reqIds.Except(repIds);
-
-                var conditions = cacheUserPermissionCondition.Where(t => diffIds.Contains(t.Value.UserId))
+                var conditions = cacheUserPermissionCondition.Where(t => reqIds.Contains(t.Value.UserId))
                                                              .ToArray();
 
                 conditions.ForEach(t => cacheUserPermissionCondition.Remove(t.Key));
@@ -95,9 +91,11 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
             foreach (var i in result.Content)
             {
-                if (cacheUserPermissionCondition.TryAdd(i.Id, i)) continue;
+                var id = i.Id;
 
-                cacheUserPermissionCondition[i.Id] = i;
+                if (cacheUserPermissionCondition.TryAdd(id, i)) continue;
+
+                cacheUserPermissionCondition[id] = i;
             }
 
             _cache.Set(ConfigSettings.CACHE_USER_PERMISSION_CONDITION, cacheUserPermissionCondition);

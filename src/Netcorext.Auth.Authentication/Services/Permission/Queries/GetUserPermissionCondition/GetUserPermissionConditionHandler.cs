@@ -23,7 +23,7 @@ public class GetUserPermissionConditionHandler : IRequestHandler<GetUserPermissi
         Expression<Func<Domain.Entities.UserPermissionCondition, bool>> predicate = p => (p.ExpireDate == null || p.ExpireDate > DateTimeOffset.UtcNow) && !p.User.Disabled;
 
         if (!request.Ids.IsEmpty())
-            predicate = predicate.And(t => request.Ids.Contains(t.Id));
+            predicate = predicate.And(t => request.Ids.Contains(t.UserId));
 
         var result = ds.Where(predicate)
                        .Select(t => new Models.UserPermissionCondition
@@ -35,7 +35,8 @@ public class GetUserPermissionConditionHandler : IRequestHandler<GetUserPermissi
                                         Key = t.Key,
                                         Value = t.Value,
                                         ExpireDate = t.ExpireDate
-                                    });
+                                    })
+                       .ToArray();
 
         return Task.FromResult(Result<IEnumerable<Models.UserPermissionCondition>>.Success.Clone(result));
     }

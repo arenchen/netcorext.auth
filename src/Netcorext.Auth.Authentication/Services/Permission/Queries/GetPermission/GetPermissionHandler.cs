@@ -37,7 +37,8 @@ public class GetPermissionHandler : IRequestHandler<GetPermission, Result<IEnume
                                                                           Priority = t.Priority,
                                                                           PermissionType = t2.PermissionType,
                                                                           Allowed = t2.Allowed
-                                                                      }));
+                                                                      }))
+                                .ToArray();
 
         return Task.FromResult(Result<IEnumerable<Models.PermissionRule>>.Success.Clone(result));
     }

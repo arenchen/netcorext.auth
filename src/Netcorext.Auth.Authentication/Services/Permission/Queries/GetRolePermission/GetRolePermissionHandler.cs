@@ -36,7 +36,8 @@ public class GetRolePermissionHandler : IRequestHandler<GetRolePermission, Resul
                                                               Id = t2.Id,
                                                               RoleId = t.Id,
                                                               PermissionId = t2.PermissionId
-                                                          }));
+                                                          }))
+                          .ToArray();
 
         return Task.FromResult(Result<IEnumerable<Models.RolePermission>>.Success.Clone(result));
     }

@@ -39,7 +39,8 @@ public class GetRolePermissionConditionHandler : IRequestHandler<GetRolePermissi
                                                               Group = t2.Group,
                                                               Key = t2.Key,
                                                               Value = t2.Value
-                                                          }));
+                                                          }))
+                          .ToArray();
 
         return Task.FromResult(Result<IEnumerable<Models.RolePermissionCondition>>.Success.Clone(result));
     }
