@@ -14,14 +14,12 @@ public class PermissionChangeNotifyPipeline : IRequestPipeline<CreatePermission,
                                               IRequestPipeline<UpdatePermission, Result>,
                                               IRequestPipeline<DeletePermission, Result>
 {
-    private readonly DatabaseContext _context;
     private readonly ISerializer _serializer;
     private readonly RedisClient _redis;
     private readonly ConfigSettings _config;
 
-    public PermissionChangeNotifyPipeline(DatabaseContextAdapter context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
+    public PermissionChangeNotifyPipeline(RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
     {
-        _context = context;
         _redis = redis;
         _serializer = serializer;
         _config = config.Value;

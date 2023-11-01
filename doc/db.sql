@@ -308,6 +308,24 @@ CREATE TABLE "RouteValue" (
 );
 
 
+CREATE TABLE "BlockedIp" (
+  "Id" bigint NOT NULL,
+  "Cidr" character varying(50) NOT NULL,
+  "BeginRange" bigint NOT NULL,
+  "EndRange" bigint NOT NULL,
+  "Country" character varying(100) NULL,
+  "City" character varying(100) NULL,
+  "Asn" character varying(50) NULL,
+  "Description" character varying(200) NULL,
+  "CreationDate" timestamp with time zone NOT NULL,
+  "CreatorId" bigint NOT NULL,
+  "ModificationDate" timestamp with time zone NOT NULL,
+  "ModifierId" bigint NOT NULL,
+  "Version" bigint NOT NULL,
+  CONSTRAINT "PK_BlockedIp" PRIMARY KEY ("Id")
+);
+
+
 CREATE INDEX "IX_ClientExtendData_Key" ON "ClientExtendData" ("Key");
 CREATE INDEX "IX_ClientExtendData_Value" ON "ClientExtendData" ("Value");
 CREATE INDEX "IX_ClientRole_RoleId" ON "ClientRole" ("RoleId");
@@ -362,6 +380,11 @@ CREATE INDEX "IX_User_DisplayName" ON "User" ("DisplayName");
 CREATE INDEX "IX_User_Email" ON "User" ("Email");
 CREATE INDEX "IX_User_NormalizedEmail" ON "User" ("NormalizedEmail");
 CREATE INDEX "IX_User_PhoneNumber" ON "User" ("PhoneNumber");
+CREATE INDEX "IX_BlockedIp_BeginRange" ON "BlockedIp" ("BeginRange");
+CREATE INDEX "IX_BlockedIp_EndRange" ON "BlockedIp" ("EndRange");
+CREATE INDEX "IX_BlockedIp_Country" ON "BlockedIp" ("Country");
+CREATE INDEX "IX_BlockedIp_City" ON "BlockedIp" ("City");
+CREATE INDEX "IX_BlockedIp_Asn" ON "BlockedIp" ("Asn");
 CREATE UNIQUE INDEX "IX_User_Username" ON "User" ("Username");
 CREATE UNIQUE INDEX "IX_User_NormalizedUsername" ON "User" ("NormalizedUsername");
 CREATE UNIQUE INDEX "IX_Client_Name" ON "Client" ("Name");
@@ -371,7 +394,7 @@ CREATE UNIQUE INDEX "IX_Role_Name" ON "Role" ("Name");
 CREATE UNIQUE INDEX "IX_Route_HttpMethod_RelativePath" ON "Route" ("HttpMethod", "RelativePath");
 CREATE UNIQUE INDEX "IX_Rule_PermissionId_FunctionId_PermissionType_Allowed" ON "Rule" ("PermissionId", "FunctionId", "PermissionType", "Allowed");
 CREATE UNIQUE INDEX "IX_UserPermissionCondition_UserId_PermissionId_Group_Key_Value" ON "UserPermissionCondition" ("UserId", "PermissionId", "Group", "Key", "Value");
-
+CREATE UNIQUE INDEX "IX_BlockedIp_Cidr" ON "BlockedIp" ("Cidr");
 
 /* Functions */
 CREATE OR REPLACE FUNCTION public.fn_prune_token()

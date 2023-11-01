@@ -30,9 +30,16 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
 
         _subscriber?.Dispose();
 
-        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_MAINTAIN_CHANGE_EVENT], (s, o) => UpdateMaintainAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
+        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_MAINTAIN_CHANGE_EVENT], Handler);
 
         await UpdateMaintainAsync(null, cancellationToken);
+
+        return;
+
+        async void Handler(string s, object o)
+        {
+            await UpdateMaintainAsync(o.ToString(), cancellationToken);
+        }
     }
 
     private async Task UpdateMaintainAsync(string? data, CancellationToken cancellationToken = default)

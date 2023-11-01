@@ -32,9 +32,14 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
 
         _subscriber?.Dispose();
 
-        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], (s, o) => UpdateTokenAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
+        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], Handler);
 
         return Task.CompletedTask;
+
+        async void Handler(string s, object o)
+        {
+            await UpdateTokenAsync(o.ToString(), cancellationToken);
+        }
     }
 
     private async Task UpdateTokenAsync(string? data, CancellationToken cancellationToken = default)

@@ -1,5 +1,6 @@
 using Mapster;
 using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Services.Blocked;
 using Netcorext.Auth.API.Services.Client;
 using Netcorext.Auth.API.Services.Permission;
 using Netcorext.Auth.API.Services.Role;
@@ -40,13 +41,14 @@ public class AppConfig
         app.MapGrpcService<PermissionServiceFacade>();
         app.MapGrpcService<RoleServiceFacade>();
         app.MapGrpcService<UserServiceFacade>();
+        app.MapGrpcService<BlockedServiceFacade>();
 
-        app.RegisterPermissionEndpoints((_, registerConfig) =>
-                                        {
-                                            config.AppSettings.RegisterConfig?.Adapt(registerConfig);
-                                            registerConfig.RouteGroupName = config.Id;
-                                            registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Authentication"].Url;
-                                        });
+        // app.RegisterPermissionEndpoints((_, registerConfig) =>
+        //                                 {
+        //                                     config.AppSettings.RegisterConfig?.Adapt(registerConfig);
+        //                                     registerConfig.RouteGroupName = config.Id;
+        //                                     registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Authentication"].Url;
+        //                                 });
 
         app.Run();
     }

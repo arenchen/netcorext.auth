@@ -7,6 +7,7 @@ public class WorkerConfig
 {
     public WorkerConfig(IServiceCollection services)
     {
+        services.AddWorkerRunner<AuthWorker, BlockedIpRunner>();
         services.AddWorkerRunner<AuthWorker, MaintainRunner>();
         services.AddWorkerRunner<AuthWorker, PermissionRunner>();
         services.AddWorkerRunner<AuthWorker, RoleRunner>();

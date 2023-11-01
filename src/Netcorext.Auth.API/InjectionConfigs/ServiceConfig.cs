@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Services.Blocked.Commands;
+using Netcorext.Auth.API.Services.Blocked.Pipelines;
 using Netcorext.Auth.API.Services.Client.Commands;
 using Netcorext.Auth.API.Services.Client.Pipelines;
 using Netcorext.Auth.API.Services.Permission.Commands;
@@ -26,6 +28,9 @@ public class ServiceConfig
                                  })
                 .AddPerformancePipeline()
                 .AddValidatorPipeline()
+                .AddRequestPipeline<BlockedIpChangeNotifyPipeline, CreateBlockedIp, Result<IEnumerable<long>>>()
+                .AddRequestPipeline<BlockedIpChangeNotifyPipeline, UpdateBlockedIp, Result>()
+                .AddRequestPipeline<BlockedIpChangeNotifyPipeline, DeleteBlockedIp, Result>()
                 .AddRequestPipeline<ClientChangeNotifyPipeline, CreateClient, Result<long?>>()
                 .AddRequestPipeline<ClientChangeNotifyPipeline, UpdateClient, Result>()
                 .AddRequestPipeline<ClientChangeNotifyPipeline, DeleteClient, Result>()

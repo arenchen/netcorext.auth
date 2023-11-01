@@ -40,14 +40,6 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
         _subscriber?.Dispose();
 
-        async void Handler(string s, object o)
-        {
-            if (s == _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT])
-                await UpdateUserAsync(o.ToString(), cancellationToken);
-            else if (s == _config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT])
-                await BlockUserTokenAsync(o.ToString(), cancellationToken);
-        }
-
         _subscriber = _redis.Subscribe(new[]
                                        {
                                            _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT]
@@ -57,6 +49,16 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
                                        }, Handler);
 
         await UpdateUserAsync(null, cancellationToken);
+
+        return;
+
+        async void Handler(string s, object o)
+        {
+            if (s == _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT])
+                await UpdateUserAsync(o.ToString(), cancellationToken);
+            else if (s == _config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT])
+                await BlockUserTokenAsync(o.ToString(), cancellationToken);
+        }
     }
 
     private async Task UpdateUserAsync(string? ids, CancellationToken cancellationToken = default)

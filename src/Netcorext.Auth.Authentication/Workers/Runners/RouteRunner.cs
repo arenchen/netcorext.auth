@@ -41,9 +41,16 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
         _subscriber?.Dispose();
 
-        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_ROUTE_CHANGE_EVENT], (s, o) => UpdateRouteAsync(o.ToString(), cancellationToken).GetAwaiter().GetResult());
+        _subscriber = _redis.Subscribe(_config.Queues[ConfigSettings.QUEUES_ROUTE_CHANGE_EVENT], Handler);
 
         await UpdateRouteAsync(null, cancellationToken);
+
+        return;
+
+        async void Handler(string s, object o)
+        {
+            await UpdateRouteAsync(o.ToString(), cancellationToken);
+        }
     }
 
     private async Task UpdateRouteAsync(string? ids, CancellationToken cancellationToken = default)

@@ -34,6 +34,7 @@ public class AppConfig
                          .AllowCredentials();
                     });
 
+        app.UseMiddleware<BlockedIpMiddleware>();
         app.UseMiddleware<TokenMiddleware>();
         app.UseJwtAuthentication();
         app.UseMiddleware<MaintainMiddleware>();

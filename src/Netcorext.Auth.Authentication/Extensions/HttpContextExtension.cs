@@ -11,7 +11,8 @@ public static class HttpContextExtension
                                                                            { "401000", "{ \"code\": \"401000\", \"message\": \"Unauthorized.\"}" },
                                                                            { "403000", "{ \"code\": \"403000\", \"message\": \"Forbidden.\"}" },
                                                                            { "403002", "{ \"code\": \"403002\", \"message\": \"The specified account is disabled.\"}" },
-                                                                           { "403007", "{ \"code\": \"403007\", \"message\": \"Permission has changed, please re-login\"}" }
+                                                                           { "403007", "{ \"code\": \"403007\", \"message\": \"Permission has changed, please re-login\"}" },
+                                                                           { "403008", "{ \"code\": \"403008\", \"message\": \"This specified ip is blocked.\"}" }
                                                                        };
 
     public static bool IsGrpc(this HttpContext context)
