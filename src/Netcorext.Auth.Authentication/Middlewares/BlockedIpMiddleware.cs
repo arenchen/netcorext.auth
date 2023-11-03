@@ -51,5 +51,7 @@ public class BlockedIpMiddleware
 
             await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus, "403008");
         }
+
+        await _next(context);
     }
 }
