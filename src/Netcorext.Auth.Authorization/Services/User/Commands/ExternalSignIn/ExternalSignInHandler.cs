@@ -141,6 +141,12 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                 e.CreationDate = creationDate;
                                                 e.ModificationDate = creationDate;
                                             }, cancellationToken);
+
+            await _context.Entry(entity)
+                          .Collection(t => t.Roles)
+                          .Query()
+                          .Include(t => t.Role)
+                          .LoadAsync(cancellationToken);
         }
         else
         {
