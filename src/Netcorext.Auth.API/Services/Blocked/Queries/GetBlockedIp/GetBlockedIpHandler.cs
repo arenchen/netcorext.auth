@@ -1,5 +1,8 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Netcorext.Auth.API.Settings;
+using Netcorext.Configuration.Extensions;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Extensions.Commons;
@@ -11,10 +14,12 @@ namespace Netcorext.Auth.API.Services.Blocked.Queries;
 public class GetBlockedIpHandler : IRequestHandler<GetBlockedIp, Result<IEnumerable<Models.BlockedIp>>>
 {
     private readonly DatabaseContext _context;
+    private readonly int _dataSizeLimit;
 
-    public GetBlockedIpHandler(DatabaseContextAdapter context)
+    public GetBlockedIpHandler(DatabaseContextAdapter context, IOptions<ConfigSettings> config)
     {
         _context = context.Slave;
+        _dataSizeLimit = config.Value.Connections.RelationalDb.GetDefault().DataSizeLimit;
     }
 
     public async Task<Result<IEnumerable<Models.BlockedIp>>> Handle(GetBlockedIp request, CancellationToken cancellationToken = default)
@@ -38,25 +43,43 @@ public class GetBlockedIpHandler : IRequestHandler<GetBlockedIp, Result<IEnumera
         if (!request.Asn.IsEmpty())
             predicate = predicate.And(t => t.Asn == request.Asn);
 
-        var entities = await ds.Where(predicate)
-                               .AsNoTracking()
-                               .Select(t => new Models.BlockedIp
-                                            {
-                                                Id = t.Id,
-                                                Cidr = t.Cidr,
-                                                BeginRange = t.BeginRange,
-                                                EndRange = t.EndRange,
-                                                Country = t.Country,
-                                                City = t.City,
-                                                Asn = t.Asn,
-                                                Description = t.Description,
-                                                CreationDate = t.CreationDate,
-                                                CreatorId = t.CreatorId,
-                                                ModificationDate = t.ModificationDate,
-                                                ModifierId = t.ModifierId
-                                            })
-                               .ToArrayAsync(cancellationToken);
+        var queryEntities = ds.Where(predicate)
+                              .OrderBy(t => t.Id)
+                              .Take(_dataSizeLimit)
+                              .AsNoTracking();
 
-        return Result<IEnumerable<Models.BlockedIp>>.Success.Clone(entities);
+        var pagination = await queryEntities.GroupBy(t => 0)
+                                            .Select(t => new
+                                                         {
+                                                             Count = t.Count(),
+                                                             Rows = t.OrderBy(t2 => t2.Id)
+                                                                     .Skip(request.Paging.Offset)
+                                                                     .Take(request.Paging.Limit)
+                                                                     .Select(t2 => new Models.BlockedIp
+                                                                                   {
+                                                                                       Id = t2.Id,
+                                                                                       Cidr = t2.Cidr,
+                                                                                       BeginRange = t2.BeginRange,
+                                                                                       EndRange = t2.EndRange,
+                                                                                       Country = t2.Country,
+                                                                                       City = t2.City,
+                                                                                       Asn = t2.Asn,
+                                                                                       Description = t2.Description,
+                                                                                       CreationDate = t2.CreationDate,
+                                                                                       CreatorId = t2.CreatorId,
+                                                                                       ModificationDate = t2.ModificationDate,
+                                                                                       ModifierId = t2.ModifierId
+                                                                                   }
+                                                                            )
+                                                         })
+                                            .SingleOrDefaultAsync(cancellationToken);
+
+        request.Paging.Count = pagination?.Count ?? 0;
+
+        var content = pagination?.Rows.ToArray();
+
+        if (content != null && !content.Any()) content = null;
+
+        return Result<IEnumerable<Models.BlockedIp>>.Success.Clone(content, request.Paging);
     }
 }

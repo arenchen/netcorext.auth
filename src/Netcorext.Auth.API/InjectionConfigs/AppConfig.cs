@@ -43,12 +43,12 @@ public class AppConfig
         app.MapGrpcService<UserServiceFacade>();
         app.MapGrpcService<BlockedServiceFacade>();
 
-        // app.RegisterPermissionEndpoints((_, registerConfig) =>
-        //                                 {
-        //                                     config.AppSettings.RegisterConfig?.Adapt(registerConfig);
-        //                                     registerConfig.RouteGroupName = config.Id;
-        //                                     registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Authentication"].Url;
-        //                                 });
+        app.RegisterPermissionEndpoints((_, registerConfig) =>
+                                        {
+                                            config.AppSettings.RegisterConfig?.Adapt(registerConfig);
+                                            registerConfig.RouteGroupName = config.Id;
+                                            registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Authentication"].Url;
+                                        });
 
         app.Run();
     }
