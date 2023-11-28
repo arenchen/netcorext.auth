@@ -1,9 +1,11 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Settings;
 using Netcorext.Configuration.Extensions;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
+using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 
 namespace Netcorext.Auth.API.Services.User.Queries;
@@ -23,7 +25,12 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
     {
         var ds = _context.Set<Domain.Entities.UserRole>();
 
-        var queryEntities = ds.Where(t => request.Ids.Contains(t.Id) && t.ExpireDate > DateTime.UtcNow && !t.Role.Disabled)
+        Expression<Func<Domain.Entities.UserRole, bool>> predicate = t => request.Ids.Contains(t.Id) && !t.Role.Disabled;
+
+        if (!request.IncludeExpired)
+            predicate = predicate.And(t => t.ExpireDate > DateTime.UtcNow);
+
+        var queryEntities = ds.Where(predicate)
                               .OrderBy(t => t.Id)
                               .Take(_dataSizeLimit)
                               .AsNoTracking();

@@ -9,4 +9,5 @@ public class GetUserRole : IRequest<Result<IEnumerable<Models.FullUserRole>>>
     public bool IncludeExtendData { get; set; }
     public bool IncludePermission { get; set; }
     public bool IncludePermissionCondition { get; set; }
+    public bool IncludeExpired { get; set; }
 }
