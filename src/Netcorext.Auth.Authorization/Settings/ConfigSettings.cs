@@ -10,6 +10,8 @@ public class ConfigSettings : Config<AppSettings>
     public const string QUEUES_USER_SIGN_IN_EVENT = "UserSignInEvent";
     public const string QUEUES_USER_REFRESH_TOKEN_EVENT = "UserRefreshTokenEvent";
     public const string QUEUES_USER_ROLE_CHANGE_EVENT = "UserRoleChangeEvent";
+
+    public const string CACHE_REFRESH_TOKEN_RETAIN = "RefreshTokenRetain";
 }
 
 public class AppSettings

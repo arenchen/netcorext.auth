@@ -56,9 +56,9 @@ public static class TokenHelper
                                   Issuer = issuer,
                                   Audience = audience,
                                   Subject = new ClaimsIdentity(claims),
-                                  IssuedAt = issuedAt.DateTime,
-                                  NotBefore = issuedAt.DateTime,
-                                  Expires = expires.DateTime,
+                                  IssuedAt = issuedAt.UtcDateTime,
+                                  NotBefore = issuedAt.UtcDateTime,
+                                  Expires = expires.UtcDateTime,
                                   SigningCredentials = string.IsNullOrWhiteSpace(signingKey)
                                                            ? null
                                                            : new SigningCredentials(GetSymmetricSecurityKey(signingKey),
@@ -102,10 +102,7 @@ public static class TokenHelper
 
         var jwt = token.Split(".");
 
-        if (jwt.Length != 3)
-            return null;
-
-        return jwt[2];
+        return jwt.Length != 3 ? null : jwt[2];
     }
 
     public static SecurityKey GetSymmetricSecurityKey(string privateKey)

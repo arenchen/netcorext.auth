@@ -287,6 +287,15 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               ErrorDescription = Constants.OAuth.INVALID_REQUEST_TOKEN
                                                           });
 
+        var signature = TokenHelper.GetJwtSignature(request.RefreshToken);
+        if (_config.Caches.TryGetValue(ConfigSettings.CACHE_REFRESH_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
+        {
+            var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
+
+            if (cacheResult != null)
+                return Result<TokenResult>.Success.Clone(cacheResult);
+        }
+
         if (await dsToken.AnyAsync(t => t.RefreshToken == request.RefreshToken && (t.Revoked & TokenRevoke.RefreshToken) == TokenRevoke.RefreshToken, cancellationToken))
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
@@ -396,6 +405,11 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                ExpiresIn = accessToken.ExpiresIn
                                                            });
 
+            if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
+            {
+                await _redis.SetAsync(cache.Key + ":" + signature, result.Content!, cache.ServerDuration.Value);
+            }
+
             var token = await dsToken.FirstOrDefaultAsync(t => t.RefreshToken == request.RefreshToken && (t.Revoked & TokenRevoke.RefreshToken) != TokenRevoke.RefreshToken, cancellationToken);
 
             if (token != null)
@@ -426,7 +440,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
             if (resourceType == ResourceType.User)
                 await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_USER_REFRESH_TOKEN_EVENT], "[{\"Id\":" + resourceId + ",\"RefreshDate\":\"" + DateTimeOffset.UtcNow.ToString("O") + "\"}]");
 
-            if (token == null) return result;
+            if (token == null)
+                return result;
 
             await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], await _serializer.SerializeAsync(new[] { request.RefreshToken }, cancellationToken));
 

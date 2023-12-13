@@ -40,8 +40,9 @@ internal class PermissionMiddleware
         }
 
         var claimName = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Name)?.Value;
+        var rt = context.User.Claims.FirstOrDefault(t => t.Type == TokenHelper.CLAIM_TYPES_RESOURCE_TYPE)?.Value;
 
-        if (long.TryParse(claimName, out var id) && (_config.AppSettings.Owner?.Any(t => t == id) ?? false))
+        if (long.TryParse(claimName, out var id) && rt == "1" && (_config.AppSettings.Owner?.Any(t => t == id) ?? false))
         {
             await _next(context);
 
@@ -51,8 +52,6 @@ internal class PermissionMiddleware
         var permissionEndpoints = _cache.Get<Dictionary<long, Services.Route.Queries.Models.RouteGroup>>(ConfigSettings.CACHE_ROUTE) ?? new Dictionary<long, Services.Route.Queries.Models.RouteGroup>();
         var allowAnonymous = false;
         var functionId = string.Empty;
-
-        var rt = context.User.Claims.FirstOrDefault(t => t.Type == TokenHelper.CLAIM_TYPES_RESOURCE_TYPE)?.Value;
         var role = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Role)?.Value;
         var path = context.Request.GetPath();
         var method = context.Request.GetMethod();
