@@ -95,6 +95,15 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
             }
         }
 
+        var signature = $"user:{entity.Id}";
+        if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
+        {
+            var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
+
+            if (cacheResult != null)
+                return Result<TokenResult>.Success.Clone(cacheResult);
+        }
+
         _context.Entry(entity).UpdateProperty(t => t.AccessFailedCount, 0);
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -119,6 +128,11 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                                                            RefreshToken = refreshToken.Token,
                                                            ExpiresIn = entity.TokenExpireSeconds
                                                        });
+
+        if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
+        {
+            await _redis.SetAsync(cache.Key + ":" + signature, result.Content!, cache.ServerDuration.Value);
+        }
 
         var dsToken = _context.Set<Domain.Entities.Token>();
 

@@ -11,7 +11,7 @@ public class ConfigSettings : Config<AppSettings>
     public const string QUEUES_USER_REFRESH_TOKEN_EVENT = "UserRefreshTokenEvent";
     public const string QUEUES_USER_ROLE_CHANGE_EVENT = "UserRoleChangeEvent";
 
-    public const string CACHE_REFRESH_TOKEN_RETAIN = "RefreshTokenRetain";
+    public const string CACHE_TOKEN_RETAIN = "TokenRetain";
 }
 
 public class AppSettings

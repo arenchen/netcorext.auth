@@ -93,6 +93,15 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         var id = entity?.Id ?? (request.CustomId ?? _snowflake.Generate());
 
+        var signature = $"user:{id}";
+        if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
+        {
+            var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
+
+            if (cacheResult != null)
+                return Result<TokenResult>.Success.Clone(cacheResult);
+        }
+
         entity ??= new Domain.Entities.User
                    {
                        Id = id,
@@ -174,6 +183,11 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                            ExpiresIn = accessToken.ExpiresIn,
                                                            NameId = entity.Id.ToString()
                                                        });
+
+        if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
+        {
+            await _redis.SetAsync(cache.Key + ":" + signature, result.Content!, cache.ServerDuration.Value);
+        }
 
         var dsToken = _context.Set<Domain.Entities.Token>();
 

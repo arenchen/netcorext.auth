@@ -90,15 +90,6 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                    ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
                                                                });
 
-        var clientScope = client.Roles.Any() ? client.Roles.Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n) : null;
-
-        if (!TokenHelper.ScopeCheck(clientScope, request.Scope))
-            return Result<TokenResult>.InvalidInput.Clone(new TokenResult
-                                                          {
-                                                              Error = Constants.OAuth.INVALID_SCOPE,
-                                                              ErrorDescription = string.Format(Constants.OAuth.INVALID_SCOPE_MESSAGE, request.Scope)
-                                                          });
-
         var secret = request.ClientSecret!.Pbkdf2HashCode(client.CreationDate.ToUnixTimeMilliseconds());
 
         if (client.Secret != secret)
@@ -107,6 +98,24 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                              Error = Constants.OAuth.INVALID_REQUEST,
                                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
                                                                          });
+
+        var signature = $"client:{client.Id}";
+        if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
+        {
+            var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
+
+            if (cacheResult != null)
+                return Result<TokenResult>.Success.Clone(cacheResult);
+        }
+
+        var clientScope = client.Roles.Any() ? client.Roles.Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n) : null;
+
+        if (!TokenHelper.ScopeCheck(clientScope, request.Scope))
+            return Result<TokenResult>.InvalidInput.Clone(new TokenResult
+                                                          {
+                                                              Error = Constants.OAuth.INVALID_SCOPE,
+                                                              ErrorDescription = string.Format(Constants.OAuth.INVALID_SCOPE_MESSAGE, request.Scope)
+                                                          });
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope);
 
@@ -122,6 +131,11 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                            RefreshToken = refreshToken.Token,
                                                            ExpiresIn = accessToken.ExpiresIn
                                                        });
+
+        if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
+        {
+            await _redis.SetAsync(cache.Key + ":" + signature, result.Content!, cache.ServerDuration.Value);
+        }
 
         var dsToken = _context.Set<Domain.Entities.Token>();
 
@@ -208,6 +222,24 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                    ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
                                                                });
 
+        var password = request.Password!.Pbkdf2HashCode(user.CreationDate.ToUnixTimeMilliseconds());
+
+        if (user.Password != password)
+            return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
+                                                                         {
+                                                                             Error = Constants.OAuth.UNAUTHORIZED_USER,
+                                                                             ErrorDescription = Constants.OAuth.UNAUTHORIZED_USER_MESSAGE
+                                                                         });
+
+        var signature = $"user:{user.Id}";
+        if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
+        {
+            var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
+
+            if (cacheResult != null)
+                return Result<TokenResult>.Success.Clone(cacheResult);
+        }
+
         var userScope = user.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow)
                             ? user.Roles.Where(t => t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
                             : null;
@@ -218,15 +250,6 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               Error = Constants.OAuth.INVALID_SCOPE,
                                                               ErrorDescription = string.Format(Constants.OAuth.INVALID_SCOPE_MESSAGE, request.Scope)
                                                           });
-
-        var password = request.Password!.Pbkdf2HashCode(user.CreationDate.ToUnixTimeMilliseconds());
-
-        if (user.Password != password)
-            return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
-                                                                         {
-                                                                             Error = Constants.OAuth.UNAUTHORIZED_USER,
-                                                                             ErrorDescription = Constants.OAuth.UNAUTHORIZED_USER_MESSAGE
-                                                                         });
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope);
 
@@ -242,6 +265,11 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                            RefreshToken = refreshToken.Token,
                                                            ExpiresIn = accessToken.ExpiresIn
                                                        });
+
+        if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
+        {
+            await _redis.SetAsync(cache.Key + ":" + signature, result.Content!, cache.ServerDuration.Value);
+        }
 
         var dsToken = _context.Set<Domain.Entities.Token>();
 
@@ -288,7 +316,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                           });
 
         var signature = TokenHelper.GetJwtSignature(request.RefreshToken);
-        if (_config.Caches.TryGetValue(ConfigSettings.CACHE_REFRESH_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
+        if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
         {
             var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
 
