@@ -109,34 +109,37 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
 
     private Task<Models.RoleFunction> GetFunctionsWithoutConditionAsync(IEnumerable<Models.PermissionRule> rules)
     {
-        var validatorRules = rules.GroupBy(t => new { t.FunctionId, t.Priority, t.Allowed }, t => t.PermissionType)
+        var validatorRules = rules.Select(t => new
+                                               {
+                                                   t.FunctionId,
+                                                   t.Priority,
+                                                   Readable = t.PermissionType.HasFlag(PermissionType.Read) ? (bool?)t.Allowed : null,
+                                                   Writable = t.PermissionType.HasFlag(PermissionType.Write) ? (bool?)t.Allowed : null,
+                                                   Deletable = t.PermissionType.HasFlag(PermissionType.Read) ? (bool?)t.Allowed : null
+                                               })
+                                  .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.Readable, t.Writable, t.Deletable })
                                   .Select(t =>
                                           {
                                               // 先將同權重允許/不允許的權限最大化
-                                              var p = t.Aggregate((c, n) => c | n);
-
-                                              return new
-                                                     {
-                                                         t.Key.FunctionId,
-                                                         t.Key.Priority,
-                                                         PermissionType = p,
-                                                         t.Key.Allowed
-                                                     };
-                                          })
-                                  .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
-                                  .Select(t =>
-                                          {
-                                              // 先將同權重的權限最大化
                                               var p = t.Aggregate((c, n) =>
                                                                   {
-                                                                      var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+                                                                      var readable = c.Readable.HasValue
+                                                                                         ? c.Readable | (n.Readable ?? c.Readable)
+                                                                                         : n.Readable;
 
-                                                                      pt = n.Allowed ? pt | n.PermissionType : pt;
+                                                                      var writable = c.Writable.HasValue
+                                                                                         ? c.Writable | (n.Writable ?? c.Writable)
+                                                                                         : n.Writable;
+
+                                                                      var deletable = c.Deletable.HasValue
+                                                                                          ? c.Deletable | (n.Deletable ?? c.Deletable)
+                                                                                          : n.Deletable;
 
                                                                       return new
                                                                              {
-                                                                                 PermissionType = pt,
-                                                                                 Allowed = c.Allowed | n.Allowed
+                                                                                 Readable = readable,
+                                                                                 Writable = writable,
+                                                                                 Deletable = deletable
                                                                              };
                                                                   });
 
@@ -144,33 +147,40 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                                      {
                                                          t.Key.FunctionId,
                                                          t.Key.Priority,
-                                                         p.PermissionType,
-                                                         p.Allowed
+                                                         p.Readable,
+                                                         p.Writable,
+                                                         p.Deletable
                                                      };
                                           })
                                   .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
                                   .GroupBy(t => t.FunctionId,
-                                           t => new { t.PermissionType, t.Allowed })
+                                           t => new { t.Readable, t.Writable, t.Deletable })
                                   .Select(t =>
                                           {
                                               // 最終以優先度高的權限為主
                                               var p = t.Aggregate((c, n) =>
                                                                   {
-                                                                      var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+                                                                      var readable = n.Readable ?? c.Readable;
 
-                                                                      pt = n.Allowed ? pt | n.PermissionType : (pt ^ n.PermissionType) & pt;
+                                                                      var writable = n.Writable ?? c.Writable;
+
+                                                                      var deletable = n.Deletable ?? c.Deletable;
 
                                                                       return new
                                                                              {
-                                                                                 PermissionType = pt,
-                                                                                 Allowed = pt != PermissionType.None
+                                                                                 Readable = readable,
+                                                                                 Writable = writable,
+                                                                                 Deletable = deletable
                                                                              };
                                                                   });
 
                                               return new
                                                      {
                                                          FunctionId = t.Key,
-                                                         PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
+                                                         PermissionType = PermissionType.None
+                                                                        | (p.Readable.HasValue && p.Readable.Value ? PermissionType.Read : PermissionType.None)
+                                                                        | (p.Writable.HasValue && p.Writable.Value ? PermissionType.Write : PermissionType.None)
+                                                                        | (p.Deletable.HasValue && p.Deletable.Value ? PermissionType.Delete : PermissionType.None)
                                                      };
                                           })
                                   .ToArray();
@@ -231,34 +241,37 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
         var permissionRules = rules.Where(t => permissions.Contains(t.PermissionId))
                                    .ToArray();
 
-        var validatorRules = permissionRules.GroupBy(t => new { t.FunctionId, t.Priority, t.Allowed }, t => t.PermissionType)
+        var validatorRules = permissionRules.Select(t => new
+                                                         {
+                                                             t.FunctionId,
+                                                             t.Priority,
+                                                             Readable = t.PermissionType.HasFlag(PermissionType.Read) ? (bool?)t.Allowed : null,
+                                                             Writable = t.PermissionType.HasFlag(PermissionType.Write) ? (bool?)t.Allowed : null,
+                                                             Deletable = t.PermissionType.HasFlag(PermissionType.Read) ? (bool?)t.Allowed : null
+                                                         })
+                                            .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.Readable, t.Writable, t.Deletable })
                                             .Select(t =>
                                                     {
                                                         // 先將同權重允許/不允許的權限最大化
-                                                        var p = t.Aggregate((c, n) => c | n);
-
-                                                        return new
-                                                               {
-                                                                   t.Key.FunctionId,
-                                                                   t.Key.Priority,
-                                                                   PermissionType = p,
-                                                                   t.Key.Allowed
-                                                               };
-                                                    })
-                                            .GroupBy(t => new { t.FunctionId, t.Priority }, t => new { t.PermissionType, t.Allowed })
-                                            .Select(t =>
-                                                    {
-                                                        // 先將同權重的權限最大化
                                                         var p = t.Aggregate((c, n) =>
                                                                             {
-                                                                                var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+                                                                                var readable = c.Readable.HasValue
+                                                                                                   ? c.Readable | (n.Readable ?? c.Readable)
+                                                                                                   : n.Readable;
 
-                                                                                pt = n.Allowed ? pt | n.PermissionType : pt;
+                                                                                var writable = c.Writable.HasValue
+                                                                                                   ? c.Writable | (n.Writable ?? c.Writable)
+                                                                                                   : n.Writable;
+
+                                                                                var deletable = c.Deletable.HasValue
+                                                                                                    ? c.Deletable | (n.Deletable ?? c.Deletable)
+                                                                                                    : n.Deletable;
 
                                                                                 return new
                                                                                        {
-                                                                                           PermissionType = pt,
-                                                                                           Allowed = c.Allowed | n.Allowed
+                                                                                           Readable = readable,
+                                                                                           Writable = writable,
+                                                                                           Deletable = deletable
                                                                                        };
                                                                             });
 
@@ -266,33 +279,40 @@ public class GetRoleFunctionHandler : IRequestHandler<GetRoleFunction, Result<IE
                                                                {
                                                                    t.Key.FunctionId,
                                                                    t.Key.Priority,
-                                                                   p.PermissionType,
-                                                                   p.Allowed
+                                                                   p.Readable,
+                                                                   p.Writable,
+                                                                   p.Deletable
                                                                };
                                                     })
                                             .OrderBy(t => t.FunctionId).ThenBy(t => t.Priority)
                                             .GroupBy(t => t.FunctionId,
-                                                     t => new { t.PermissionType, t.Allowed })
+                                                     t => new { t.Readable, t.Writable, t.Deletable })
                                             .Select(t =>
                                                     {
                                                         // 最終以優先度高的權限為主
                                                         var p = t.Aggregate((c, n) =>
                                                                             {
-                                                                                var pt = c.Allowed ? c.PermissionType : PermissionType.None;
+                                                                                var readable = n.Readable ?? c.Readable;
 
-                                                                                pt = n.Allowed ? pt | n.PermissionType : (pt ^ n.PermissionType) & pt;
+                                                                                var writable = n.Writable ?? c.Writable;
+
+                                                                                var deletable = n.Deletable ?? c.Deletable;
 
                                                                                 return new
                                                                                        {
-                                                                                           PermissionType = pt,
-                                                                                           Allowed = pt != PermissionType.None
+                                                                                           Readable = readable,
+                                                                                           Writable = writable,
+                                                                                           Deletable = deletable
                                                                                        };
                                                                             });
 
                                                         return new
                                                                {
                                                                    FunctionId = t.Key,
-                                                                   PermissionType = p.Allowed ? p.PermissionType : PermissionType.None
+                                                                   PermissionType = PermissionType.None
+                                                                                  | (p.Readable.HasValue && p.Readable.Value ? PermissionType.Read : PermissionType.None)
+                                                                                  | (p.Writable.HasValue && p.Writable.Value ? PermissionType.Write : PermissionType.None)
+                                                                                  | (p.Deletable.HasValue && p.Deletable.Value ? PermissionType.Delete : PermissionType.None)
                                                                };
                                                     })
                                             .ToArray();
