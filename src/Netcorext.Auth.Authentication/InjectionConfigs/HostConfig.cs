@@ -7,35 +7,25 @@ public class HostConfig
 {
     public HostConfig(IHostBuilder builder)
     {
-        builder.ConfigureAppConfiguration((w, s) =>
+        builder.ConfigureAppConfiguration((context, configuration) =>
                                           {
-                                              var host = w.HostingEnvironment;
+                                              var host = context.HostingEnvironment;
 
-                                              s.SetBasePath(host.ContentRootPath)
-                                               .AddJsonFile("appsettings.json", false, true)
-                                               .AddJsonFile($"appsettings.{host.EnvironmentName}.json", true, true)
-                                               .AddJsonFile("appsettings.override.json", true, true)
-                                               .AddJsonGzipCompressFile("appsettings.secret", true, true)
-                                               .AddEnvironmentVariables();
+                                              configuration.SetBasePath(host.ContentRootPath)
+                                                           .AddJsonFile("appsettings.json", false, true)
+                                                           .AddJsonFile($"appsettings.{host.EnvironmentName}.json", true, true)
+                                                           .AddJsonFile("appsettings.override.json", true, true)
+                                                           .AddJsonGzipCompressFile("appsettings.secret", true, true)
+                                                           .AddEnvironmentVariables();
                                           })
                .ConfigureLogging(loggingBuilder =>
                                  {
                                      loggingBuilder.ClearProviders();
                                      loggingBuilder.AddSerilog();
                                  })
-               .UseSerilog((ctx, provider, lc) =>
-                           {
-                               Serilog.Debugging.SelfLog.Enable(Console.Error.WriteLine);
-
-                               lc.ReadFrom.Configuration(ctx.Configuration)
-                                 .Enrich.FromLogContext()
-                                 .WriteTo
-                                 .Async(cfg =>
-                                        {
-#if DEBUG
-                                            cfg.Console();
-#endif
-                                        });
-                           });
+               .UseSerilog((context, services, configuration) => configuration
+                                                                .ReadFrom.Configuration(context.Configuration)
+                                                                .ReadFrom.Services(services)
+                          );
     }
 }

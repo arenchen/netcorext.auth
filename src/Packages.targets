@@ -5,9 +5,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Serilog.AspNetCore" Version="5.0.*" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="1.5.*" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.*" />
+    <PackageReference Include="Serilog.AspNetCore" Version="6.*" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.*" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.*" />
+    <PackageReference Include="Serilog.Enrichers.Process" Version="2.*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,7 +42,7 @@
     <PackageReference Include="Netcorext.Mediator.Queuing.Redis" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Serialization.Json" Version="1.0.0-dev.*" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="../Netcorext.Auth.Core/Netcorext.Auth.Core.csproj" />
   </ItemGroup>
