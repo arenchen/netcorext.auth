@@ -12,26 +12,34 @@ public class GatewayConfig
 
         services.AddCors();
 
-        services.AddReverseProxy()
-                .LoadFromMemory(Array.Empty<RouteConfig>(), Array.Empty<ClusterConfig>())
-                .AddTransforms(builder =>
-                               {
-                                   builder.AddXForwarded(ForwardedTransformActions.Off);
-                                   builder.AddXForwardedFor(action: ForwardedTransformActions.Append);
-                                   builder.AddResponseTransform(ctx =>
-                                                                {
-                                                                    if (ctx.ProxyResponse == null || !ctx.ProxyResponse.Headers.TryGetValues(requestIdHeaderName, out var requestIds))
+        var gatewayConfig = configuration.GetSection("ReverseProxy");
+
+        var proxyBuilder = services.AddReverseProxy();
+
+        if (gatewayConfig.Exists())
+            proxyBuilder.LoadFromConfig(gatewayConfig);
+        else
+            proxyBuilder.LoadFromMemory(Array.Empty<RouteConfig>(), Array.Empty<ClusterConfig>());
+
+        proxyBuilder.AddTransforms(builder =>
+                                   {
+                                       builder.AddXForwarded(ForwardedTransformActions.Off);
+                                       builder.AddXForwardedFor(action: ForwardedTransformActions.Append);
+
+                                       builder.AddResponseTransform(ctx =>
+                                                                    {
+                                                                        if (ctx.ProxyResponse == null || !ctx.ProxyResponse.Headers.TryGetValues(requestIdHeaderName, out var requestIds))
+                                                                            return ValueTask.CompletedTask;
+
+                                                                        var requestIdHeader = string.Join(',', requestIds);
+
+                                                                        if (string.IsNullOrWhiteSpace(requestIdHeader))
+                                                                            return ValueTask.CompletedTask;
+
+                                                                        ctx.HttpContext.Response.Headers[requestIdHeaderName] = requestIdHeader;
+
                                                                         return ValueTask.CompletedTask;
-
-                                                                    var requestIdHeader = string.Join(',', requestIds);
-
-                                                                    if (string.IsNullOrWhiteSpace(requestIdHeader))
-                                                                        return ValueTask.CompletedTask;
-
-                                                                    ctx.HttpContext.Response.Headers[requestIdHeaderName] = requestIdHeader;
-
-                                                                    return ValueTask.CompletedTask;
-                                                                });
-                               });
+                                                                    });
+                                   });
     }
 }
