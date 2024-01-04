@@ -46,7 +46,7 @@ public class AppConfig
                                         {
                                             config.AppSettings.RegisterConfig?.Adapt(registerConfig);
                                             registerConfig.RouteGroupName = config.Id;
-                                            registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Authentication"].Url;
+                                            registerConfig.RouteServiceUrl = config.Services["Netcorext.Auth.Gateway"].Url;
                                         });
 
         app.Run();
