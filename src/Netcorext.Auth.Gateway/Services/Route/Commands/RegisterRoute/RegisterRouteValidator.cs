@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Netcorext.Auth.Authentication.Services.Route.Commands;
+namespace Netcorext.Auth.Gateway.Services.Route.Commands;
 
 public class RegisterRouteValidator : AbstractValidator<RegisterRoute>
 {

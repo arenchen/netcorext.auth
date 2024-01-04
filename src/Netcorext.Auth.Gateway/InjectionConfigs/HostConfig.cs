@@ -1,6 +1,6 @@
 using Serilog;
 
-namespace Netcorext.Auth.Authentication.InjectionConfigs;
+namespace Netcorext.Auth.Gateway.InjectionConfigs;
 
 [Injection]
 public class HostConfig
@@ -26,7 +26,6 @@ public class HostConfig
                .UseSerilog((context, services, configuration) => configuration
                                                                 .ReadFrom.Configuration(context.Configuration)
                                                                 .ReadFrom.Services(services)
-                                                                .Enrich.FromLogContext()
                           );
     }
 }

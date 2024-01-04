@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authorization.Services.Authorization;
 using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Extensions.AspNetCore.Middlewares;
+using Serilog;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
 
@@ -38,7 +39,6 @@ public class AppConfig
         }
 
         app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
-
         app.MapControllers();
         app.MapGrpcService<AuthorizationServiceFacade>();
 

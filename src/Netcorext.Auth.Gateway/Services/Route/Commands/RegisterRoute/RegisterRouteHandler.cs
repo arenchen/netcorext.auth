@@ -1,14 +1,14 @@
 using FreeRedis;
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
-using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Auth.Gateway.Settings;
 using Netcorext.Auth.Domain.Entities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 
-namespace Netcorext.Auth.Authentication.Services.Route.Commands;
+namespace Netcorext.Auth.Gateway.Services.Route.Commands;
 
 public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 {

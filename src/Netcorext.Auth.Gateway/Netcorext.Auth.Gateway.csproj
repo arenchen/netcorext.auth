@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.*"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Netcorext.Worker.Abstractions" Version="1.0.0-dev.*"/>
+  </ItemGroup>
+
+  <Import Project="../Packages.targets"/>
+  <Import Project="../Versioning.targets"/>
+
+</Project>

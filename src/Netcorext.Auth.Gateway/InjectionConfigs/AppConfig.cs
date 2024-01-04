@@ -1,13 +1,9 @@
 using Microsoft.Extensions.Options;
-using Netcorext.Auth.Authentication.Middlewares;
-using Netcorext.Auth.Authentication.Services.Maintenance;
-using Netcorext.Auth.Authentication.Services.Permission;
-using Netcorext.Auth.Authentication.Services.Route;
-using Netcorext.Auth.Authentication.Services.Token;
-using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Auth.Gateway.Services.Route;
+using Netcorext.Auth.Gateway.Settings;
 using Netcorext.Extensions.AspNetCore.Middlewares;
 
-namespace Netcorext.Auth.Authentication.InjectionConfigs;
+namespace Netcorext.Auth.Gateway.InjectionConfigs;
 
 [Injection]
 public class AppConfig
@@ -33,15 +29,9 @@ public class AppConfig
                          .AllowCredentials();
                     });
 
-        app.UseMiddleware<BlockedIpMiddleware>();
-        app.UseMiddleware<TokenMiddleware>();
         app.UseJwtAuthentication();
-        app.UseMiddleware<MaintainMiddleware>();
-        app.UseMiddleware<PermissionMiddleware>();
         app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
-        app.MapGrpcService<PermissionValidationServiceFacade>();
-        app.MapGrpcService<MaintenanceServiceFacade>();
-        app.MapGrpcService<TokenValidationServiceFacade>();
+        app.MapGrpcService<RouteServiceFacade>();
         app.MapReverseProxy();
 
         app.Run();

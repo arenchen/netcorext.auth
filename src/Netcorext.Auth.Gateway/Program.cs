@@ -1,0 +1,2 @@
+WebApplication.CreateBuilder(args)
+              .ConfigureDependencyInjections();
