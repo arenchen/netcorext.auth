@@ -1,3 +1,4 @@
+using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
@@ -12,7 +13,7 @@ public class GatewayConfig
         services.AddCors();
 
         services.AddReverseProxy()
-                .LoadFromConfig(configuration.GetSection("ReverseProxy"))
+                .LoadFromMemory(Array.Empty<RouteConfig>(), Array.Empty<ClusterConfig>())
                 .AddTransforms(builder =>
                                {
                                    builder.AddXForwarded(ForwardedTransformActions.Off);
