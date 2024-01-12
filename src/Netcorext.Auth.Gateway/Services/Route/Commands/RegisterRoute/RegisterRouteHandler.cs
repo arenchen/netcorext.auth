@@ -39,7 +39,7 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
         {
             try
             {
-                if (!await _redis.HSetNxAsync(_config.AppSettings.LockPrefixKey, group.Name, Array.Empty<byte>()))
+                if (!await _redis.HSetNxAsync(_config.AppSettings.LockPrefixKey, group.Name.ToUpper(), Array.Empty<byte>()))
                     continue;
 
                 var entGroup = ds.FirstOrDefault(t => t.Name.ToUpper() == group.Name.ToUpper());
@@ -98,13 +98,13 @@ public class RegisterRouteHandler : IRequestHandler<RegisterRoute, Result>
 
                 lsChangeIds.Add(entGroup.Id);
 
-                await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name);
+                await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name.ToUpper());
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "{Message}", e.Message);
 
-                await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name);
+                await _redis.HDelAsync(_config.AppSettings.LockPrefixKey, group.Name.ToUpper());
             }
         }
 

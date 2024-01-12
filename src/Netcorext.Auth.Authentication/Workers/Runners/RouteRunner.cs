@@ -19,17 +19,19 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly IConfiguration _configuration;
     private readonly InMemoryConfigProvider _memoryConfigProvider;
     private readonly ConfigSettings _config;
     private readonly ILogger<RouteRunner> _logger;
     private static readonly SemaphoreSlim RouteUpdateLocker = new(1, 1);
 
-    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, ILogger<RouteRunner> logger)
+    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, IConfiguration configuration, ILogger<RouteRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _configuration = configuration;
         _memoryConfigProvider = (InMemoryConfigProvider)proxyConfigProvider;
         _config = config.Value;
         _logger = logger;
@@ -106,6 +108,11 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             }
 
             _cache.Set(ConfigSettings.CACHE_ROUTE, cacheRouteGroups);
+
+            var gatewayConfig = _configuration.GetSection("ReverseProxy");
+
+            if (gatewayConfig.Exists())
+                return;
 
             var gatewayUrl = _config.Services["Netcorext.Auth.Gateway"].Url;
 

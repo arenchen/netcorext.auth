@@ -15,6 +15,7 @@ public class ServiceConfig
                                      var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
                                      options.ConnectionString = cfg.Connections.Redis.GetDefault().Connection;
                                  })
+                .AddLoggingPipeline()
                 .AddPerformancePipeline()
                 .AddValidatorPipeline();
     }

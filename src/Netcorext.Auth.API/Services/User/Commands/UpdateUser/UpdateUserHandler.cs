@@ -124,19 +124,19 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
 
             var stringId = entity.Id.ToString();
             var tokens = dsToken.Where(t => t.Revoked != TokenRevoke.Both && t.ResourceType == ResourceType.User && t.ResourceId == stringId);
-            var dicTokens = new Dictionary<string, string>();
+            var hsTokens = new HashSet<string>();
 
             foreach (var token in tokens)
             {
-                dicTokens.TryAdd(token.AccessToken, string.Empty);
+                hsTokens.Add(token.AccessToken);
 
                 if (!token.RefreshToken.IsEmpty())
-                    dicTokens.TryAdd(token.RefreshToken, string.Empty);
+                    hsTokens.Add(token.RefreshToken);
 
                 _context.Entry(token).UpdateProperty(t => t.Revoked, TokenRevoke.Both);
             }
 
-            _httpContextAccessor.HttpContext?.Items.Add(ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT, dicTokens.Keys.ToArray());
+            _httpContextAccessor.HttpContext?.Items.Add(ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT, hsTokens.ToArray());
         }
 
         if (request.ExtendData != null && request.ExtendData.Any())

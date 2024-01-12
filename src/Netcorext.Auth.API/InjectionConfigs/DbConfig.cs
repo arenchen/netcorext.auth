@@ -1,9 +1,7 @@
 using FreeRedis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Settings;
-using Netcorext.Configuration.Extensions;
 using Netcorext.EntityFramework.UserIdentityPattern.AspNetCore;
 using Netcorext.Extensions.Redis.Utilities;
 using Netcorext.Serialization;
@@ -15,30 +13,51 @@ public class DbConfig
 {
     public DbConfig(IServiceCollection services, IConfiguration config)
     {
-        var slowCommandLoggingThreshold = config.GetValue("AppSettings:SlowCommandLoggingThreshold", 1000L);
-        var defaultPoolSize = config.GetValue("Connections:RelationalDb:Default:PoolSize", 1024);
-        var slavePoolSize = config.GetValue("Connections:RelationalDb:Slave:PoolSize", 1024);
+        var cfg = config.Get<ConfigSettings>();
+        var slowCommandLoggingThreshold = cfg.AppSettings.SlowCommandLoggingThreshold;
+        var mainDb = cfg.Connections.RelationalDb["Default"];
+        var slaveDb = cfg.Connections.RelationalDb["Slave"];
+        var redis = cfg.Connections.Redis["Default"];
 
-        services.AddIdentityDbContextPool((provider, builder) =>
+        services.AddIdentityDbContextPool((_, builder) =>
                                           {
-                                              var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+                                              builder.UseNpgsql(mainDb.Connection, options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery));
 
-                                              builder.UseNpgsql(cfg.Connections.RelationalDb.GetDefault().Connection, options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery));
-                                          }, defaultPoolSize, slowCommandLoggingThreshold);
+                                              if (mainDb.EnableDetailedErrors.HasValue)
+                                                  builder.EnableDetailedErrors(mainDb.EnableDetailedErrors.Value);
 
-        services.AddIdentitySlaveDbContextPool((provider, builder) =>
+                                              if (mainDb.EnableSensitiveDataLogging.HasValue)
+                                                  builder.EnableSensitiveDataLogging(mainDb.EnableSensitiveDataLogging.Value);
+
+                                              if (mainDb.EnableServiceProviderCaching.HasValue)
+                                                  builder.EnableServiceProviderCaching(mainDb.EnableServiceProviderCaching.Value);
+
+                                              if (mainDb.EnableThreadSafetyChecks.HasValue)
+                                                  builder.EnableThreadSafetyChecks(mainDb.EnableThreadSafetyChecks.Value);
+                                          }, mainDb.PoolSize, slowCommandLoggingThreshold);
+
+        services.AddIdentitySlaveDbContextPool((_, builder) =>
                                                {
-                                                   var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+                                                   builder.UseNpgsql(slaveDb.Connection, options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery));
 
-                                                   builder.UseNpgsql(cfg.Connections.RelationalDb["Slave"].Connection, options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery));
-                                               }, slavePoolSize, slowCommandLoggingThreshold);
+                                                   if (slaveDb.EnableDetailedErrors.HasValue)
+                                                       builder.EnableDetailedErrors(slaveDb.EnableDetailedErrors.Value);
+
+                                                   if (slaveDb.EnableSensitiveDataLogging.HasValue)
+                                                       builder.EnableSensitiveDataLogging(slaveDb.EnableSensitiveDataLogging.Value);
+
+                                                   if (slaveDb.EnableServiceProviderCaching.HasValue)
+                                                       builder.EnableServiceProviderCaching(slaveDb.EnableServiceProviderCaching.Value);
+
+                                                   if (slaveDb.EnableThreadSafetyChecks.HasValue)
+                                                       builder.EnableThreadSafetyChecks(slaveDb.EnableThreadSafetyChecks.Value);
+                                               }, slaveDb.PoolSize, slowCommandLoggingThreshold);
 
         services.TryAddSingleton<RedisClient>(provider =>
                                               {
-                                                  var cfg = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
                                                   var serializer = provider.GetRequiredService<ISerializer>();
 
-                                                  return new RedisClientConnection<RedisClient>(() => new RedisClient(cfg.Connections.Redis.GetDefault().Connection)
+                                                  return new RedisClientConnection<RedisClient>(() => new RedisClient(redis.Connection)
                                                                                                       {
                                                                                                           Serialize = serializer.Serialize,
                                                                                                           Deserialize = serializer.Deserialize,
