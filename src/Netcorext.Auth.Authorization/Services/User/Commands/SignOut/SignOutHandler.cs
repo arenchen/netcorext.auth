@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using FreeRedis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.EntityFramework.UserIdentityPattern.Extensions;
 using Netcorext.Extensions.Commons;
+using Netcorext.Extensions.Linq;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 
@@ -39,7 +41,12 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
         if (token == null)
             return Result.Success;
 
-        var tokens = dsToken.Where(t => t.ResourceId == token.ResourceId && t.ResourceType == token.ResourceType);
+        Expression<Func<Domain.Entities.Token, bool>> predicate = t => t.Id == token.Id;
+
+        if (request.AllDevice)
+            predicate = predicate.Or(t => t.ResourceId == token.ResourceId && t.ResourceType == token.ResourceType);
+
+        var tokens = dsToken.Where(predicate);
 
         var lsToken = new List<string>();
 
