@@ -2,6 +2,7 @@ using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Contracts;
 using Netcorext.Serialization;
 using Netcorext.Worker;
 
@@ -58,7 +59,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
 
             foreach (var token in tokens)
             {
-                _cache.Set(token, false, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+                _cache.Set(token, Result.UnauthorizedAndCannotRefreshToken, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
             }
         }
         finally
