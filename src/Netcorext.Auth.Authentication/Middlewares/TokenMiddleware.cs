@@ -56,7 +56,7 @@ internal class TokenMiddleware
             return;
         }
 
-        await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus);
+        await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus, result.Code);
     }
 
     private async Task<Result> IsValid(IDispatcher dispatcher, string headerValue)
