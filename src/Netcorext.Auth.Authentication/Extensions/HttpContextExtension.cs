@@ -9,6 +9,7 @@ public static class HttpContextExtension
     private static readonly Dictionary<string, string> ErrorMessages = new()
                                                                        {
                                                                            { "401000", "{ \"code\": \"401000\", \"message\": \"Unauthorized.\"}" },
+                                                                           { "401001", "{ \"code\": \"401001\", \"message\": \"Unauthorized and cannot refresh token.\"}" },
                                                                            { "403000", "{ \"code\": \"403000\", \"message\": \"Forbidden.\"}" },
                                                                            { "403002", "{ \"code\": \"403002\", \"message\": \"The specified account is disabled.\"}" },
                                                                            { "403007", "{ \"code\": \"403007\", \"message\": \"Permission has changed, please re-login\"}" },

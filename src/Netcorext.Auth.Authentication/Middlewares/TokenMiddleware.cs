@@ -56,7 +56,14 @@ internal class TokenMiddleware
             return;
         }
 
-        await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus, result.Code);
+        if (result == Result.UnauthorizedAndCannotRefreshToken)
+            await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus, result.Code);
+        else if (result == Result.Forbidden)
+            await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
+        else if (result == Result.AccountIsDisabled)
+            await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus, result.Code);
+        else
+            await context.UnauthorizedAsync(_config.AppSettings.UseNativeStatus);
     }
 
     private async Task<Result> IsValid(IDispatcher dispatcher, string headerValue)
