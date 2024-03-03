@@ -20,7 +20,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
     private readonly IConfiguration _configuration;
-    private readonly InMemoryConfigProvider _memoryConfigProvider;
+    private readonly IProxyConfigProvider _proxyConfigProvider;
     private readonly ConfigSettings _config;
     private readonly ILogger<RouteRunner> _logger;
     private static readonly SemaphoreSlim RouteUpdateLocker = new(1, 1);
@@ -32,7 +32,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
         _cache = cache;
         _serializer = serializer;
         _configuration = configuration;
-        _memoryConfigProvider = (InMemoryConfigProvider)proxyConfigProvider;
+        _proxyConfigProvider = proxyConfigProvider;
         _config = config.Value;
         _logger = logger;
     }
@@ -151,7 +151,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
                                                                          }))
                                          .ToArray();
 
-            _memoryConfigProvider.Update(routes, clusters);
+            (_proxyConfigProvider as InMemoryConfigProvider)?.Update(routes, clusters);
         }
         finally
         {
