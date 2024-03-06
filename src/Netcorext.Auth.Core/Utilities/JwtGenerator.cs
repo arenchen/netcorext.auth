@@ -16,20 +16,19 @@ public class JwtGenerator
         _config = config.Value;
     }
 
-    public (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, int? tokenExpireSeconds = null, string? scope = null, string? originScope = null)
+    public (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, string? nickname = null, int? tokenExpireSeconds = null, string? scope = null)
     {
         return TokenHelper.Generate(tokenType,
                                     resourceType,
                                     DateTimeOffset.UtcNow.AddSeconds(tokenExpireSeconds ?? (tokenType == TokenType.AccessToken ? _config.TokenExpireSeconds : _config.RefreshTokenExpireSeconds)),
                                     resourceId,
                                     uniqueId,
+                                    nickname,
                                     scope,
                                     _config.Issuer,
                                     _config.Audience,
                                     _config.SigningKey,
                                     _config.NameClaimType,
-                                    _config.RoleClaimType,
-                                    originScope
-                                   );
+                                    _config.RoleClaimType);
     }
 }

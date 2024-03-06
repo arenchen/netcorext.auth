@@ -114,10 +114,10 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                                 .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
                         : null;
 
-        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), null, entity.TokenExpireSeconds, scope);
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), null, entity.DisplayName, entity.TokenExpireSeconds, scope);
 
         var refreshToken = entity.AllowedRefreshToken
-                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), null, entity.RefreshTokenExpireSeconds, scope, scope)
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), null, entity.DisplayName, entity.RefreshTokenExpireSeconds, scope)
                                : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult

@@ -168,10 +168,10 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                 .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
                         : null;
 
-        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.TokenExpireSeconds, scope);
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.DisplayName, entity.TokenExpireSeconds, scope);
 
         var refreshToken = entity.AllowedRefreshToken
-                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.RefreshTokenExpireSeconds, scope, scope)
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.DisplayName, entity.RefreshTokenExpireSeconds, scope)
                                : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult

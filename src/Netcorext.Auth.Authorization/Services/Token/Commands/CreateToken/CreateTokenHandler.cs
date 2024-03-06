@@ -117,10 +117,10 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               ErrorDescription = string.Format(Constants.OAuth.INVALID_SCOPE_MESSAGE, request.Scope)
                                                           });
 
-        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.TokenExpireSeconds, request.Scope ?? clientScope);
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.Name, client.TokenExpireSeconds, request.Scope ?? clientScope);
 
         var refreshToken = client.AllowedRefreshToken || _authOptions.AllowedRefreshToken
-                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope, clientScope)
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.Name, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope)
                                : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
@@ -251,10 +251,10 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                               ErrorDescription = string.Format(Constants.OAuth.INVALID_SCOPE_MESSAGE, request.Scope)
                                                           });
 
-        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, user.Id.ToString(), null, user.TokenExpireSeconds, request.Scope ?? userScope);
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, user.Id.ToString(), null, user.DisplayName, user.TokenExpireSeconds, request.Scope ?? userScope);
 
         var refreshToken = user.AllowedRefreshToken
-                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, user.Id.ToString(), null, user.RefreshTokenExpireSeconds, request.Scope ?? userScope, userScope)
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, user.Id.ToString(), null, user.DisplayName, user.RefreshTokenExpireSeconds, request.Scope ?? userScope)
                                : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
@@ -374,6 +374,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         }
 
         var resourceId = claimsPrincipal.Identity?.Name;
+        var nickname = claimsPrincipal.FindFirst(TokenHelper.CLAIM_NICKNAME)?.Value;
         var tt = claimsPrincipal.FindFirst(TokenHelper.CLAIM_TYPES_TOKEN_TYPE)?.Value;
         var rt = claimsPrincipal.FindFirst(TokenHelper.CLAIM_TYPES_RESOURCE_TYPE)?.Value;
         var uid = claimsPrincipal.FindFirst(TokenHelper.CLAIM_UNIQUE_ID)?.Value;
@@ -409,7 +410,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         try
         {
-            var (disabled, allowedRefreshToken, tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
+            var (disabled, roles, allowedRefreshToken, tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
 
             if (disabled)
                 return Result<TokenResult>.Forbidden.Clone(new TokenResult
@@ -418,10 +419,15 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                ErrorDescription = Constants.OAuth.ACCESS_DENIED_MESSAGE
                                                            });
 
-            var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType, resourceId!, uid, tokenExpireSeconds, request.Scope ?? role);
+            if (request.Scope == "*")
+                role = string.Join(' ', roles);
+            else if (!string.IsNullOrWhiteSpace(request.Scope))
+                role = request.Scope;
+
+            var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, resourceType, resourceId!, uid, nickname, tokenExpireSeconds, role);
 
             var refreshToken = allowedRefreshToken
-                                   ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType, resourceId!, uid, refreshTokenExpireSeconds, request.Scope ?? role, role)
+                                   ? _jwtGenerator.Generate(TokenType.RefreshToken, resourceType, resourceId!, uid, nickname, refreshTokenExpireSeconds, role)
                                    : JwtGenerator.DefaultGenerateEmpty;
 
             var result = Result<TokenResult>.Success.Clone(new TokenResult
@@ -485,7 +491,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         }
     }
 
-    private async Task<(bool Disabled, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
+    private async Task<(bool Disabled, string[] roles, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
     {
         return resourceType switch
                {
@@ -495,20 +501,25 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                };
     }
 
-    private async Task<(bool Disabled, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
+    private async Task<(bool Disabled, string[] roles, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
         var ds = _context.Set<Domain.Entities.User>();
 
-        var entity = await ds.FirstOrDefaultAsync(t => t.Id == id);
+        var entity = await ds.Include(t => t.Roles)
+                             .FirstOrDefaultAsync(t => t.Id == id);
 
         if (entity == null) throw new Exception("Resource not found.");
 
-        return (entity.Disabled, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+        var roles = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow)
+                        ? entity.Roles.Where(t => t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId.ToString()).ToArray()
+                        : Array.Empty<string>();
+
+        return (entity.Disabled, roles, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
     }
 
-    private async Task<(bool Disabled, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
+    private async Task<(bool Disabled, string[] roles, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
@@ -518,7 +529,11 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         if (entity == null) throw new Exception("Resource not found.");
 
-        return (entity.Disabled, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+        var roles = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow)
+                        ? entity.Roles.Where(t => t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId.ToString()).ToArray()
+                        : Array.Empty<string>();
+
+        return (entity.Disabled, roles, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
     }
 
     private Task<bool> IsValidAsync(string grantType)

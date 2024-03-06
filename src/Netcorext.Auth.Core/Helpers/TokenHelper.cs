@@ -14,27 +14,27 @@ public static class TokenHelper
     public const string CLAIM_TYPES_TOKEN_TYPE = "tt";
     public const string CLAIM_TOKEN_HASH = "th";
     public const string CLAIM_UNIQUE_ID = "uid";
+    public const string CLAIM_NICKNAME = "nickname";
+
     private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
     public static string GenerateJwt(TokenType type, ResourceType resourceType,
-                                     DateTimeOffset expires, string resourceId, string? uniqueId, string? scope,
+                                     DateTimeOffset expires, string resourceId, string? uniqueId, string? nickname, string? scope,
                                      string? issuer,
                                      string? audience,
                                      string signingKey,
                                      string nameClaimType = ClaimTypes.NameIdentifier,
-                                     string roleClaimType = ClaimTypes.Role,
-                                     string? originScope = null) =>
-        Generate(type, resourceType, expires, resourceId, uniqueId, scope, issuer, audience, signingKey, nameClaimType, roleClaimType, originScope).Token;
+                                     string roleClaimType = ClaimTypes.Role) =>
+        Generate(type, resourceType, expires, resourceId, uniqueId, nickname, scope, issuer, audience, signingKey, nameClaimType, roleClaimType).Token;
 
     public static (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature)
         Generate(TokenType type, ResourceType resourceType,
-                 DateTimeOffset expires, string resourceId, string? uniqueId, string? scope,
+                 DateTimeOffset expires, string resourceId, string? uniqueId, string? nickname, string? scope,
                  string? issuer,
                  string? audience,
                  string signingKey,
                  string nameClaimType = ClaimTypes.NameIdentifier,
-                 string roleClaimType = ClaimTypes.Role,
-                 string? originScope = null)
+                 string roleClaimType = ClaimTypes.Role)
     {
         var claims = new List<Claim>
                      {
@@ -45,8 +45,8 @@ public static class TokenHelper
                      };
 
         if (!string.IsNullOrWhiteSpace(uniqueId)) claims.Add(new Claim(CLAIM_UNIQUE_ID, uniqueId));
+        if (!string.IsNullOrWhiteSpace(nickname)) claims.Add(new Claim(CLAIM_NICKNAME, nickname));
         if (!string.IsNullOrWhiteSpace(scope)) claims.Add(new Claim(roleClaimType, scope));
-        if (!string.IsNullOrWhiteSpace(originScope)) claims.Add(new Claim("origin-scope", originScope));
 
         var issuedAt = DateTimeOffset.UtcNow;
         var expiresIn = (int)expires.Subtract(issuedAt).TotalSeconds + 1;
@@ -114,6 +114,9 @@ public static class TokenHelper
 
     public static bool ScopeCheck(string? entity, string? request)
     {
+        if (request == "*")
+            return true;
+
         var entityScope = entity?.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
         var requestScope = request?.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
 
