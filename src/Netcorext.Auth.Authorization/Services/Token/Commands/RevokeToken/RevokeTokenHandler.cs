@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using FreeRedis;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authorization.Settings;
 using Netcorext.Auth.Enums;
@@ -34,19 +33,18 @@ public class RevokeTokenHandler : IRequestHandler<RevokeToken, Result>
     {
         var dsToken = _context.Set<Domain.Entities.Token>();
 
-        if (!await dsToken.AnyAsync(t => t.AccessToken == request.Token, cancellationToken))
-            return Result.Success;
+        Expression<Func<Domain.Entities.Token, bool>> predicate = t => t.Revoked != TokenRevoke.Both;
 
-        Expression<Func<Domain.Entities.Token, bool>> predicate = t => false;
-
-        var resourceId = request.ResourceId ?? TokenHelper.GetResourceId(request.Token);
+        var resourceId = TokenHelper.GetResourceId(request.Token) ?? request.ResourceId;
 
         if (!request.ResourceId.IsEmpty())
-            predicate = predicate.Or(t => t.ResourceId == request.ResourceId);
+            predicate = predicate.And(t => t.ResourceId == request.ResourceId);
+
         if (!request.Token.IsEmpty())
-            predicate = predicate.Or(t => t.AccessToken == request.Token || t.RefreshToken == request.Token);
-        if (request.AllDevice.HasValue && request.AllDevice.Value)
-            predicate = predicate.Or(t => t.ResourceId == resourceId);
+            predicate = predicate.And(t => t.AccessToken == request.Token || t.RefreshToken == request.Token);
+
+        if (!resourceId.IsEmpty() && request.AllDevice.HasValue && request.AllDevice.Value)
+            predicate = predicate.And(t => t.ResourceId == resourceId);
 
         var tokens = dsToken.Where(predicate)
                             .ToArray();

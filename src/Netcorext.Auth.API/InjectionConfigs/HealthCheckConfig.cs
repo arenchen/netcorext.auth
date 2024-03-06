@@ -3,6 +3,7 @@ using Netcorext.Auth.API.Settings;
 using Netcorext.Configuration.Extensions;
 using Netcorext.Diagnostics.HealthChecks.PostgreSql;
 using Netcorext.Diagnostics.HealthChecks.Redis;
+using Netcorext.EntityFramework.UserIdentityPattern.Helpers;
 
 namespace Netcorext.Auth.API.InjectionConfigs;
 
@@ -19,7 +20,7 @@ public class HealthCheckConfig
 
                                    return new PostgreSqlHealthCheckOptions
                                           {
-                                              Connection = config.Connections.RelationalDb.GetDefault().Connection
+                                              Connection = DbOptionsHelper.GetConnectionString(config.Connections.RelationalDb.GetDefault().Connection)!
                                           };
                                }, "Postgresql")
                 .AddRedis(provider =>
