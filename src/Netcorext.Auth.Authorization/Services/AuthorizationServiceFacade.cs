@@ -53,6 +53,14 @@ public class AuthorizationServiceFacade : AuthorizationService.AuthorizationServ
         return rep.Adapt<Result>();
     }
 
+    public override async Task<Result> RevokeToken(RevokeTokenRequest request, ServerCallContext context)
+    {
+        var req = request.Adapt<RevokeToken>();
+        var rep = await _dispatcher.SendAsync(req);
+
+        return rep.Adapt<Result>();
+    }
+
     public override async Task<SignInRequest.Types.Result> SignIn(SignInRequest request, ServerCallContext context)
     {
         var req = request.Adapt<SignIn>();

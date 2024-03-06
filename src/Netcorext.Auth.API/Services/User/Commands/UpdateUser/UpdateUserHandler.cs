@@ -15,13 +15,11 @@ namespace Netcorext.Auth.API.Services.User.Commands;
 public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
 {
     private readonly DatabaseContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ISnowflake _snowflake;
 
-    public UpdateUserHandler(DatabaseContextAdapter context, IHttpContextAccessor httpContextAccessor, ISnowflake snowflake)
+    public UpdateUserHandler(DatabaseContextAdapter context, ISnowflake snowflake)
     {
         _context = context;
-        _httpContextAccessor = httpContextAccessor;
         _snowflake = snowflake;
     }
 
@@ -121,22 +119,6 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                           .ToArray();
 
             dsRole.UpdateRange(roles);
-
-            var stringId = entity.Id.ToString();
-            var tokens = dsToken.Where(t => t.Revoked != TokenRevoke.Both && t.ResourceType == ResourceType.User && t.ResourceId == stringId);
-            var hsTokens = new HashSet<string>();
-
-            foreach (var token in tokens)
-            {
-                hsTokens.Add(token.AccessToken);
-
-                if (!token.RefreshToken.IsEmpty())
-                    hsTokens.Add(token.RefreshToken);
-
-                _context.Entry(token).UpdateProperty(t => t.Revoked, TokenRevoke.Both);
-            }
-
-            _httpContextAccessor.HttpContext?.Items.Add(ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT, hsTokens.ToArray());
         }
 
         if (request.ExtendData != null && request.ExtendData.Any())

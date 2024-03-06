@@ -95,6 +95,16 @@ public static class TokenHelper
         return securityToken;
     }
 
+    public static string? GetResourceId(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var jwt = GetJwtInfo(token);
+
+        return jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+    }
+
     public static string? GetJwtSignature(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
