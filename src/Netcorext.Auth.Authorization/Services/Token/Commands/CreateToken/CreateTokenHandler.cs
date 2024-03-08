@@ -434,7 +434,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                            {
                                                                TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
                                                                AccessToken = accessToken.Token,
-                                                               Scope = request.Scope ?? role,
+                                                               Scope = role,
                                                                RefreshToken = refreshToken.Token,
                                                                ExpiresIn = accessToken.ExpiresIn
                                                            });
