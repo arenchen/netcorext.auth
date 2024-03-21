@@ -34,7 +34,7 @@ public class CreateRoleHandler : IRequestHandler<CreateRole, Result<IEnumerable<
             if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result<IEnumerable<long>>.DependencyNotFound;
 
-            permissionIds = request.Roles.SelectMany(t => t.PermissionConditions ?? Array.Empty<CreateRole.RolePermissionCondition>()).Select(t => t.PermissionId).ToArray();
+            permissionIds = request.Roles.SelectMany(t => t.PermissionConditions ?? Array.Empty<CreateRole.RolePermissionCondition>()).Select(t => t.PermissionId).Distinct().ToArray();
 
             if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
                 return Result<IEnumerable<long>>.DependencyNotFound;

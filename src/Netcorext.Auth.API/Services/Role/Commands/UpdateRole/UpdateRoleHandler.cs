@@ -49,6 +49,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
         {
             var permissionIds = request.PermissionConditions
                                        .Select(t => t.PermissionId)
+                                       .Distinct()
                                        .ToArray();
 
             if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)

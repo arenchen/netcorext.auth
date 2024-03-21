@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Netcorext.Algorithms;
-using Netcorext.Auth.API.Settings;
 using Netcorext.Auth.Domain.Entities;
 using Netcorext.Auth.Enums;
 using Netcorext.Contracts;
@@ -31,7 +30,6 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         var dsExternalLogin = _context.Set<UserExternalLogin>();
         var dsPermission = _context.Set<Domain.Entities.Permission>();
         var dsPermissionCondition = _context.Set<UserPermissionCondition>();
-        var dsToken = _context.Set<Token>();
 
         if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
         if (!request.Username.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.NormalizedUsername == request.Username.ToUpper(), cancellationToken)) return Result.Conflict;
@@ -40,6 +38,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         {
             var permissionIds = request.PermissionConditions
                                        .Select(t => t.PermissionId)
+                                       .Distinct()
                                        .ToArray();
 
             if (dsPermission.Count(t => permissionIds.Contains(t.Id)) != permissionIds.Length)
