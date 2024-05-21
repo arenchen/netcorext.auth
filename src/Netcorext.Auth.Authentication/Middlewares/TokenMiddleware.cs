@@ -106,6 +106,9 @@ internal class TokenMiddleware
 
     private async Task<Result> IsBasicValid(IDispatcher dispatcher, string token)
     {
+        if (_cache.TryGetValue(token, out Result cacheResult))
+            return cacheResult;
+
         var raw = Encoding.UTF8.GetString(Convert.FromBase64String(token));
 
         var client = raw.Split(":", StringSplitOptions.RemoveEmptyEntries);
@@ -119,6 +122,8 @@ internal class TokenMiddleware
                                                     Secret = client[1]
                                                 });
 
+        _cache.Set(token, result, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+
         return result;
     }
 
@@ -128,7 +133,8 @@ internal class TokenMiddleware
         {
             TokenHelper.ValidateJwt(token, _tokenValidationParameters);
 
-            if (_cache.TryGetValue(token, out Result cacheResult)) return cacheResult;
+            if (_cache.TryGetValue(token, out Result cacheResult))
+                return cacheResult;
 
             var result = await dispatcher.SendAsync(new ValidateToken
                                                     {
