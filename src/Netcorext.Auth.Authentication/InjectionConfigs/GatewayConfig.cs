@@ -10,8 +10,6 @@ public class GatewayConfig
     {
         var requestIdHeaderName = configuration.GetValue<string>("AppSettings:RequestIdHeaderName");
 
-        services.AddCors();
-
         var gatewayConfig = configuration.GetSection("ReverseProxy");
 
         var proxyBuilder = services.AddReverseProxy();

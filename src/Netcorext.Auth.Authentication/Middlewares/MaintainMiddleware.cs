@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Extensions;
@@ -13,29 +12,20 @@ internal class MaintainMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _cache;
-    private readonly RedisClient _redis;
     private readonly ILogger<MaintainMiddleware> _logger;
     private readonly ConfigSettings _config;
 
-    public MaintainMiddleware(RequestDelegate next, IMemoryCache cache, RedisClient redis, IOptions<ConfigSettings> config, ILogger<MaintainMiddleware> logger)
+    public MaintainMiddleware(RequestDelegate next, IMemoryCache cache, IOptions<ConfigSettings> config, ILogger<MaintainMiddleware> logger)
     {
         _next = next;
         _cache = cache;
-        _redis = redis;
         _logger = logger;
         _config = config.Value;
     }
 
     public async Task InvokeAsync(HttpContext context, IDispatcher dispatcher)
     {
-        if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN, out var maintain))
-        {
-            await _next(context);
-
-            return;
-        }
-
-        if (!maintain.Enabled)
+        if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN + "-" + context.Request.Host.ToString().ToLower(), out var maintain) || !maintain.Enabled)
         {
             await _next(context);
 

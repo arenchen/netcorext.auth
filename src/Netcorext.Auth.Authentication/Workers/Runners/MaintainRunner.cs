@@ -44,23 +44,27 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
 
     private async Task UpdateMaintainAsync(string? data, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(data))
+            return;
+
         try
         {
             await MaintainUpdateLocker.WaitAsync(cancellationToken);
 
             _logger.LogInformation(nameof(UpdateMaintainAsync));
 
-            if (data == bool.FalseString)
+            var cacheData = _config.Caches[ConfigSettings.CACHE_MAINTAIN];
+
+            var cacheMaintain = await _redis.HGetAsync<Maintain>(cacheData.Key, data.ToLower()) ?? new Maintain();
+
+            if (!cacheMaintain.Enabled)
             {
-                _cache.Remove(ConfigSettings.CACHE_MAINTAIN);
+                _cache.Remove(ConfigSettings.CACHE_MAINTAIN + "-" + data.ToLower());
 
                 return;
             }
 
-            var cacheConfig = _config.Caches[ConfigSettings.CACHE_MAINTAIN];
-            var cacheMaintain = await _redis.GetAsync<Maintain>(cacheConfig.Key) ?? new Maintain();
-
-            _cache.Set(ConfigSettings.CACHE_MAINTAIN, cacheMaintain);
+            _cache.Set(ConfigSettings.CACHE_MAINTAIN + "-" + cacheMaintain.Host.ToLower() , cacheMaintain);
         }
         finally
         {

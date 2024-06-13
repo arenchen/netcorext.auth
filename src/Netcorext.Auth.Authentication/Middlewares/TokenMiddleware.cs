@@ -70,7 +70,7 @@ internal class TokenMiddleware
     {
         if (headerValue.IsEmpty())
         {
-            _logger.LogWarning("Unauthorized, no authorization header");
+            _logger.LogDebug("Unauthorized, no authorization header");
 
             return Result.Success;
         }

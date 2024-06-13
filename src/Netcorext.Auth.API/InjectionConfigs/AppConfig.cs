@@ -17,6 +17,7 @@ public class AppConfig
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
+        app.UseHttpLogging();
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
         app.UseJwtAuthentication();
@@ -35,7 +36,7 @@ public class AppConfig
                          .AllowCredentials();
                     });
 
-        app.UseSimpleHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
+        app.UseDefaultHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
 
         app.MapGrpcService<ClientServiceFacade>();
         app.MapGrpcService<PermissionServiceFacade>();

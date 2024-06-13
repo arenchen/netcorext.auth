@@ -1,7 +1,5 @@
 using System.Security.Claims;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Routing.Template;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Extensions;

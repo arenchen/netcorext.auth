@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Netcorext.Auth.Authorization.InjectionConfigs;
@@ -9,6 +10,13 @@ public class MvcConfig
 {
     public MvcConfig(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddHttpLogging(options =>
+                                {
+                                    options.LoggingFields = HttpLoggingFields.All;
+                                    options.RequestBodyLogLimit = 100 * 1024;
+                                    options.ResponseBodyLogLimit = 100 * 1024;
+                                });
+
         services.AddApiVersioning(options =>
                                   {
                                       options.ReportApiVersions = true;
