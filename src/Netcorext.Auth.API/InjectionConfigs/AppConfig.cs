@@ -7,6 +7,7 @@ using Netcorext.Auth.API.Services.Role;
 using Netcorext.Auth.API.Services.User;
 using Netcorext.Auth.API.Settings;
 using Netcorext.Extensions.AspNetCore.Middlewares;
+using Netcorext.Logging.AspNetCoreLogger;
 
 namespace Netcorext.Auth.API.InjectionConfigs;
 
@@ -17,9 +18,9 @@ public class AppConfig
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
-        app.UseHttpLogging();
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
+        app.UseAspNetCoreLogger();
         app.UseJwtAuthentication();
 
         app.UseCors(b =>

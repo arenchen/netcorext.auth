@@ -5,7 +5,7 @@ using Netcorext.Auth.Authentication.Services.Permission;
 using Netcorext.Auth.Authentication.Services.Token;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Extensions.AspNetCore.Middlewares;
-using Serilog;
+using Netcorext.Logging.AspNetCoreLogger;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
 
@@ -16,9 +16,9 @@ public class AppConfig
     {
         var config = app.Services.GetRequiredService<IOptions<ConfigSettings>>().Value;
 
-        app.UseHttpLogging();
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
+        app.UseAspNetCoreLogger();
         app.UseCors(b =>
                     {
                         b.SetIsOriginAllowed(host =>
