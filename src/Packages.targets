@@ -36,7 +36,7 @@
     <PackageReference Include="Netcorext.Extensions.Linq" Version="1.0.1-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Mapster.Protobufs" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Redis" Version="1.0.0-dev.*" />
-    <PackageReference Include="Netcorext.Logging.AspNetCoreLogger" Version="1.0" />
+    <PackageReference Include="Netcorext.Logging.AspNetCoreLogger" Version="1.0.1-dev.*" />
     <PackageReference Include="Netcorext.Logging.HttpClientLogger" Version="1.0" />
     <PackageReference Include="Netcorext.Mediator" Version="1.0.1-dev.*" />
     <PackageReference Include="Netcorext.Mediator.Queuing.Redis" Version="1.0.1-dev.*" />
