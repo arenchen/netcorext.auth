@@ -55,16 +55,16 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
 
             var cacheData = _config.Caches[ConfigSettings.CACHE_MAINTAIN];
 
-            var cacheMaintain = await _redis.HGetAsync<Maintain>(cacheData.Key, data.ToLower()) ?? new Maintain();
+            var cacheMaintain = await _redis.GetAsync<Maintain>(cacheData.Key) ?? new Maintain();
 
             if (!cacheMaintain.Enabled)
             {
-                _cache.Remove(ConfigSettings.CACHE_MAINTAIN + "-" + data.ToLower());
+                _cache.Remove(ConfigSettings.CACHE_MAINTAIN);
 
                 return;
             }
 
-            _cache.Set(ConfigSettings.CACHE_MAINTAIN + "-" + cacheMaintain.Host.ToLower() , cacheMaintain);
+            _cache.Set(ConfigSettings.CACHE_MAINTAIN, cacheMaintain);
         }
         finally
         {

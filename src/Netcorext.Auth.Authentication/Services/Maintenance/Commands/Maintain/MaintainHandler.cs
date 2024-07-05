@@ -21,9 +21,9 @@ public class MaintainHandler : IRequestHandler<Maintain, Result>
     {
         var cacheData = _config.Caches[ConfigSettings.CACHE_MAINTAIN];
 
-        await _redis.HSetAsync(cacheData.Key, request.Host.ToLower(), request);
+        await _redis.SetAsync(cacheData.Key, request);
 
-        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_MAINTAIN_CHANGE_EVENT], request.Host);
+        await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_MAINTAIN_CHANGE_EVENT], Array.Empty<byte>());
 
         return Result.Success;
     }

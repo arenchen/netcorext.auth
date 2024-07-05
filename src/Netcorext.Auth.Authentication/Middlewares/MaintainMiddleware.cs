@@ -25,6 +25,13 @@ internal class MaintainMiddleware
 
     public async Task InvokeAsync(HttpContext context, IDispatcher dispatcher)
     {
+        if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN, out var maintain) || !maintain.Enabled)
+        {
+            await _next(context);
+
+            return;
+        }
+
         var host = GetHost(context);
 
         if (_config.AppSettings.InternalHost?.Any(t => t.Equals(host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
@@ -43,7 +50,7 @@ internal class MaintainMiddleware
             return;
         }
 
-        if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN + "-" + host.ToLower(), out var maintain) || !maintain.Enabled)
+        if (maintain.ExcludeHosts != null && maintain.ExcludeHosts.Any(t => t.Equals(host, StringComparison.CurrentCultureIgnoreCase)))
         {
             await _next(context);
 
@@ -66,7 +73,7 @@ internal class MaintainMiddleware
         await context.ServiceUnavailableAsync(_config.AppSettings.UseNativeStatus, message: maintain.Message);
     }
 
-    private string GetHost(HttpContext context)
+    private static string GetHost(HttpContext context)
     {
         var host = context.Request.Host.Host;
 
