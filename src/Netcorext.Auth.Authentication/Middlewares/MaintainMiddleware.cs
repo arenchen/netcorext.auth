@@ -25,14 +25,9 @@ internal class MaintainMiddleware
 
     public async Task InvokeAsync(HttpContext context, IDispatcher dispatcher)
     {
-        if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN + "-" + context.Request.Host.ToString().ToLower(), out var maintain) || !maintain.Enabled)
-        {
-            await _next(context);
+        var host = GetHost(context);
 
-            return;
-        }
-
-        if (_config.AppSettings.InternalHost?.Any(t => t.Equals(context.Request.Host.Host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
+        if (_config.AppSettings.InternalHost?.Any(t => t.Equals(host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
         {
             await _next(context);
 
@@ -42,6 +37,13 @@ internal class MaintainMiddleware
         var claimName = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Name)?.Value;
 
         if (long.TryParse(claimName, out var id) && (_config.AppSettings.Owner?.Any(t => t == id) ?? false))
+        {
+            await _next(context);
+
+            return;
+        }
+
+        if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN + "-" + host.ToLower(), out var maintain) || !maintain.Enabled)
         {
             await _next(context);
 
@@ -62,5 +64,17 @@ internal class MaintainMiddleware
         _logger.LogInformation("Service Unavailable: {Message}", maintain.Message);
 
         await context.ServiceUnavailableAsync(_config.AppSettings.UseNativeStatus, message: maintain.Message);
+    }
+
+    private string GetHost(HttpContext context)
+    {
+        var host = context.Request.Host.Host;
+
+        if (context.Request.Headers.TryGetValue("X-Forwarded-Host", out var values))
+        {
+            host = values.FirstOrDefault() ?? host;
+        }
+
+        return host;
     }
 }
