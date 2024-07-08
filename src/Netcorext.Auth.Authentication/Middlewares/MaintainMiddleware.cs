@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Extensions;
-using Netcorext.Auth.Authentication.Services.Maintenance.Commands;
+using Netcorext.Auth.Authentication.Services.Maintenance.Queries.Models;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Mediator;
 
@@ -25,16 +25,16 @@ internal class MaintainMiddleware
 
     public async Task InvokeAsync(HttpContext context, IDispatcher dispatcher)
     {
-        if (!_cache.TryGetValue<Maintain>(ConfigSettings.CACHE_MAINTAIN, out var maintain) || !maintain.Enabled)
+        var host = GetHost(context);
+
+        if (_config.AppSettings.InternalHost?.Any(t => t.Equals(host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
         {
             await _next(context);
 
             return;
         }
 
-        var host = GetHost(context);
-
-        if (_config.AppSettings.InternalHost?.Any(t => t.Equals(host, StringComparison.CurrentCultureIgnoreCase)) ?? false)
+        if (!_cache.TryGetValue<IDictionary<string, MaintainItem>>($"{ConfigSettings.CACHE_MAINTAIN}", out var maintain))
         {
             await _next(context);
 
@@ -50,27 +50,43 @@ internal class MaintainMiddleware
             return;
         }
 
-        if (maintain.ExcludeHosts != null && maintain.ExcludeHosts.Any(t => t.Equals(host, StringComparison.CurrentCultureIgnoreCase)))
-        {
-            await _next(context);
-
-            return;
-        }
+        var isMaintain = false;
+        var key = string.Empty;
+        var message = string.Empty;
 
         var role = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Role)?.Value;
-
         var roles = (role?.Split() ?? Array.Empty<string>()).Select(long.Parse);
 
-        if (maintain.ExcludeRoles?.Any() == true && roles.Any(t => maintain.ExcludeRoles.Contains(t)))
+        foreach (var item in maintain)
+        {
+            if (item.Value.BeginDate > DateTimeOffset.Now || item.Value.EndDate < DateTimeOffset.Now)
+            {
+                continue;
+            }
+            if (item.Value.ExcludeHosts != null && item.Value.ExcludeHosts.Any(h => h.Equals(host, StringComparison.CurrentCultureIgnoreCase)))
+            {
+                continue;
+            }
+            if (item.Value.ExcludeRoles != null && item.Value.ExcludeRoles.Any(t => roles.Contains(t)))
+            {
+                continue;
+            }
+
+            isMaintain = true;
+            key = item.Key;
+            message = item.Value.Message;
+        }
+
+        if (!isMaintain)
         {
             await _next(context);
 
             return;
         }
 
-        _logger.LogInformation("Service Unavailable: {Message}", maintain.Message);
+        _logger.LogInformation("Service Unavailable: {Key}, {Message}", key, message);
 
-        await context.ServiceUnavailableAsync(_config.AppSettings.UseNativeStatus, message: maintain.Message);
+        await context.ServiceUnavailableAsync(_config.AppSettings.UseNativeStatus, message: message);
     }
 
     private static string GetHost(HttpContext context)

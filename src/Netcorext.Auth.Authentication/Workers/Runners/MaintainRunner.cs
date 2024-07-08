@@ -1,25 +1,32 @@
 using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using Netcorext.Auth.Authentication.Services.Maintenance.Commands;
+using Netcorext.Auth.Authentication.Services.Maintenance.Queries;
 using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Contracts;
+using Netcorext.Mediator;
+using Netcorext.Serialization;
 using Netcorext.Worker;
 
 namespace Netcorext.Auth.Authentication.Workers;
 
 internal class MaintainRunner : IWorkerRunner<AuthWorker>
 {
+    private readonly IServiceProvider _serviceProvider;
     private readonly RedisClient _redis;
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
+    private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<MaintainRunner> _logger;
     private static readonly SemaphoreSlim MaintainUpdateLocker = new(1, 1);
 
-    public MaintainRunner(RedisClient redis, IMemoryCache cache, IOptions<ConfigSettings> config, ILogger<MaintainRunner> logger)
+    public MaintainRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<MaintainRunner> logger)
     {
+        _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _serializer = serializer;
         _config = config.Value;
         _logger = logger;
     }
@@ -44,27 +51,19 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
 
     private async Task UpdateMaintainAsync(string? data, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(data))
-            return;
-
         try
         {
             await MaintainUpdateLocker.WaitAsync(cancellationToken);
 
             _logger.LogInformation(nameof(UpdateMaintainAsync));
 
-            var cacheData = _config.Caches[ConfigSettings.CACHE_MAINTAIN];
+            using var scope = _serviceProvider.CreateScope();
+            var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
+            var result = await dispatcher.SendAsync(new GetMaintain(), cancellationToken);
 
-            var cacheMaintain = await _redis.GetAsync<Maintain>(cacheData.Key) ?? new Maintain();
+            if (result.Content == null || result.Code != Result.Success) return;
 
-            if (!cacheMaintain.Enabled)
-            {
-                _cache.Remove(ConfigSettings.CACHE_MAINTAIN);
-
-                return;
-            }
-
-            _cache.Set(ConfigSettings.CACHE_MAINTAIN, cacheMaintain);
+            _cache.Set($"{ConfigSettings.CACHE_MAINTAIN}", result.Content);
         }
         finally
         {

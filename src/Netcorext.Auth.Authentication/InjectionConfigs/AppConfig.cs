@@ -40,7 +40,6 @@ public class AppConfig
         app.UseMiddleware<PermissionMiddleware>();
         app.UseDefaultHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
         app.MapGrpcService<PermissionValidationServiceFacade>();
-        app.MapGrpcService<MaintenanceServiceFacade>();
         app.MapGrpcService<TokenValidationServiceFacade>();
         app.MapReverseProxy();
 

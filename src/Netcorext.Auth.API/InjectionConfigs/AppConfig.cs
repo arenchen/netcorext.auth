@@ -2,6 +2,7 @@ using Mapster;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Blocked;
 using Netcorext.Auth.API.Services.Client;
+using Netcorext.Auth.API.Services.Maintenance;
 using Netcorext.Auth.API.Services.Permission;
 using Netcorext.Auth.API.Services.Role;
 using Netcorext.Auth.API.Services.User;
@@ -44,6 +45,7 @@ public class AppConfig
         app.MapGrpcService<RoleServiceFacade>();
         app.MapGrpcService<UserServiceFacade>();
         app.MapGrpcService<BlockedServiceFacade>();
+        app.MapGrpcService<MaintenanceServiceFacade>();
 
         app.RegisterPermissionEndpoints((_, registerConfig) =>
                                         {
