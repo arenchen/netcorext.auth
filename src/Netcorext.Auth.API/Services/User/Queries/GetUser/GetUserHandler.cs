@@ -128,6 +128,7 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                                                                {
                                                                                                                    RoleId = t3.RoleId,
                                                                                                                    Name = t3.Role.Name,
+                                                                                                                   Priority = t3.Priority,
                                                                                                                    ExpireDate = t3.ExpireDate,
                                                                                                                    CreationDate = t3.CreationDate,
                                                                                                                    CreatorId = t3.CreatorId,

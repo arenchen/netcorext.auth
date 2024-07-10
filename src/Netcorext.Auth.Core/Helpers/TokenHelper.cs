@@ -15,6 +15,7 @@ public static class TokenHelper
     public const string CLAIM_TOKEN_HASH = "th";
     public const string CLAIM_UNIQUE_ID = "uid";
     public const string CLAIM_NICKNAME = "nickname";
+    public const string CLAIM_LABEL = "label";
 
     private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
@@ -29,7 +30,7 @@ public static class TokenHelper
 
     public static (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature)
         Generate(TokenType type, ResourceType resourceType,
-                 DateTimeOffset expires, string resourceId, string? uniqueId, string? nickname, string? scope,
+                 DateTimeOffset expires, string resourceId, string? uniqueId, string? nickname, string? scope, string? label,
                  string? issuer,
                  string? audience,
                  string signingKey,
@@ -47,6 +48,7 @@ public static class TokenHelper
         if (!string.IsNullOrWhiteSpace(uniqueId)) claims.Add(new Claim(CLAIM_UNIQUE_ID, uniqueId));
         if (!string.IsNullOrWhiteSpace(nickname)) claims.Add(new Claim(CLAIM_NICKNAME, nickname));
         if (!string.IsNullOrWhiteSpace(scope)) claims.Add(new Claim(roleClaimType, scope));
+        if (!string.IsNullOrWhiteSpace(label)) claims.Add(new Claim(CLAIM_LABEL, label));
 
         var issuedAt = DateTimeOffset.UtcNow;
         var expiresIn = (int)expires.Subtract(issuedAt).TotalSeconds + 1;

@@ -16,7 +16,7 @@ public class JwtGenerator
         _config = config.Value;
     }
 
-    public (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, string? nickname = null, int? tokenExpireSeconds = null, string? scope = null)
+    public (string Token, JwtSecurityToken Jwt, int ExpiresIn, long ExpiresAt, string Signature) Generate(TokenType tokenType, ResourceType resourceType, string resourceId, string? uniqueId = null, string? nickname = null, int? tokenExpireSeconds = null, string? scope = null, string? label = null)
     {
         return TokenHelper.Generate(tokenType,
                                     resourceType,
@@ -25,6 +25,7 @@ public class JwtGenerator
                                     uniqueId,
                                     nickname,
                                     scope,
+                                    label,
                                     _config.Issuer,
                                     _config.Audience,
                                     _config.SigningKey,

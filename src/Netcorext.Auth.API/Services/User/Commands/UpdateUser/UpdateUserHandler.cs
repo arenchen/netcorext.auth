@@ -89,6 +89,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                                                                                                   {
                                                                                                       Id = entity.Id,
                                                                                                       RoleId = t.RoleId,
+                                                                                                      Priority = t.Priority,
                                                                                                       ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                                                                   })
                                                                                      .ToArray()
@@ -111,6 +112,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                           .Join(updateRoles, t => new { t.Id, t.RoleId }, t => new { t.Id, t.RoleId },
                                 (src, desc) =>
                                 {
+                                    src.Priority = desc.Priority;
                                     src.ExpireDate = desc.ExpireDate;
 
                                     return src;

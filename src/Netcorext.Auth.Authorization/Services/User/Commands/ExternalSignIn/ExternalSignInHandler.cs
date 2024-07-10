@@ -41,6 +41,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
     {
         var dsExternalLogin = _context.Set<Domain.Entities.UserExternalLogin>();
         var dsUser = _context.Set<Domain.Entities.User>();
+        var dsRole = _context.Set<Domain.Entities.Role>();
         var username = request.Username;
         var creationDate = DateTimeOffset.UtcNow;
 
@@ -94,6 +95,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
         var id = entity?.Id ?? (request.CustomId ?? _snowflake.Generate());
 
         var signature = $"user:{id}";
+
         if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
         {
             var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
@@ -122,6 +124,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                    {
                                                        Id = id,
                                                        RoleId = t.RoleId,
+                                                       Priority = t.Priority,
                                                        ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                    })
                                       .ToArray() ?? Array.Empty<Domain.Entities.UserRole>()
@@ -162,16 +165,24 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        var scope = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                        ? entity.Roles
-                                .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                                .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
+        var scopes = entity.Roles
+                           .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                           .OrderBy(t => t.Priority)
+                           .Select(t => t.RoleId)
+                           .ToArray();
+
+        var scope = scopes.Length > 0 ? string.Join(' ', scopes) : null;
+
+        var label = scopes.Length > 0
+                        ? isNewRegister
+                              ? (await dsRole.FirstOrDefaultAsync(t => t.Id == scopes.First(), cancellationToken))?.Name
+                              : entity.Roles.FirstOrDefault(t => t.RoleId == scopes.First())?.Role.Name
                         : null;
 
-        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.DisplayName, entity.TokenExpireSeconds, scope);
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.DisplayName, entity.TokenExpireSeconds, scope, label);
 
         var refreshToken = entity.AllowedRefreshToken
-                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.DisplayName, entity.RefreshTokenExpireSeconds, scope)
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.DisplayName, entity.RefreshTokenExpireSeconds, scope, label)
                                : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult

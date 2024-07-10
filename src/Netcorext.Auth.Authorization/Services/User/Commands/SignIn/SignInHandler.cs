@@ -108,16 +108,19 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var scope = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                        ? entity.Roles
-                                .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                                .Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n)
-                        : null;
+        var scopes = entity.Roles
+                           .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                           .OrderBy(t => t.Priority)
+                           .Select(t => t.RoleId)
+                           .ToArray();
 
-        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), null, entity.DisplayName, entity.TokenExpireSeconds, scope);
+        var scope = scopes.Length > 0 ? string.Join(' ', scopes) : null;
+        var label = scopes.Length > 0 ? entity.Roles.FirstOrDefault(t => t.RoleId == scopes.First())?.Role.Name : null;
+
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), null, entity.DisplayName, entity.TokenExpireSeconds, scope, label);
 
         var refreshToken = entity.AllowedRefreshToken
-                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), null, entity.DisplayName, entity.RefreshTokenExpireSeconds, scope)
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.User, entity.Id.ToString(), null, entity.DisplayName, entity.RefreshTokenExpireSeconds, scope, label)
                                : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult

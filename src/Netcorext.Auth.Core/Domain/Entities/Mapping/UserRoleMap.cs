@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Netcorext.EntityFramework.UserIdentityPattern.Entities.Mapping;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Netcorext.Auth.Domain.Entities.Mapping;
 
@@ -9,9 +10,14 @@ public class UserRoleMap : EntityMap<UserRole>
     {
         Builder.HasKey(t => new { t.Id, t.RoleId });
 
+        Builder.HasIndex(t => t.Priority);
+
         // Columns
         Builder.Property(t => t.RoleId)
                .HasColumnName(nameof(UserRole.RoleId));
+
+        Builder.Property(t => t.Priority)
+               .HasColumnName(nameof(UserRole.Priority));
 
         Builder.Property(t => t.ExpireDate)
                .HasColumnName(nameof(UserRole.ExpireDate));

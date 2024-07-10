@@ -24,6 +24,7 @@ public class ExternalSignIn : IRequest<Result<TokenResult>>
     public class UserRole
     {
         public long RoleId { get; set; }
+        public int Priority { get; set; }
         public DateTimeOffset? ExpireDate { get; set; }
     }
 }
