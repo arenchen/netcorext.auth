@@ -7,6 +7,7 @@ public class CloneRole : IRequest<Result<long?>>
 {
     public long SourceId { get; set; }
     public string Name { get; set; } = null!;
+    public int Priority { get; set; }
     public bool Disabled { get; set; }
     public RoleExtendData[]? ExtendData { get; set; }
     public RolePermission[]? Permissions { get; set; }

@@ -28,7 +28,6 @@ public class UpdateUser : IRequest<Result>
     {
         public CRUD Crud { get; set; }
         public long RoleId { get; set; }
-        public int Priority { get; set; }
         public DateTimeOffset? ExpireDate { get; set; }
     }
 

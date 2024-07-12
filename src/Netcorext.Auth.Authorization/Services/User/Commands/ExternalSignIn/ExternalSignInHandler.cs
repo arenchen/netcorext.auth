@@ -124,7 +124,6 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                    {
                                                        Id = id,
                                                        RoleId = t.RoleId,
-                                                       Priority = t.Priority,
                                                        ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                    })
                                       .ToArray() ?? Array.Empty<Domain.Entities.UserRole>()
@@ -167,7 +166,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         var scopes = entity.Roles
                            .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                           .OrderBy(t => t.Priority)
+                           .OrderBy(t => t.Role.Priority)
                            .Select(t => t.RoleId)
                            .ToArray();
 

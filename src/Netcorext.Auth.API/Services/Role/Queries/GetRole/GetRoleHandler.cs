@@ -64,6 +64,7 @@ public class GetRoleHandler : IRequestHandler<GetRole, Result<IEnumerable<Models
                                                                                    {
                                                                                        Id = t2.Id,
                                                                                        Name = t2.Name,
+                                                                                       Priority = t2.Priority,
                                                                                        Disabled = t2.Disabled,
                                                                                        ExtendData = t2.ExtendData.Select(t3 => new Models.RoleExtendData
                                                                                                                                {

@@ -40,7 +40,7 @@ public class GetUserRoleHandler : IRequestHandler<GetUserRole, Result<IEnumerabl
                                                     Id = t.Id,
                                                     RoleId = t.RoleId,
                                                     Name = t.Role.Name,
-                                                    Priority = t.Priority,
+                                                    Priority = t.Role.Priority,
                                                     ExpireDate = t.ExpireDate,
                                                     ExtendData = request.IncludeExtendData
                                                                      ? t.Role.ExtendData.Select(t2 => new Models.RoleExtendData

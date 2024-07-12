@@ -62,6 +62,7 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                        .First(t => t.Id == request.Id);
 
         _context.Entry(entity).UpdateProperty(t => t.Name, request.Name);
+        _context.Entry(entity).UpdateProperty(t => t.Priority, request.Priority);
         _context.Entry(entity).UpdateProperty(t => t.Disabled, request.Disabled);
 
         if (request.ExtendData != null && request.ExtendData.Any())

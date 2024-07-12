@@ -67,7 +67,6 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                                             {
                                                                 Id = id,
                                                                 RoleId = t.RoleId,
-                                                                Priority = t.Priority,
                                                                 ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                             })
                                                .ToArray() ?? Array.Empty<UserRole>(),

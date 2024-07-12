@@ -4,6 +4,7 @@ public class Role
 {
     public long Id { get; set; }
     public string? Name { get; set; }
+    public int Priority { get; set; }
     public bool Disabled { get; set; }
     public IEnumerable<RoleExtendData>? ExtendData { get; set; }
     public IEnumerable<RolePermission>? Permissions { get; set; }

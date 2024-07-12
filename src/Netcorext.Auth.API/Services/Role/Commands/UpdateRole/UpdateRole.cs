@@ -8,6 +8,7 @@ public class UpdateRole : IRequest<Result>
 {
     public long Id { get; set; }
     public string? Name { get; set; }
+    public int? Priority { get; set; }
     public bool? Disabled { get; set; }
     public RoleExtendData[]? ExtendData { get; set; }
     public RolePermission[]? Permissions { get; set; }

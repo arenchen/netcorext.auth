@@ -110,7 +110,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
         var scopes = entity.Roles
                            .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                           .OrderBy(t => t.Priority)
+                           .OrderBy(t => t.Role.Priority)
                            .Select(t => t.RoleId)
                            .ToArray();
 

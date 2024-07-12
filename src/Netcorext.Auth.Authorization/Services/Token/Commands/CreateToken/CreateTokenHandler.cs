@@ -243,7 +243,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         var scopes = user.Roles
                          .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                         .OrderBy(t => t.Priority)
+                         .OrderBy(t => t.Role.Priority)
                          .Select(t => t.RoleId)
                          .ToArray();
 

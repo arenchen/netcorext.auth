@@ -11,12 +11,17 @@ public class RoleMap : EntityMap<Role>
         Builder.HasIndex(t => t.Name)
                .IsUnique();
 
+        Builder.HasIndex(t => t.Priority);
+
         Builder.HasIndex(t => t.Disabled);
 
         // Properties
         Builder.Property(t => t.Name)
                .HasColumnName(nameof(Role.Name))
                .HasMaxLength(50);
+
+        Builder.Property(t => t.Priority)
+               .HasColumnName(nameof(Role.Priority));
 
         Builder.Property(t => t.Disabled)
                .HasColumnName(nameof(Role.Disabled));

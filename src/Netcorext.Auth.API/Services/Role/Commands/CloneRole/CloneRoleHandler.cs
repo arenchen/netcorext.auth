@@ -36,6 +36,7 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
 
         entity.Id = request.CustomId ?? _snowflake.Generate();
         entity.Name = request.Name;
+        entity.Priority = request.Priority;
         entity.Disabled = request.Disabled;
         entity.ExtendData.ForEach(t => t.Id = entity.Id);
         entity.Permissions.ForEach(t => t.Id = entity.Id);
