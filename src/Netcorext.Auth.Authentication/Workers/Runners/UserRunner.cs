@@ -6,6 +6,7 @@ using Netcorext.Auth.Authentication.Services.Token.Commands;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
+using Netcorext.Extensions.Threading;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 using Netcorext.Worker;
@@ -21,8 +22,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
     private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<UserRunner> _logger;
-    private static readonly SemaphoreSlim UserUpdateLocker = new(1, 1);
-    private static readonly SemaphoreSlim TokenUpdateLocker = new(1, 1);
+    private static readonly KeyLocker Locker = new KeyLocker();
 
     public UserRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
     {
@@ -65,7 +65,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await UserUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(UpdateUserAsync), cancellationToken);
 
             _logger.LogInformation(nameof(UpdateUserAsync));
 
@@ -104,7 +104,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            UserUpdateLocker.Release();
+            Locker.Release(nameof(UpdateUserAsync));
         }
     }
 
@@ -115,7 +115,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
 
         try
         {
-            await TokenUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(BlockUserTokenAsync), cancellationToken);
 
             _logger.LogInformation(nameof(BlockUserTokenAsync));
 
@@ -138,7 +138,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            TokenUpdateLocker.Release();
+            Locker.Release(nameof(BlockUserTokenAsync));
         }
     }
 

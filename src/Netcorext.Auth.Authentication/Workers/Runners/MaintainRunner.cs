@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Services.Maintenance.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
+using Netcorext.Extensions.Threading;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 using Netcorext.Worker;
@@ -19,7 +20,7 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
     private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<MaintainRunner> _logger;
-    private static readonly SemaphoreSlim MaintainUpdateLocker = new(1, 1);
+    private static readonly KeyLocker Locker = new KeyLocker();
 
     public MaintainRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<MaintainRunner> logger)
     {
@@ -53,7 +54,7 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await MaintainUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(UpdateMaintainAsync), cancellationToken);
 
             _logger.LogInformation(nameof(UpdateMaintainAsync));
 
@@ -67,7 +68,7 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            MaintainUpdateLocker.Release();
+            Locker.Release(nameof(UpdateMaintainAsync));
         }
     }
 

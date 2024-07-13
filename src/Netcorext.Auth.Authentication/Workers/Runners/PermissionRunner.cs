@@ -5,6 +5,7 @@ using Netcorext.Auth.Authentication.Services.Permission.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
+using Netcorext.Extensions.Threading;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 using Netcorext.Worker;
@@ -20,7 +21,7 @@ internal class PermissionRunner : IWorkerRunner<AuthWorker>
     private readonly ConfigSettings _config;
     private readonly ILogger<PermissionRunner> _logger;
     private IDisposable? _subscriber;
-    private static readonly SemaphoreSlim PermissionUpdateLocker = new(1, 1);
+    private static readonly KeyLocker Locker = new KeyLocker();
 
     public PermissionRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<PermissionRunner> logger)
     {
@@ -54,7 +55,7 @@ internal class PermissionRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await PermissionUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(UpdatePermissionAsync), cancellationToken);
 
             _logger.LogInformation(nameof(UpdatePermissionAsync));
 
@@ -93,7 +94,7 @@ internal class PermissionRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            PermissionUpdateLocker.Release();
+            Locker.Release(nameof(UpdatePermissionAsync));
         }
     }
 

@@ -5,6 +5,7 @@ using Netcorext.Auth.Authentication.Services.Blocked.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
+using Netcorext.Extensions.Threading;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 using Netcorext.Worker;
@@ -20,7 +21,7 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
     private readonly ConfigSettings _config;
     private readonly ILogger<BlockedIpRunner> _logger;
     private IDisposable? _subscriber;
-    private static readonly SemaphoreSlim BlockedIpUpdateLocker = new(1, 1);
+    private static readonly KeyLocker Locker = new KeyLocker();
 
     public BlockedIpRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<BlockedIpRunner> logger)
     {
@@ -54,7 +55,7 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await BlockedIpUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(UpdateBlockedIpAsync), cancellationToken);
 
             _logger.LogInformation(nameof(UpdateBlockedIpAsync));
 
@@ -93,7 +94,7 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            BlockedIpUpdateLocker.Release();
+            Locker.Release(nameof(UpdateBlockedIpAsync));
         }
     }
 

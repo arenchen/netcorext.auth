@@ -6,6 +6,7 @@ using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Linq;
+using Netcorext.Extensions.Threading;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 using Netcorext.Worker;
@@ -21,7 +22,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
     private readonly ConfigSettings _config;
     private readonly ILogger<RoleRunner> _logger;
     private IDisposable? _subscriber;
-    private static readonly SemaphoreSlim RoleUpdateLocker = new(1, 1);
+    private static readonly KeyLocker Locker = new KeyLocker();
 
     public RoleRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<RoleRunner> logger)
     {
@@ -55,7 +56,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await RoleUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(UpdateRoleAsync), cancellationToken);
 
             _logger.LogInformation(nameof(UpdateRoleAsync));
 
@@ -121,7 +122,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            RoleUpdateLocker.Release();
+            Locker.Release(nameof(UpdateRoleAsync));
         }
     }
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
+using Netcorext.Extensions.Threading;
 using Netcorext.Serialization;
 using Netcorext.Worker;
 
@@ -16,7 +17,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
     private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<TokenRunner> _logger;
-    private static readonly SemaphoreSlim TokenUpdateLocker = new(1, 1);
+    private static readonly KeyLocker Locker = new KeyLocker();
 
     public TokenRunner(RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<TokenRunner> logger)
     {
@@ -49,7 +50,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
 
         try
         {
-            await TokenUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(UpdateTokenAsync), cancellationToken);
 
             _logger.LogInformation(nameof(UpdateTokenAsync));
 
@@ -64,7 +65,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            TokenUpdateLocker.Release();
+            Locker.Release(nameof(UpdateTokenAsync));
         }
     }
 

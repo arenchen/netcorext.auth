@@ -5,6 +5,7 @@ using Netcorext.Auth.Gateway.Services.Route.Queries;
 using Netcorext.Auth.Gateway.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
+using Netcorext.Extensions.Threading;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 using Netcorext.Worker;
@@ -22,7 +23,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
     private readonly InMemoryConfigProvider _memoryConfigProvider;
     private readonly ConfigSettings _config;
     private readonly ILogger<RouteRunner> _logger;
-    private static readonly SemaphoreSlim RouteUpdateLocker = new(1, 1);
+    private static readonly KeyLocker Locker = new KeyLocker();
 
     public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, ILogger<RouteRunner> logger)
     {
@@ -71,7 +72,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
             var result = await dispatcher.SendAsync(request, cancellationToken);
 
-            await RouteUpdateLocker.WaitAsync(cancellationToken);
+            await Locker.WaitAsync(nameof(UpdateRouteAsync), cancellationToken);
 
             if (result.Content == null || result.Code != Result.Success)
                 return;
@@ -146,7 +147,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            RouteUpdateLocker.Release();
+            Locker.Release(nameof(UpdateRouteAsync));
         }
     }
 
