@@ -58,12 +58,12 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                 .UpdateProperty(t => t.NormalizedDisplayName, request.DisplayName?.ToUpper())
                 .UpdateProperty(t => t.Password, request.Password?.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds()))
                 .UpdateProperty(t => t.RequiredChangePassword, request.RequiredChangePassword)
-                .UpdateProperty(t => t.Email, request.Email, false, user =>
+                .UpdateProperty(t => t.Email, request.Email, true, user =>
                                                                    {
                                                                        _context.Entry(user).UpdateProperty(t => t.EmailConfirmed, false);
                                                                        _context.Entry(user).UpdateProperty(t => t.NormalizedEmail, request.Email?.ToUpper());
                                                                    })
-                .UpdateProperty(t => t.PhoneNumber, request.PhoneNumber, false, user => { _context.Entry(user).UpdateProperty(t => t.PhoneNumberConfirmed, false); })
+                .UpdateProperty(t => t.PhoneNumber, request.PhoneNumber, true, user => { _context.Entry(user).UpdateProperty(t => t.PhoneNumberConfirmed, false); })
                 .UpdateProperty(t => t.AllowedRefreshToken, request.AllowedRefreshToken)
                 .UpdateProperty(t => t.TokenExpireSeconds, request.TokenExpireSeconds)
                 .UpdateProperty(t => t.RefreshTokenExpireSeconds, request.RefreshTokenExpireSeconds)
