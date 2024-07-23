@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="hashids.net" Version="1.5.*"/>
+    <PackageReference Include="UAParser" Version="3.1.*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +25,5 @@
     <PackageReference Include="Netcorext.Configuration.Abstractions" Version="1.0.1-dev.*"/>
     <PackageReference Include="Netcorext.EntityFramework.UserIdentityPattern.AspNetCore" Version="1.0.0-dev.*"/>
   </ItemGroup>
-
 
 </Project>
