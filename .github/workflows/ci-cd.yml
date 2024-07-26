@@ -23,7 +23,7 @@ jobs:
       app-authorization: ${{ steps.detect.outputs.app-authorization }}
       app-gateway: ${{ steps.detect.outputs.app-gateway }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Detect Change
@@ -80,7 +80,7 @@ jobs:
       tag-hash: ${{ steps.envs.outputs.tag-hash }}
       tag-latest: ${{ steps.envs.outputs.tag-latest }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - id: envs
@@ -90,7 +90,7 @@ jobs:
           image-prefix: ${{ vars.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -120,7 +120,7 @@ jobs:
       tag-hash: ${{ steps.envs.outputs.tag-hash }}
       tag-latest: ${{ steps.envs.outputs.tag-latest }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - id: envs
@@ -130,7 +130,7 @@ jobs:
           image-prefix: ${{ vars.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -160,7 +160,7 @@ jobs:
       tag-hash: ${{ steps.envs.outputs.tag-hash }}
       tag-latest: ${{ steps.envs.outputs.tag-latest }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - id: envs
@@ -170,7 +170,7 @@ jobs:
           image-prefix: ${{ vars.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -199,7 +199,7 @@ jobs:
       tag-hash: ${{ steps.envs.outputs.tag-hash }}
       tag-latest: ${{ steps.envs.outputs.tag-latest }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - id: envs
@@ -209,7 +209,7 @@ jobs:
           image-prefix: ${{ vars.IMAGE_PREFIX }}
       - uses: netcorext/dotnet-dockerfile-action@dev
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -127,10 +127,10 @@ public static class HttpContextExtension
 
         foreach (var name in headers)
         {
-            if (!context.Request.Headers.ContainsKey(name) || string.IsNullOrWhiteSpace(context.Request.Headers[name]))
+            if (!context.Request.Headers.TryGetValue(name, out var hRequestId) || string.IsNullOrWhiteSpace(hRequestId))
                 continue;
 
-            requestId = context.Request.Headers[name];
+            requestId = hRequestId;
 
             break;
         }
@@ -140,17 +140,9 @@ public static class HttpContextExtension
 
     public static string? GetDeviceId(this HttpContext context)
     {
-        if (context.Request.HasFormContentType && context.Request.Form.TryGetValue(HEADER_DEVICE_ID, out var formDeviceId)
-                                               && !string.IsNullOrWhiteSpace(formDeviceId))
-            return formDeviceId.ToString().ToLower();
-
-        if (context.Request.Headers.TryGetValue(HEADER_DEVICE_ID, out var headerDeviceId)
-         && !string.IsNullOrWhiteSpace(headerDeviceId))
-            return headerDeviceId.ToString().ToLower();
-
-        if (context.Request.Cookies.TryGetValue(HEADER_DEVICE_ID, out var cookieDeviceId)
-         && !string.IsNullOrWhiteSpace(cookieDeviceId))
-            return cookieDeviceId.ToLower();
+        if (context.Request.Headers.TryGetValue(HEADER_DEVICE_ID, out var deviceId)
+         && !string.IsNullOrWhiteSpace(deviceId))
+            return deviceId.ToString().ToLower();
 
         return null;
     }
