@@ -58,7 +58,7 @@ public class TrafficMiddleware
 
             await _redis.XAddAsync(streamKey, _config.AppSettings.StreamMaxLength, "*", values);
 
-            await _redis.PublishAsync(channelKey, $"[\"{streamKey}\"]");
+            await _redis.PublishAsync(channelKey, streamKey);
         }
         catch (Exception e)
         {

@@ -30,7 +30,7 @@ internal class AuthWorker : BackgroundWorker
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "${Message}", e.Message);
+            _logger.LogError(e, "{Message}", e.Message);
 
             ct.Cancel();
 
