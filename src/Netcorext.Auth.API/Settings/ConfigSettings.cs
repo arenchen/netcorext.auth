@@ -23,4 +23,5 @@ public class AppSettings
     public long SlowCommandLoggingThreshold { get; set; } = 1000;
     public string RequestIdHeaderName { get; set; } = "X-Request-Id";
     public string[] RequestIdFromHeaderNames { get; set; } = { "X-Request-Id" };
+    public bool EnableAspNetCoreLogger { get; set; }
 }

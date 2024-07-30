@@ -15,7 +15,10 @@ public class AppConfig
 
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
-        app.UseAspNetCoreLogger();
+
+        if (config.AppSettings.EnableAspNetCoreLogger)
+            app.UseAspNetCoreLogger();
+
         app.UseCors(b =>
                     {
                         b.SetIsOriginAllowed(host =>

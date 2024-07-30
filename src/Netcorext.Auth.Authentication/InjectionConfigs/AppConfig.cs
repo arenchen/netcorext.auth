@@ -18,7 +18,10 @@ public class AppConfig
 
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRequestId(config.AppSettings.RequestIdHeaderName, config.AppSettings.RequestIdFromHeaderNames);
-        app.UseAspNetCoreLogger();
+
+        if (config.AppSettings.EnableAspNetCoreLogger)
+            app.UseAspNetCoreLogger();
+
         app.UseCors(b =>
                     {
                         b.SetIsOriginAllowed(host =>
@@ -33,7 +36,9 @@ public class AppConfig
                          .AllowCredentials();
                     });
 
-        app.UseMiddleware<TrafficMiddleware>();
+        if (config.AppSettings.EnableTraffic)
+            app.UseMiddleware<TrafficMiddleware>();
+
         app.UseMiddleware<BlockedIpMiddleware>();
         app.UseMiddleware<TokenMiddleware>();
         app.UseJwtAuthentication();

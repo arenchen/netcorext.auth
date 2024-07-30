@@ -20,4 +20,5 @@ public class AppSettings
     public int? RetryLimit { get; set; } = 3;
     public string RequestIdHeaderName { get; set; } = "X-Request-Id";
     public string[] RequestIdFromHeaderNames { get; set; } = { "X-Request-Id" };
+    public bool EnableAspNetCoreLogger { get; set; }
 }
