@@ -73,15 +73,15 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         var dsClient = _context.Set<Domain.Entities.Client>();
 
-        if (!await dsClient.AnyAsync(t => t.Id == clientId, cancellationToken))
+        var client = await dsClient.Include(t => t.Roles)
+                                   .FirstOrDefaultAsync(t => t.Id == clientId, cancellationToken);
+
+        if (client == null)
             return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
                                                                          {
                                                                              Error = Constants.OAuth.INVALID_REQUEST,
                                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_ID_OR_SECRET_MESSAGE
                                                                          });
-
-        var client = await dsClient.Include(t => t.Roles)
-                                   .FirstAsync(t => t.Id == clientId, cancellationToken);
 
         if (client.Disabled)
             return Result<TokenResult>.AccountIsDisabled.Clone(new TokenResult
@@ -100,6 +100,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                          });
 
         var signature = $"client:{client.Id}";
+
         if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
         {
             var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
@@ -178,14 +179,14 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         var dsClient = _context.Set<Domain.Entities.Client>();
 
-        if (!await dsClient.AnyAsync(t => t.Id == clientId, cancellationToken))
+        var client = await dsClient.FirstOrDefaultAsync(t => t.Id == clientId, cancellationToken);
+
+        if (client == null)
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
                                                               Error = Constants.OAuth.UNAUTHORIZED_CLIENT,
                                                               ErrorDescription = Constants.OAuth.UNAUTHORIZED_CLIENT_MESSAGE
                                                           });
-
-        var client = await dsClient.FirstAsync(t => t.Id == clientId, cancellationToken);
 
         if (client.Disabled)
             return Result<TokenResult>.Forbidden.Clone(new TokenResult
@@ -205,16 +206,16 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         var dsUser = _context.Set<Domain.Entities.User>();
 
-        if (!await dsUser.AnyAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken))
+        var user = await dsUser.Include(t => t.Roles)
+                               .ThenInclude(t => t.Role)
+                               .FirstOrDefaultAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken);
+
+        if (user == null)
             return Result<TokenResult>.UsernameOrPasswordIncorrect.Clone(new TokenResult
                                                                          {
                                                                              Error = Constants.OAuth.INVALID_REQUEST,
                                                                              ErrorDescription = Constants.OAuth.INVALID_REQUEST_USERNAME_OR_PASSWORD_MESSAGE
                                                                          });
-
-        var user = await dsUser.Include(t => t.Roles)
-                               .ThenInclude(t => t.Role)
-                               .FirstAsync(t => t.NormalizedUsername == request.Username!.ToUpper(), cancellationToken);
 
         if (user.Disabled)
             return Result<TokenResult>.AccountIsDisabled.Clone(new TokenResult
@@ -233,6 +234,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                          });
 
         var signature = $"user:{user.Id}";
+
         if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
         {
             var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
@@ -325,6 +327,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                           });
 
         var signature = TokenHelper.GetJwtSignature(request.RefreshToken);
+
         if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
         {
             var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);

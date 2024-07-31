@@ -28,13 +28,6 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
         var dsRolePermission = _context.Set<Domain.Entities.RolePermission>();
         var dsPermissionCondition = _context.Set<Domain.Entities.RolePermissionCondition>();
 
-        if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken))
-            return Result.NotFound;
-
-        if (!request.Name.IsEmpty())
-            if (await ds.AnyAsync(t => t.Id != request.Id && t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken))
-                return Result.Conflict;
-
         if (request.Permissions != null && request.Permissions.Any())
         {
             var permissionIds = request.Permissions
@@ -56,10 +49,17 @@ public class UpdateRoleHandler : IRequestHandler<UpdateRole, Result>
                 return Result.DependencyNotFound;
         }
 
-        var entity = ds.Include(t => t.ExtendData)
-                       .Include(t => t.Permissions)
-                       .Include(t => t.PermissionConditions)
-                       .First(t => t.Id == request.Id);
+        var entity = await ds.Include(t => t.ExtendData)
+                             .Include(t => t.Permissions)
+                             .Include(t => t.PermissionConditions)
+                             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken);
+
+        if (entity == null)
+            return Result.NotFound;
+
+        if (!request.Name.IsEmpty())
+            if (await ds.AnyAsync(t => t.Id != request.Id && t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken))
+                return Result.Conflict;
 
         _context.Entry(entity).UpdateProperty(t => t.Name, request.Name);
         _context.Entry(entity).UpdateProperty(t => t.Priority, request.Priority);

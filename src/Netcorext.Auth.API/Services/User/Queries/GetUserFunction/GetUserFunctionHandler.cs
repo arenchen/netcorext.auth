@@ -19,7 +19,6 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
 
     public async Task<Result<IEnumerable<Models.UserFunction>>> Handle(GetUserFunction request, CancellationToken cancellationToken = default)
     {
-        var dsUser = _context.Set<Domain.Entities.User>();
         var dsUserRole = _context.Set<Domain.Entities.UserRole>();
         var dsUserPermissionCondition = _context.Set<Domain.Entities.UserPermissionCondition>();
         var dsPermission = _context.Set<Domain.Entities.Permission>();
@@ -27,10 +26,7 @@ public class GetUserFunctionHandler : IRequestHandler<GetUserFunction, Result<IE
         var dsRolePermissionCondition = _context.Set<Domain.Entities.RolePermissionCondition>();
         var emptyContent = new Models.UserFunction[request.PermissionConditions?.Length ?? 0];
 
-        if (!dsUser.Any(t => t.Id == request.Id && !t.Disabled))
-            return Result<IEnumerable<Models.UserFunction>>.NotFound;
-
-        var roleIds = dsUserRole.Where(t => t.Id == request.Id && !t.Role.Disabled && t.ExpireDate > DateTimeOffset.UtcNow)
+        var roleIds = dsUserRole.Where(t => t.Id == request.Id && !t.User.Disabled && !t.Role.Disabled && t.ExpireDate > DateTimeOffset.UtcNow)
                                 .Select(t => t.RoleId)
                                 .ToArray();
 

@@ -42,9 +42,8 @@ public static class HttpContextExtension
     }
 
 
-    public static string GetRequestHeaders(this HttpContext context)
+    public static string GetHeadersString(this IHeaderDictionary headers)
     {
-        var headers = context.Request.Headers;
         var headersString = new StringBuilder();
         foreach (var header in headers)
         {
@@ -53,25 +52,14 @@ public static class HttpContextExtension
         return headersString.ToString();
     }
 
-    public static string GetResponseHeaders(this HttpContext context)
+    public static Dictionary<string, string?>? GetUser(this ClaimsPrincipal user)
     {
-        var headers = context.Response.Headers;
-        var headersString = new StringBuilder();
-        foreach (var header in headers)
-        {
-            headersString.Append($"{header.Key}: {header.Value}\n");
-        }
-        return headersString.ToString();
-    }
-
-    public static Dictionary<string, string?>? GetUser(this HttpContext context)
-    {
-        if (!context.User.Claims.Any())
+        if (!user.Claims.Any())
             return default;
 
         var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var claim in context.User.Claims)
+        foreach (var claim in user.Claims)
         {
             switch (claim.Type)
             {
@@ -97,14 +85,13 @@ public static class HttpContextExtension
         return result;
     }
 
-    public static Dictionary<string, string?>? GetUserAgent(this HttpContext context)
+    public static Dictionary<string, string?>? GetUserAgent(this IHeaderDictionary headers)
     {
-        if (string.IsNullOrWhiteSpace(context.Request.Headers.UserAgent))
+        if (string.IsNullOrWhiteSpace(headers.UserAgent))
             return default;
-
         var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
-        var clientInfo = UAParser.Parser.GetDefault().Parse(context.Request.Headers.UserAgent);
+        var clientInfo = UAParser.Parser.GetDefault().Parse(headers.UserAgent);
 
         var device = clientInfo.Device.ToString();
         var os = clientInfo.OS.ToString();
@@ -119,15 +106,15 @@ public static class HttpContextExtension
         return result;
     }
 
-    public static string GetRequestId(this HttpContext context, params string[] headerNames)
+    public static string GetRequestId(this IHeaderDictionary headers, params string[] headerNames)
     {
-        var requestId = context.TraceIdentifier;
+        var requestId = string.Empty;
 
-        var headers = headerNames.Length == 0 ? new[] { HEADER_REQUEST_ID } : headerNames;
+        var internalheaderNames = headerNames.Length == 0 ? new[] { HEADER_REQUEST_ID } : headerNames;
 
-        foreach (var name in headers)
+        foreach (var name in internalheaderNames)
         {
-            if (!context.Request.Headers.TryGetValue(name, out var hRequestId) || string.IsNullOrWhiteSpace(hRequestId))
+            if (!headers.TryGetValue(name, out var hRequestId) || string.IsNullOrWhiteSpace(hRequestId))
                 continue;
 
             requestId = hRequestId;
@@ -138,9 +125,9 @@ public static class HttpContextExtension
         return requestId ?? string.Empty;
     }
 
-    public static string? GetDeviceId(this HttpContext context)
+    public static string? GetDeviceId(this IHeaderDictionary headers)
     {
-        if (context.Request.Headers.TryGetValue(HEADER_DEVICE_ID, out var deviceId)
+        if (headers.TryGetValue(HEADER_DEVICE_ID, out var deviceId)
          && !string.IsNullOrWhiteSpace(deviceId))
             return deviceId.ToString().ToLower();
 

@@ -19,7 +19,8 @@ public class DeleteClientHandler : IRequestHandler<DeleteClient, Result>
 
         var qClient = ds.Where(t => t.Id == request.Id);
 
-        if (!qClient.Any()) return Result.SuccessNoContent;
+        if (!qClient.Any())
+            return Result.SuccessNoContent;
 
         ds.RemoveRange(qClient);
 

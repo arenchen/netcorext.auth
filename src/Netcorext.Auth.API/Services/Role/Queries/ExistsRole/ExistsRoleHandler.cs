@@ -26,9 +26,7 @@ public class ExistsRoleHandler : IRequestHandler<ExistsRole, Result>
             predicate = predicate.And(t => t.Id != request.Id.Value);
 
         if (await ds.AnyAsync(predicate, cancellationToken))
-        {
             return Result.Success;
-        }
 
         return Result.NotFound;
     }

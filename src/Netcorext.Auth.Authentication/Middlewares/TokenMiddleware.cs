@@ -1,16 +1,16 @@
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Netcorext.Auth.Authentication.Extensions;
-using Netcorext.Auth.Authentication.Services.Client.Queries;
-using Netcorext.Auth.Authentication.Services.Token.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Extensions;
 using Netcorext.Auth.Helpers;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Commons;
+using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
 namespace Netcorext.Auth.Authentication.Middlewares;
@@ -93,8 +93,8 @@ internal class TokenMiddleware
 
         var result = authHeader.Scheme.ToUpper() switch
                      {
-                         Constants.OAuth.TOKEN_TYPE_BASIC_NORMALIZED => await IsBasicValid(dispatcher, token),
-                         Constants.OAuth.TOKEN_TYPE_BEARER_NORMALIZED => await IsBearerValid(dispatcher, token),
+                         Constants.OAuth.TOKEN_TYPE_BASIC_NORMALIZED => await IsBasicValid(token),
+                         Constants.OAuth.TOKEN_TYPE_BEARER_NORMALIZED => await IsBearerValid(token),
                          _ => Result.Unauthorized
                      };
 
@@ -104,56 +104,96 @@ internal class TokenMiddleware
         return result;
     }
 
-    private async Task<Result> IsBasicValid(IDispatcher dispatcher, string token)
+    private Task<Result> IsBasicValid(string token)
     {
         if (_cache.TryGetValue(token, out Result cacheResult))
-            return cacheResult;
+            return Task.FromResult(cacheResult);
 
         var raw = Encoding.UTF8.GetString(Convert.FromBase64String(token));
 
         var client = raw.Split(":", StringSplitOptions.RemoveEmptyEntries);
 
-        if (client.Length != 2 || !long.TryParse(client[0], out var clientId))
-            return Result.Unauthorized;
+        if (client.Length != 2 || !long.TryParse(client[0], out var clientId) || string.IsNullOrWhiteSpace(client[1]))
+            return Task.FromResult(Result.Unauthorized);
 
-        var result = await dispatcher.SendAsync(new ValidateClient
-                                                {
-                                                    Id = clientId,
-                                                    Secret = client[1]
-                                                });
+        var cacheBlockedClient = _cache.Get<HashSet<long>>(ConfigSettings.CACHE_BLOCKED_CLIENT) ?? new HashSet<long>();
 
-        _cache.Set(token, result, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+        if (cacheBlockedClient.Contains(clientId))
+        {
+            _cache.Set(token, Result.AccountIsDisabled, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
 
-        return result;
+            return Task.FromResult(Result.AccountIsDisabled);
+        }
+
+        var cacheClient = _cache.Get<Dictionary<long, Netcorext.Auth.Authentication.Services.Client.Queries.Models.Client>>(ConfigSettings.CACHE_CLIENT) ?? new Dictionary<long, Netcorext.Auth.Authentication.Services.Client.Queries.Models.Client>();
+
+        if (!cacheClient.TryGetValue(clientId, out var entity) || entity.Secret != client[1].Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds()))
+        {
+            _cache.Set(token, Result.UsernameOrPasswordIncorrect, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+
+            return Task.FromResult(Result.UsernameOrPasswordIncorrect);
+        }
+
+
+        _cache.Set(token, Result.Success, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+
+        return Task.FromResult(Result.Success);
     }
 
-    private async Task<Result> IsBearerValid(IDispatcher dispatcher, string token)
+    private Task<Result> IsBearerValid(string token)
     {
         try
         {
-            TokenHelper.ValidateJwt(token, _tokenValidationParameters);
-
             if (_cache.TryGetValue(token, out Result cacheResult))
-                return cacheResult;
+                return Task.FromResult(cacheResult);
 
-            var result = await dispatcher.SendAsync(new ValidateToken
-                                                    {
-                                                        Token = token
-                                                    });
+            var claimsPrincipal = TokenHelper.ValidateJwt(token, _tokenValidationParameters);
 
-            _cache.Set(token, result, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+            var claimName = claimsPrincipal.Identity?.Name;
+            var tt = claimsPrincipal.Claims.FirstOrDefault(t => t.Type == TokenHelper.CLAIM_TYPES_TOKEN_TYPE)?.Value;
+            var rt = claimsPrincipal.Claims.FirstOrDefault(t => t.Type == TokenHelper.CLAIM_TYPES_RESOURCE_TYPE)?.Value;
 
-            return result;
+            if (tt != "1" || string.IsNullOrWhiteSpace(claimName) || !long.TryParse(claimName, out var id))
+                return Task.FromResult(Result.InvalidInput);
+            if (rt != "0" && rt != "1")
+                return Task.FromResult(Result.InvalidInput);
+
+            if (rt == "0")
+            {
+                var cacheBlockedClient = _cache.Get<HashSet<long>>(ConfigSettings.CACHE_BLOCKED_CLIENT) ?? new HashSet<long>();
+
+                if (cacheBlockedClient.Contains(id))
+                {
+                    _cache.Set(token, Result.AccountIsDisabled, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+
+                    return Task.FromResult(Result.AccountIsDisabled);
+                }
+            }
+            else
+            {
+                var cacheBlockedUser = _cache.Get<HashSet<long>>(ConfigSettings.CACHE_BLOCKED_USER) ?? new HashSet<long>();
+
+                if (cacheBlockedUser.Contains(id))
+                {
+                    _cache.Set(token, Result.AccountIsDisabled, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+
+                    return Task.FromResult(Result.AccountIsDisabled);
+                }
+            }
+
+            _cache.Set(token, Result.Success, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
+
+            return Task.FromResult(Result.Success);
         }
         catch (SecurityTokenExpiredException)
         {
             _cache.Remove(token);
 
-            return Result.Unauthorized;
+            return Task.FromResult(Result.Unauthorized);
         }
         catch
         {
-            return Result.Unauthorized;
+            return Task.FromResult(Result.Unauthorized);
         }
     }
 }

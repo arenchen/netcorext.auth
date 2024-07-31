@@ -5,13 +5,13 @@ namespace Netcorext.Auth.Authorization.Settings;
 
 public class ConfigSettings : Config<AppSettings>
 {
+    public const string CACHE_TOKEN_RETAIN = "TokenRetain";
+
     public const string QUEUES_TOKEN_REVOKE_EVENT = "TokenRevokeEvent";
     public const string QUEUES_USER_CHANGE_EVENT = "UserChangeEvent";
     public const string QUEUES_USER_SIGN_IN_EVENT = "UserSignInEvent";
     public const string QUEUES_USER_REFRESH_TOKEN_EVENT = "UserRefreshTokenEvent";
     public const string QUEUES_USER_ROLE_CHANGE_EVENT = "UserRoleChangeEvent";
-
-    public const string CACHE_TOKEN_RETAIN = "TokenRetain";
 }
 
 public class AppSettings

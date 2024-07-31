@@ -25,11 +25,14 @@ public class UpdatePermissionHandler : IRequestHandler<UpdatePermission, Result>
         var ds = _context.Set<Domain.Entities.Permission>();
         var dsRule = _context.Set<Domain.Entities.Rule>();
 
-        if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
-        if (!request.Name.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken)) return Result.Conflict;
+        var entity = await ds.Include(t => t.Rules)
+                             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken);
 
-        var entity = ds.Include(t => t.Rules)
-                       .First(t => t.Id == request.Id);
+        if (entity == null)
+            return Result.NotFound;
+
+        if (!request.Name.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken))
+            return Result.Conflict;
 
         _context.Entry(entity).UpdateProperty(t => t.Name, request.Name);
         _context.Entry(entity).UpdateProperty(t => t.Priority, request.Priority);

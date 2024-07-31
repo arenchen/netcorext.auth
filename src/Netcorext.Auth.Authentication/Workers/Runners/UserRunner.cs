@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Services.Permission.Queries;
 using Netcorext.Auth.Authentication.Services.Token.Commands;
+using Netcorext.Auth.Authentication.Services.User.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
 using Netcorext.Extensions.Linq;
@@ -22,7 +23,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
     private readonly ISerializer _serializer;
     private readonly ConfigSettings _config;
     private readonly ILogger<UserRunner> _logger;
-    private static readonly KeyLocker Locker = new KeyLocker();
+    private static readonly KeyLocker Locker = new();
 
     public UserRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
     {
@@ -43,21 +44,17 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         _subscriber = _redis.Subscribe(new[]
                                        {
                                            _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT]
-
-                                           // 目前在 Netcorext.Auth.API 異動時處理
-                                           // _config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT]
                                        }, Handler);
 
         await UpdateUserAsync(null, cancellationToken);
+        await BlockUserAsync(null, cancellationToken);
 
         return;
 
         async void Handler(string s, object o)
         {
-            if (s == _config.Queues[ConfigSettings.QUEUES_USER_CHANGE_EVENT])
-                await UpdateUserAsync(o.ToString(), cancellationToken);
-            else if (s == _config.Queues[ConfigSettings.QUEUES_USER_ROLE_CHANGE_EVENT])
-                await BlockUserTokenAsync(o.ToString(), cancellationToken);
+            await UpdateUserAsync(o.ToString(), cancellationToken);
+            await BlockUserAsync(o.ToString(), cancellationToken);
         }
     }
 
@@ -108,29 +105,43 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         }
     }
 
-    private async Task BlockUserTokenAsync(string? ids, CancellationToken cancellationToken = default)
+    private async Task BlockUserAsync(string? ids, CancellationToken cancellationToken = default)
     {
-        if (ids == null)
-            return;
-
         try
         {
-            await Locker.WaitAsync(nameof(BlockUserTokenAsync), cancellationToken);
+            await Locker.WaitAsync(nameof(BlockUserAsync), cancellationToken);
 
-            _logger.LogInformation(nameof(BlockUserTokenAsync));
+            _logger.LogInformation(nameof(BlockUserAsync));
 
             using var scope = _serviceProvider.CreateScope();
             var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
-            var reqIds = _serializer.Deserialize<long[]>(ids);
+            var reqIds = ids == null ? null : _serializer.Deserialize<long[]>(ids);
+
+            var result = await dispatcher.SendAsync(new GetBlockedUser
+                                                    {
+                                                        Ids = reqIds
+                                                    }, cancellationToken);
+
+            var cacheBlockedUser = _cache.Get<HashSet<long>>(ConfigSettings.CACHE_BLOCKED_USER) ?? new HashSet<long>();
 
             if (reqIds == null || !reqIds.Any())
-                return;
+            {
+                cacheBlockedUser.Clear();
 
-            await dispatcher.SendAsync(new BlockUserToken
-                                       {
-                                           Ids = reqIds
-                                       }, cancellationToken);
+                if (result.Content != null && result.Content.Any())
+                    result.Content.ForEach(t => cacheBlockedUser.Add(t));
+            }
+            else if (result.Content == null || !result.Content.Any())
+            {
+                cacheBlockedUser.RemoveWhere(t => reqIds.Contains(t));
+            }
+            else
+            {
+                result.Content.ForEach(t => cacheBlockedUser.Add(t));
+            }
+
+            _cache.Set(ConfigSettings.CACHE_BLOCKED_USER, cacheBlockedUser);
         }
         catch (Exception e)
         {
@@ -138,7 +149,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(BlockUserTokenAsync));
+            Locker.Release(nameof(BlockUserAsync));
         }
     }
 

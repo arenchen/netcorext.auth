@@ -27,12 +27,15 @@ public class UpdateClientHandler : IRequestHandler<UpdateClient, Result>
         var dsRole = _context.Set<Domain.Entities.ClientRole>();
         var dsExtendData = _context.Set<Domain.Entities.ClientExtendData>();
 
-        if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
-        if (!request.Name.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.Name == request.Name, cancellationToken)) return Result.Conflict;
+        var entity = await ds.Include(t => t.Roles)
+                             .Include(t => t.ExtendData)
+                             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken: cancellationToken);
 
-        var entity = ds.Include(t => t.Roles)
-                       .Include(t => t.ExtendData)
-                       .First(t => t.Id == request.Id);
+        if (entity == null)
+            return Result.NotFound;
+
+        if (!request.Name.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.Name == request.Name, cancellationToken))
+            return Result.Conflict;
 
         _context.Entry(entity).UpdateProperty(t => t.Name, request.Name);
 

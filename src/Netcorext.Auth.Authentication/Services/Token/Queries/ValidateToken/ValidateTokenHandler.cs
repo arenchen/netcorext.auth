@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Netcorext.Auth.Enums;
@@ -12,11 +13,13 @@ namespace Netcorext.Auth.Authentication.Services.Token.Queries;
 
 public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
 {
+    private readonly IMemoryCache _cache;
     private readonly DatabaseContext _context;
     private readonly TokenValidationParameters _tokenValidationParameters;
 
-    public ValidateTokenHandler(DatabaseContextAdapter context, IOptions<AuthOptions> authOptions)
+    public ValidateTokenHandler(DatabaseContextAdapter context, IMemoryCache cache, IOptions<AuthOptions> authOptions)
     {
+        _cache = cache;
         _context = context.Slave;
         _tokenValidationParameters = authOptions.Value.GetTokenValidationParameters();
     }
@@ -44,11 +47,11 @@ public class ValidateTokenHandler : IRequestHandler<ValidateToken, Result>
         var dsUser = _context.Set<Domain.Entities.User>();
         var dsClient = _context.Set<Domain.Entities.Client>();
 
-        if (!await ds.AnyAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken))
+        var entity = await ds.Select(t => new { t.ResourceType, t.ResourceId, t.AccessToken, t.RefreshToken, t.Revoked })
+                             .FirstOrDefaultAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken);
+
+        if (entity == null)
             return Result.Unauthorized;
-
-        var entity = await ds.FirstAsync(t => t.AccessToken == request.Token || t.RefreshToken == request.Token, cancellationToken);
-
         if (entity.Revoked == TokenRevoke.Both)
             return Result.UnauthorizedAndCannotRefreshToken;
         if (entity.AccessToken == request.Token && (entity.Revoked & TokenRevoke.AccessToken) == TokenRevoke.AccessToken)

@@ -41,7 +41,7 @@ internal class MaintainMiddleware
             return;
         }
 
-        var claimName = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Name)?.Value;
+        var claimName = context.User.Identity?.Name;
 
         if (long.TryParse(claimName, out var id) && (_config.AppSettings.Owner?.Any(t => t == id) ?? false))
         {

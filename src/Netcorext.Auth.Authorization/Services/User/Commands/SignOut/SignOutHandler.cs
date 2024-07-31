@@ -33,9 +33,6 @@ public class SignOutHandler : IRequestHandler<SignOut, Result>
     {
         var dsToken = _context.Set<Domain.Entities.Token>();
 
-        if (!await dsToken.AnyAsync(t => t.AccessToken == request.Token, cancellationToken))
-            return Result.Success;
-
         var token = await dsToken.FirstOrDefaultAsync(t => t.AccessToken == request.Token, cancellationToken);
 
         if (token == null)

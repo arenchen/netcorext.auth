@@ -27,9 +27,10 @@ public class ValidateUserHandler : IRequestHandler<ValidateUser, Result>
         if (!request.Id.IsEmpty()) predicate = predicate.And(t => t.Id == request.Id);
         if (!request.Username.IsEmpty()) predicate = predicate.And(t => t.NormalizedUsername == request.Username.ToUpper());
 
-        if (!await ds.AnyAsync(predicate, cancellationToken)) return Result.UsernameOrPasswordIncorrect;
+        var entity = await ds.FirstOrDefaultAsync(predicate, cancellationToken);
 
-        var entity = await ds.FirstAsync(predicate, cancellationToken);
+        if (entity == null)
+            return Result.UsernameOrPasswordIncorrect;
 
         var secret = request.Password?.Pbkdf2HashCode(entity.CreationDate.ToUnixTimeMilliseconds());
 

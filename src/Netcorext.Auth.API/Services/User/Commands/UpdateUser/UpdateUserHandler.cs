@@ -31,9 +31,6 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
         var dsPermission = _context.Set<Domain.Entities.Permission>();
         var dsPermissionCondition = _context.Set<UserPermissionCondition>();
 
-        if (!await ds.AnyAsync(t => t.Id == request.Id, cancellationToken)) return Result.NotFound;
-        if (!request.Username.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.NormalizedUsername == request.Username.ToUpper(), cancellationToken)) return Result.Conflict;
-
         if (request.PermissionConditions != null && request.PermissionConditions.Any())
         {
             var permissionIds = request.PermissionConditions
@@ -45,11 +42,17 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                 return Result.DependencyNotFound;
         }
 
-        var entity = ds.Include(t => t.ExtendData)
+        var entity = await ds.Include(t => t.ExtendData)
                        .Include(t => t.Roles)
                        .Include(t => t.ExternalLogins)
                        .Include(t => t.PermissionConditions)
-                       .First(t => t.Id == request.Id);
+                       .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken: cancellationToken);
+
+        if (entity == null)
+            return Result.NotFound;
+
+        if (!request.Username.IsEmpty() && await ds.AnyAsync(t => t.Id != request.Id && t.NormalizedUsername == request.Username.ToUpper(), cancellationToken))
+            return Result.Conflict;
 
         _context.Entry(entity)
                 .UpdateProperty(t => t.Username, request.Username)

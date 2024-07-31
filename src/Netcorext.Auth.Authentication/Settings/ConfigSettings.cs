@@ -6,14 +6,19 @@ namespace Netcorext.Auth.Authentication.Settings;
 
 public class ConfigSettings : Config<AppSettings>
 {
+    public const string CACHE_BLOCKED_CLIENT = "BlockedClient";
     public const string CACHE_BLOCKED_IP = "BlockedIp";
+    public const string CACHE_BLOCKED_USER = "BlockedUser";
+    public const string CACHE_CLIENT = "Client";
     public const string CACHE_MAINTAIN = "Maintain";
     public const string CACHE_PERMISSION_RULE = "PermissionRule";
     public const string CACHE_ROLE_PERMISSION = "RolePermission";
     public const string CACHE_ROLE_PERMISSION_CONDITION = "RolePermissionCondition";
     public const string CACHE_ROUTE = "Route";
     public const string CACHE_USER_PERMISSION_CONDITION = "UserPermissionCondition";
+    public const string CACHE_USER_ROLE = "UserRole";
     public const string QUEUES_BLOCKED_IP_CHANGE_EVENT = "BlockedIpChangeEvent";
+    public const string QUEUES_CLIENT_CHANGE_EVENT = "ClientChangeEvent";
     public const string QUEUES_HEALTH_CHECK_EVENT = "HealthCheckEvent";
     public const string QUEUES_MAINTAIN_CHANGE_EVENT = "MaintainChangeEvent";
     public const string QUEUES_PERMISSION_CHANGE_EVENT = "PermissionChangeEvent";

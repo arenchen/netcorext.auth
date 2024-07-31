@@ -30,10 +30,10 @@ public class ValidateOtpHandler : IRequestHandler<ValidateOtp, Result>
         if (!request.Username.IsEmpty())
             predicate = predicate.And(t => t.NormalizedUsername == request.Username.ToUpper());
 
-        if (!await ds.AnyAsync(predicate, cancellationToken))
-            return Result.TwoFactorAuthenticationFailed;
+        var entity = await ds.FirstOrDefaultAsync(predicate, cancellationToken);
 
-        var entity = await ds.FirstAsync(predicate, cancellationToken);
+        if (entity == null)
+            return Result.TwoFactorAuthenticationFailed;
 
         if (!entity.TwoFactorEnabled || !entity.OtpBound) return Result.RequiredTwoFactorAuthenticationBinding;
 

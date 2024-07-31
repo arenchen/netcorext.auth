@@ -12,6 +12,10 @@
     <PackageReference Include="Netcorext.Worker.Abstractions" Version="1.0.0-dev.*"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\User\Queries\Models\" />
+  </ItemGroup>
+
   <Import Project="../Packages.targets"/>
   <Import Project="../Versioning.targets"/>
 

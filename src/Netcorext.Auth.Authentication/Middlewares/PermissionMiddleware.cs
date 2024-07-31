@@ -37,7 +37,7 @@ internal class PermissionMiddleware
             return;
         }
 
-        var claimName = context.User.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Name)?.Value;
+        var claimName = context.User.Identity?.Name;
         var rt = context.User.Claims.FirstOrDefault(t => t.Type == TokenHelper.CLAIM_TYPES_RESOURCE_TYPE)?.Value;
 
         if (long.TryParse(claimName, out var id) && rt == "1" && (_config.AppSettings.Owner?.Any(t => t == id) ?? false))
@@ -54,7 +54,9 @@ internal class PermissionMiddleware
         var path = context.Request.GetPath();
         var method = context.Request.GetMethod();
 
-        var endpoints = permissionEndpoints.Values.SelectMany(t => t.Routes);
+        var endpoints = permissionEndpoints.Values
+                                           .SelectMany(t => t.Routes)
+                                           .Where(t => t.Protocol == (context.Request.Protocol == "HTTP/1.1" ? "HTTP1" : "HTTP2") && t.HttpMethod == method);
 
         foreach (var endpoint in endpoints)
         {
@@ -62,7 +64,8 @@ internal class PermissionMiddleware
 
             var matcher = new TemplateMatcher(template, new RouteValueDictionary(endpoint.RouteValues));
 
-            if (!matcher.TryMatch(path, new RouteValueDictionary(context.Request.RouteValues))) continue;
+            if (!matcher.TryMatch(path, new RouteValueDictionary(context.Request.RouteValues)))
+                continue;
 
             allowAnonymous = endpoint.AllowAnonymous;
             functionId = endpoint.FunctionId;
@@ -70,11 +73,18 @@ internal class PermissionMiddleware
             break;
         }
 
+        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId))
+        {
+            await _next(context);
+
+            return;
+        }
+
         var rv = context.Request.RouteValues
                         .ToDictionary(t => t.Key, t => new ValidatePermission.PermissionCondition
                                                        {
-                                                              Key = t.Key,
-                                                              Value = t.Value?.ToString() ?? ""
+                                                           Key = t.Key,
+                                                           Value = t.Value?.ToString() ?? ""
                                                        });
 
         foreach (var q in context.Request.Query)
@@ -86,7 +96,7 @@ internal class PermissionMiddleware
                              });
         }
 
-        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId) || await IsValidAsync(dispatcher, _config.AppSettings.ValidationPassUserId && rt == "1" ? id : null, role, functionId, method, rv.Values.ToArray()))
+        if (await IsValidAsync(dispatcher, _config.AppSettings.ValidationPassUserId && rt == "1" ? id : null, role, functionId, method, rv.Values.ToArray()))
         {
             await _next(context);
 
@@ -119,7 +129,8 @@ internal class PermissionMiddleware
                            .Select(long.Parse)
                            .ToArray();
 
-        if (userId.IsEmpty() && roleIds.IsEmpty()) return false;
+        if (userId.IsEmpty() && roleIds.IsEmpty())
+            return false;
 
         var result = await dispatcher.SendAsync(new ValidatePermission
                                                 {

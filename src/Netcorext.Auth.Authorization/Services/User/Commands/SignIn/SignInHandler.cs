@@ -41,12 +41,12 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
     {
         var ds = _context.Set<Domain.Entities.User>();
 
-        if (!await ds.AnyAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken))
-            return Result<TokenResult>.UsernameOrPasswordIncorrect;
-
         var entity = await ds.Include(t => t.Roles)
                              .ThenInclude(t => t.Role)
-                             .FirstAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken);
+                             .FirstOrDefaultAsync(t => t.NormalizedUsername == request.Username.ToUpper(), cancellationToken);
+
+        if (entity == null)
+            return Result<TokenResult>.UsernameOrPasswordIncorrect;
 
         _context.Entry(entity).UpdateProperty(t => t.LastSignInDate, DateTimeOffset.UtcNow);
         _context.Entry(entity).UpdateProperty(t => t.LastSignInIp, _httpContextAccessor.HttpContext?.GetIp());
@@ -96,6 +96,7 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
         }
 
         var signature = $"user:{entity.Id}";
+
         if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
         {
             var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);

@@ -25,7 +25,8 @@ public class CreateClientHandler : IRequestHandler<CreateClient, Result<long?>>
     {
         var ds = _context.Set<Domain.Entities.Client>();
 
-        if (await ds.AnyAsync(t => t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken)) return Result<long?>.Conflict;
+        if (await ds.AnyAsync(t => t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken))
+            return Result<long?>.Conflict;
 
         var id = _snowflake.Generate();
         var creationDate = DateTimeOffset.UtcNow;

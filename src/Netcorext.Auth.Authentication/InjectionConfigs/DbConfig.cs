@@ -2,6 +2,7 @@ using FreeRedis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Netcorext.Auth.Authentication.Settings;
+using Netcorext.Auth.Models;
 using Netcorext.EntityFramework.UserIdentityPattern.AspNetCore;
 using Netcorext.Extensions.Redis.Utilities;
 using Netcorext.Serialization;
@@ -18,6 +19,8 @@ public class DbConfig
         var mainDb = cfg.Connections.RelationalDb["Default"];
         var slaveDb = cfg.Connections.RelationalDb["Slave"];
         var redis = cfg.Connections.Redis["Default"];
+
+        services.AddSingleton<TrafficQueue>();
 
         services.AddIdentityDbContextPool((_, builder) =>
                                           {

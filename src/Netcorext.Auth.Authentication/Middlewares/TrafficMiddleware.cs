@@ -1,32 +1,31 @@
-using FreeRedis;
-using Microsoft.Extensions.Options;
-using Netcorext.Auth.Authentication.Settings;
+using System.Diagnostics;
+using Microsoft.Extensions.Primitives;
 using Netcorext.Auth.Extensions;
+
 
 namespace Netcorext.Auth.Authentication.Middlewares;
 
 public class TrafficMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly RedisClient _redis;
+    private readonly Models.TrafficQueue _trafficQueue;
     private readonly ILogger<TrafficMiddleware> _logger;
-    private readonly ConfigSettings _config;
 
-    public TrafficMiddleware(RequestDelegate next, RedisClient redis, IOptions<ConfigSettings> config, ILogger<TrafficMiddleware> logger)
+    public TrafficMiddleware(RequestDelegate next, Models.TrafficQueue trafficQueue, ILogger<TrafficMiddleware> logger)
     {
         _next = next;
-        _redis = redis;
+        _trafficQueue = trafficQueue;
         _logger = logger;
-        _config = config.Value;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
+
         await _next(context);
 
         try
         {
-            var traffic = new Models.Traffic
+            var traffic = new Models.TrafficRaw
                           {
                               Timestamp = DateTimeOffset.UtcNow,
                               Protocol = context.Request.Protocol,
@@ -36,29 +35,15 @@ public class TrafficMiddleware
                               Host = context.Request.Host.Value,
                               Path = context.Request.Path,
                               QueryString = context.Request.QueryString.Value,
-                              Headers = context.GetRequestHeaders(),
-                              ResponseHeaders = context.GetResponseHeaders(),
-                              DeviceId = context.GetDeviceId(),
+                              Headers = new HeaderDictionary(context.Request.Headers.ToDictionary(t => t.Key, t => t.Value)),
+                              ResponseHeaders = new HeaderDictionary(context.Response.Headers.ToDictionary(t => t.Key, t => t.Value)),
                               Ip = context.GetIp(),
                               TraceIdentifier = context.TraceIdentifier,
-                              XRequestId = context.GetRequestId(),
                               Status = context.Response.StatusCode.ToString(),
-                              UserAgent = context.GetUserAgent(),
-                              User = context.GetUser()
+                              User = context.User
                           };
 
-            var channelKey = _config.Queues[ConfigSettings.QUEUES_TRAFFIC_EVENT];
-            var streamKey = _config.Queues[ConfigSettings.QUEUES_TRAFFIC];
-
-            var values = new Dictionary<string, object>
-                         {
-                             { "Timestamp", traffic.Timestamp.ToUnixTimeMilliseconds() },
-                             { "Data", traffic }
-                         };
-
-            await _redis.XAddAsync(streamKey, _config.AppSettings.StreamMaxLength, "*", values);
-
-            await _redis.PublishAsync(channelKey, streamKey);
+            _trafficQueue.Enqueue(traffic);
         }
         catch (Exception e)
         {

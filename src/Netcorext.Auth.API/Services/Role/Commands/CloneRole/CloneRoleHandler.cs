@@ -22,17 +22,17 @@ public class CloneRoleHandler : IRequestHandler<CloneRole, Result<long?>>
     {
         var ds = _context.Set<Domain.Entities.Role>();
 
-        if (!await ds.AnyAsync(t => t.Id == request.SourceId, cancellationToken))
+        var entity = await ds.Include(t => t.ExtendData)
+                             .Include(t => t.Permissions)
+                             .Include(t => t.PermissionConditions)
+                             .AsNoTracking()
+                             .FirstOrDefaultAsync(t => t.Id == request.SourceId, cancellationToken);
+
+        if (entity == null)
             return Result<long?>.DependencyNotFound;
 
         if (await ds.AnyAsync(t => t.Name.ToUpper() == request.Name.ToUpper(), cancellationToken))
             return Result<long?>.Conflict;
-
-        var entity = ds.Include(t => t.ExtendData)
-                       .Include(t => t.Permissions)
-                       .Include(t => t.PermissionConditions)
-                       .AsNoTracking()
-                       .First(t => t.Id == request.SourceId);
 
         entity.Id = request.CustomId ?? _snowflake.Generate();
         entity.Name = request.Name;
