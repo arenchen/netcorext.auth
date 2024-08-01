@@ -56,7 +56,7 @@ internal class PermissionMiddleware
 
         var endpoints = permissionEndpoints.Values
                                            .SelectMany(t => t.Routes)
-                                           .Where(t => t.Protocol == (context.Request.Protocol == "HTTP/1.1" ? "HTTP1" : "HTTP2") && t.HttpMethod == method);
+                                           .Where(t => t.HttpMethod.Equals(method, StringComparison.CurrentCultureIgnoreCase));
 
         foreach (var endpoint in endpoints)
         {
@@ -73,7 +73,16 @@ internal class PermissionMiddleware
             break;
         }
 
-        if (allowAnonymous || string.IsNullOrWhiteSpace(functionId))
+        if (string.IsNullOrWhiteSpace(functionId))
+        {
+            _logger.LogWarning("Forbidden");
+
+            await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
+
+            return;
+        }
+
+        if (allowAnonymous)
         {
             await _next(context);
 
