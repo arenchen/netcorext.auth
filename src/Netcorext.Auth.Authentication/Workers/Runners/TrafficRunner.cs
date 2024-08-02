@@ -26,6 +26,7 @@ internal class TrafficRunner : IWorkerRunner<AuthWorker>
     {
         var channelKey = _config.Queues[ConfigSettings.QUEUES_TRAFFIC_EVENT];
         var streamKey = _config.Queues[ConfigSettings.QUEUES_TRAFFIC];
+        var internalQueueBatchSize = _config.AppSettings.InternalQueueBatchSize;
 
         _trafficQueue.TrafficEnqueued += async (sender, args) =>
                                          {
@@ -66,12 +67,26 @@ internal class TrafficRunner : IWorkerRunner<AuthWorker>
                                                      try
                                                      {
                                                          await _redis.XAddAsync(streamKey, _config.AppSettings.StreamMaxLength, "*", values);
+
+                                                         internalQueueBatchSize++;
                                                      }
                                                      catch (Exception e)
                                                      {
                                                          _logger.LogError(e, "{Message}", e.Message);
                                                      }
+
+                                                     if (internalQueueBatchSize < _config.AppSettings.InternalQueueBatchSize)
+                                                         continue;
+
+                                                     internalQueueBatchSize = 0;
+
+                                                     await _redis.PublishAsync(channelKey, streamKey);
                                                  }
+
+                                                 if (internalQueueBatchSize <= 0)
+                                                     return;
+
+                                                 internalQueueBatchSize = 0;
 
                                                  await _redis.PublishAsync(channelKey, streamKey);
                                              }
