@@ -13,12 +13,12 @@ public static class HttpContextExtension
     private static readonly Regex RegexIp = new(@"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}[^,]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex RegexLastPath = new(@"/(\w+)$", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
-    private static readonly Regex RegIPad = new Regex(@"\(iPad.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex RegIPhone = new Regex(@"\(iPhone.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex RegAndroid = new Regex(@"\(Android.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex RegMobile = new Regex(@"\(Mobile.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex RegWindows = new Regex(@"\(Windows.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex RegLinux = new Regex(@"\(Linux.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegIPad = new Regex("iPad.*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegIPhone = new Regex("iPhone.*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegAndroid = new Regex("Android.*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegMobile = new Regex("Mobile.*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegWindows = new Regex("Windows.*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegLinux = new Regex("Linux.*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private const string HEADER_REQUEST_ID = "X-Request-Id";
     private const string HEADER_DEVICE_ID = "X-Device-Id";
