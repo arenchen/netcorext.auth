@@ -13,6 +13,13 @@ public static class HttpContextExtension
     private static readonly Regex RegexIp = new(@"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}[^,]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex RegexLastPath = new(@"/(\w+)$", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
+    private static readonly Regex RegIPad = new Regex(@"\(iPad.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegIPhone = new Regex(@"\(iPhone.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegAndroid = new Regex(@"\(Android.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegMobile = new Regex(@"\(Mobile.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegWindows = new Regex(@"\(Windows.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RegLinux = new Regex(@"\(Linux.*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private const string HEADER_REQUEST_ID = "X-Request-Id";
     private const string HEADER_DEVICE_ID = "X-Device-Id";
 
@@ -89,19 +96,56 @@ public static class HttpContextExtension
     {
         if (string.IsNullOrWhiteSpace(headers.UserAgent))
             return default;
+
         var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
-        var clientInfo = UAParser.Parser.GetDefault().Parse(headers.UserAgent);
+        var isIpad = RegIPad.IsMatch(headers.UserAgent);
+        var isIphone = RegIPhone.IsMatch(headers.UserAgent);
+        var isAndroid = RegAndroid.IsMatch(headers.UserAgent);
+        var isWindows = RegWindows.IsMatch(headers.UserAgent);
+        var isLinux = RegLinux.IsMatch(headers.UserAgent);
+        var isMobile = RegMobile.IsMatch(headers.UserAgent);
 
-        var device = clientInfo.Device.ToString();
-        var os = clientInfo.OS.ToString();
-        var ua = clientInfo.UA.ToString();
-        var deviceType = ua.Contains("Mobile", StringComparison.CurrentCultureIgnoreCase) ? "Mobile" : os.Contains("Android", StringComparison.CurrentCultureIgnoreCase) ? "Tablet" : "Desktop";
-
-        result.TryAdd("device", device);
-        result.TryAdd("deviceType", deviceType);
-        result.TryAdd("os", os);
-        result.TryAdd("ua", ua);
+        if (isIpad)
+        {
+            result.TryAdd("device", "iPad");
+            result.TryAdd("deviceType", "Tablet");
+        }
+        else if (isIphone)
+        {
+            result.TryAdd("device", "iPhone");
+            result.TryAdd("deviceType", "Mobile");
+        }
+        else if (isAndroid && isMobile)
+        {
+            result.TryAdd("device", "Android");
+            result.TryAdd("deviceType", "Mobile");
+        }
+        else if (isAndroid)
+        {
+            result.TryAdd("device", "Android");
+            result.TryAdd("deviceType", "Tablet");
+        }
+        else if (isWindows && isMobile)
+        {
+            result.TryAdd("device", "Windows Phone");
+            result.TryAdd("deviceType", "Mobile");
+        }
+        else if (isWindows)
+        {
+            result.TryAdd("device", "Windows");
+            result.TryAdd("deviceType", "Desktop");
+        }
+        else if (isLinux)
+        {
+            result.TryAdd("device", "Linux");
+            result.TryAdd("deviceType", "Desktop");
+        }
+        else
+        {
+            result.TryAdd("device", "Other");
+            result.TryAdd("deviceType", "Desktop");
+        }
 
         return result;
     }

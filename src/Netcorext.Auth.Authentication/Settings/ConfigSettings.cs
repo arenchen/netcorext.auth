@@ -25,8 +25,6 @@ public class ConfigSettings : Config<AppSettings>
     public const string QUEUES_ROLE_CHANGE_EVENT = "RoleChangeEvent";
     public const string QUEUES_ROUTE_CHANGE_EVENT = "RouteChangeEvent";
     public const string QUEUES_TOKEN_REVOKE_EVENT = "TokenRevokeEvent";
-    public const string QUEUES_TRAFFIC = "Traffic";
-    public const string QUEUES_TRAFFIC_EVENT = "TrafficEvent";
     public const string QUEUES_USER_CHANGE_EVENT = "UserChangeEvent";
     public const string QUEUES_USER_ROLE_CHANGE_EVENT = "UserRoleChangeEvent";
 }
@@ -43,7 +41,6 @@ public class AppSettings
     public long SlowCommandLoggingThreshold { get; set; } = 1000;
     public long StreamMaxLength { get; set; } = 65535;
     public int? WorkerTaskLimit { get; set; } = 5;
-    public int InternalQueueBatchSize { get; set; } = 100;
     public int? RetryLimit { get; set; } = 3;
     public string RequestIdHeaderName { get; set; } = "X-Request-Id";
     public string[] RequestIdFromHeaderNames { get; set; } = { "X-Request-Id" };

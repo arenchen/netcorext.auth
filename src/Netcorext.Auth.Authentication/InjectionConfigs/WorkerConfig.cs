@@ -15,6 +15,5 @@ public class WorkerConfig
         services.AddWorkerRunner<AuthWorker, MaintainRunner>();
         services.AddWorkerRunner<AuthWorker, BlockedIpRunner>();
         services.AddWorkerRunner<AuthWorker, TokenRunner>();
-        services.AddWorkerRunner<AuthWorker, TrafficRunner>();
     }
 }

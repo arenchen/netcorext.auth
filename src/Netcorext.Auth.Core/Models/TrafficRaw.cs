@@ -1,13 +1,11 @@
 using System.Security.Claims;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
 
 namespace Netcorext.Auth.Models;
 
 public class TrafficRaw
 {
-    public DateTimeOffset Timestamp { get; set; }
+    public DateTimeOffset TrafficDate { get; set; }
     public string Protocol { get; set; } = null!;
     public string Scheme { get; set; } = null!;
     public string HttpMethod { get; set; } = null!;

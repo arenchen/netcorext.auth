@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Microsoft.Extensions.Primitives;
 using Netcorext.Auth.Extensions;
 
 
@@ -8,26 +7,29 @@ namespace Netcorext.Auth.Authentication.Middlewares;
 public class TrafficMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly Models.TrafficQueue _trafficQueue;
     private readonly ILogger<TrafficMiddleware> _logger;
+    private readonly ILogger _loggerTraffic;
 
-    public TrafficMiddleware(RequestDelegate next, Models.TrafficQueue trafficQueue, ILogger<TrafficMiddleware> logger)
+    public TrafficMiddleware(RequestDelegate next, ILoggerFactory loggerFactory)
     {
         _next = next;
-        _trafficQueue = trafficQueue;
-        _logger = logger;
+        _logger = loggerFactory.CreateLogger<TrafficMiddleware>();
+        _loggerTraffic = loggerFactory.CreateLogger($"Auth-{nameof(Models.Traffic)}");
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
+        var watcher = Stopwatch.StartNew();
 
         await _next(context);
 
+        watcher.Stop();
+
         try
         {
-            var traffic = new Models.TrafficRaw
+            var traffic = new Models.Traffic
                           {
-                              Timestamp = DateTimeOffset.UtcNow,
+                              TrafficDate = DateTimeOffset.UtcNow,
                               Protocol = context.Request.Protocol,
                               Scheme = context.Request.Scheme,
                               HttpMethod = context.Request.Method,
@@ -35,15 +37,19 @@ public class TrafficMiddleware
                               Host = context.Request.Host.Value,
                               Path = context.Request.Path,
                               QueryString = context.Request.QueryString.Value,
-                              Headers = new HeaderDictionary(context.Request.Headers.ToDictionary(t => t.Key, t => t.Value)),
-                              ResponseHeaders = new HeaderDictionary(context.Response.Headers.ToDictionary(t => t.Key, t => t.Value)),
+                              Headers = context.Request.Headers.GetHeadersString(),
+                              ResponseHeaders = context.Response.Headers.GetHeadersString(),
                               Ip = context.GetIp(),
                               TraceIdentifier = context.TraceIdentifier,
                               Status = context.Response.StatusCode.ToString(),
-                              User = context.User
+                              Elapsed = watcher.Elapsed,
+                              DeviceId = context.Request.Headers.GetDeviceId(),
+                              XRequestId = context.Request.Headers.GetRequestId(),
+                              User = context.User.GetUser(),
+                              UserAgent = context.Request.Headers.GetUserAgent()
                           };
 
-            _trafficQueue.Enqueue(traffic);
+            _loggerTraffic.LogTrace("{@Traffic}", traffic);
         }
         catch (Exception e)
         {

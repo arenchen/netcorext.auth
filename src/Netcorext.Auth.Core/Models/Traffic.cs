@@ -2,7 +2,7 @@ namespace Netcorext.Auth.Models;
 
 public class Traffic
 {
-    public DateTimeOffset Timestamp { get; set; }
+    public DateTimeOffset TrafficDate { get; set; }
     public string Protocol { get; set; } = null!;
     public string Scheme { get; set; } = null!;
     public string HttpMethod { get; set; } = null!;
@@ -12,7 +12,8 @@ public class Traffic
     public string? QueryString { get; set; }
     public string? Headers { get; set; }
     public string? ResponseHeaders { get; set; }
-    public string? Status { get; set; }
+    public string Status { get; set; } = null!;
+    public TimeSpan Elapsed { get; set; }
     public string? DeviceId { get; set; }
     public string? Ip { get; set; }
     public string? TraceIdentifier { get; set; }
