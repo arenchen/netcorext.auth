@@ -18,17 +18,18 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
     private readonly RedisClient _redis;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<BlockedIpRunner> _logger;
     private IDisposable? _subscriber;
-    private static readonly KeyLocker Locker = new KeyLocker();
 
-    public BlockedIpRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<BlockedIpRunner> logger)
+    public BlockedIpRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<BlockedIpRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _locker = locker;
         _config = config.Value;
         _logger = logger;
     }
@@ -55,7 +56,7 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await Locker.WaitAsync(nameof(UpdateBlockedIpAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(UpdateBlockedIpAsync));
 
             _logger.LogInformation(nameof(UpdateBlockedIpAsync));
 
@@ -94,7 +95,7 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(UpdateBlockedIpAsync));
+            _locker.Release(nameof(UpdateBlockedIpAsync));
         }
     }
 

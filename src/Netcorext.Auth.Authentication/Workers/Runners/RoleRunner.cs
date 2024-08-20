@@ -19,17 +19,18 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
     private readonly RedisClient _redis;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<RoleRunner> _logger;
     private IDisposable? _subscriber;
-    private static readonly KeyLocker Locker = new KeyLocker();
 
-    public RoleRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<RoleRunner> logger)
+    public RoleRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<RoleRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _locker = locker;
         _config = config.Value;
         _logger = logger;
     }
@@ -56,7 +57,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await Locker.WaitAsync(nameof(UpdateRoleAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(UpdateRoleAsync));
 
             _logger.LogInformation(nameof(UpdateRoleAsync));
 
@@ -122,7 +123,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(UpdateRoleAsync));
+            _locker.Release(nameof(UpdateRoleAsync));
         }
     }
 

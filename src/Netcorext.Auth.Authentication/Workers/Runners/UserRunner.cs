@@ -2,7 +2,6 @@ using FreeRedis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Services.Permission.Queries;
-using Netcorext.Auth.Authentication.Services.Token.Commands;
 using Netcorext.Auth.Authentication.Services.User.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
@@ -21,16 +20,17 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<UserRunner> _logger;
-    private static readonly KeyLocker Locker = new();
 
-    public UserRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
+    public UserRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _locker = locker;
         _config = config.Value;
         _logger = logger;
     }
@@ -62,7 +62,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await Locker.WaitAsync(nameof(UpdateUserAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(UpdateUserAsync));
 
             _logger.LogInformation(nameof(UpdateUserAsync));
 
@@ -101,7 +101,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(UpdateUserAsync));
+            _locker.Release(nameof(UpdateUserAsync));
         }
     }
 
@@ -109,7 +109,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await Locker.WaitAsync(nameof(BlockUserAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(BlockUserAsync));
 
             _logger.LogInformation(nameof(BlockUserAsync));
 
@@ -149,7 +149,7 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(BlockUserAsync));
+            _locker.Release(nameof(BlockUserAsync));
         }
     }
 

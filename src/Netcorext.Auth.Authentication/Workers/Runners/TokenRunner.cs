@@ -15,15 +15,16 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<TokenRunner> _logger;
-    private static readonly KeyLocker Locker = new KeyLocker();
 
-    public TokenRunner(RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<TokenRunner> logger)
+    public TokenRunner(RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<TokenRunner> logger)
     {
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _locker = locker;
         _config = config.Value;
         _logger = logger;
     }
@@ -50,7 +51,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
 
         try
         {
-            await Locker.WaitAsync(nameof(UpdateTokenAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(UpdateTokenAsync));
 
             _logger.LogInformation(nameof(UpdateTokenAsync));
 
@@ -65,7 +66,7 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(UpdateTokenAsync));
+            _locker.Release(nameof(UpdateTokenAsync));
         }
     }
 

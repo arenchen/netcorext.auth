@@ -27,6 +27,8 @@ public class ConfigSettings : Config<AppSettings>
     public const string QUEUES_TOKEN_REVOKE_EVENT = "TokenRevokeEvent";
     public const string QUEUES_USER_CHANGE_EVENT = "UserChangeEvent";
     public const string QUEUES_USER_ROLE_CHANGE_EVENT = "UserRoleChangeEvent";
+
+    public const int DEFAULT_WORKER_TASK_LIMIT = 5;
 }
 
 public class AppSettings
@@ -40,7 +42,7 @@ public class AppSettings
     public bool UseNativeStatus { get; set; }
     public long SlowCommandLoggingThreshold { get; set; } = 1000;
     public long StreamMaxLength { get; set; } = 65535;
-    public int? WorkerTaskLimit { get; set; } = 5;
+    public int? WorkerTaskLimit { get; set; } = ConfigSettings.DEFAULT_WORKER_TASK_LIMIT;
     public int? RetryLimit { get; set; } = 3;
     public string RequestIdHeaderName { get; set; } = "X-Request-Id";
     public string[] RequestIdFromHeaderNames { get; set; } = { "X-Request-Id" };

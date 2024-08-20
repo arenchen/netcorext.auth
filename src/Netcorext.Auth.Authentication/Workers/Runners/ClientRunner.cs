@@ -18,16 +18,17 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<UserRunner> _logger;
-    private static readonly KeyLocker Locker = new KeyLocker();
 
-    public ClientRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
+    public ClientRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _locker = locker;
         _config = config.Value;
         _logger = logger;
     }
@@ -59,7 +60,7 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await Locker.WaitAsync(nameof(UpdateClientAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(UpdateClientAsync));
 
             _logger.LogInformation(nameof(UpdateClientAsync));
 
@@ -101,7 +102,7 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(BlockClientAsync));
+            _locker.Release(nameof(BlockClientAsync));
         }
     }
 
@@ -109,7 +110,7 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await Locker.WaitAsync(nameof(BlockClientAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(BlockClientAsync));
 
             _logger.LogInformation(nameof(BlockClientAsync));
 
@@ -149,7 +150,7 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(BlockClientAsync));
+            _locker.Release(nameof(BlockClientAsync));
         }
     }
 

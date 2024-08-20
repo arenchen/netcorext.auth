@@ -20,18 +20,19 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly KeyLocker _locker;
     private readonly IConfiguration _configuration;
     private readonly IProxyConfigProvider _proxyConfigProvider;
     private readonly ConfigSettings _config;
     private readonly ILogger<RouteRunner> _logger;
-    private static readonly KeyLocker Locker = new KeyLocker();
 
-    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, IConfiguration configuration, ILogger<RouteRunner> logger)
+    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, IConfiguration configuration, ILogger<RouteRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _locker = locker;
         _configuration = configuration;
         _proxyConfigProvider = proxyConfigProvider;
         _config = config.Value;
@@ -74,7 +75,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
 
             var result = await dispatcher.SendAsync(request, cancellationToken);
 
-            await Locker.WaitAsync(nameof(UpdateRouteAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(UpdateRouteAsync));
 
             if (result.Content == null || result.Code != Result.Success)
                 return;
@@ -156,7 +157,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(UpdateRouteAsync));
+            _locker.Release(nameof(UpdateRouteAsync));
         }
     }
 

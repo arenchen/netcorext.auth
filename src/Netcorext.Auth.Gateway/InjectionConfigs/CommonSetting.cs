@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Gateway.Settings;
+using Netcorext.Extensions.Threading;
 
 namespace Netcorext.Auth.Gateway.InjectionConfigs;
 
@@ -20,6 +21,15 @@ public class CommonSetting
 
                                               return new SnowflakeJavaScriptSafeInteger(machineId);
                                           });
+
+        services.AddSingleton<KeyLocker>(provider =>
+                                         {
+                                             var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+                                             var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
+                                             var logger = loggerFactory.CreateLogger<KeyLocker>();
+
+                                             return new KeyLocker(logger, maxConcurrent: config.AppSettings.WorkerTaskLimit ?? ConfigSettings.DEFAULT_WORKER_TASK_LIMIT);
+                                         });
 
         services.TryAddSystemJsonSerializer();
     }

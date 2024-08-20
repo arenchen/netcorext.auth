@@ -18,16 +18,17 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
     private readonly ISerializer _serializer;
+    private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<MaintainRunner> _logger;
-    private static readonly KeyLocker Locker = new KeyLocker();
 
-    public MaintainRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<MaintainRunner> logger)
+    public MaintainRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<MaintainRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
         _serializer = serializer;
+        _locker = locker;
         _config = config.Value;
         _logger = logger;
     }
@@ -54,7 +55,7 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
     {
         try
         {
-            await Locker.WaitAsync(nameof(UpdateMaintainAsync), cancellationToken);
+            await _locker.WaitAsync(nameof(UpdateMaintainAsync));
 
             _logger.LogInformation(nameof(UpdateMaintainAsync));
 
@@ -68,7 +69,7 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
         }
         finally
         {
-            Locker.Release(nameof(UpdateMaintainAsync));
+            _locker.Release(nameof(UpdateMaintainAsync));
         }
     }
 
