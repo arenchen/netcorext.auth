@@ -64,6 +64,10 @@ internal class TokenRunner : IWorkerRunner<AuthWorker>
                 _cache.Set(token, Result.UnauthorizedAndCannotRefreshToken, DateTimeOffset.UtcNow.AddMilliseconds(_config.AppSettings.CacheTokenExpires));
             }
         }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "{Message}", e.Message);
+        }
         finally
         {
             _locker.Release(nameof(UpdateTokenAsync));

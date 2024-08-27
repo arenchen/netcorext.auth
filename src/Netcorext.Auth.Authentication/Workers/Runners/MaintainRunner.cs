@@ -17,16 +17,18 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
     private readonly RedisClient _redis;
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheEntryOptions;
     private readonly ISerializer _serializer;
     private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<MaintainRunner> _logger;
 
-    public MaintainRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<MaintainRunner> logger)
+    public MaintainRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, MemoryCacheEntryOptions cacheEntryOptions, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<MaintainRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _cacheEntryOptions = cacheEntryOptions;
         _serializer = serializer;
         _locker = locker;
         _config = config.Value;
@@ -65,7 +67,11 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
 
             if (result.Content == null || result.Code != Result.Success) return;
 
-            _cache.Set($"{ConfigSettings.CACHE_MAINTAIN}", result.Content);
+            _cache.Set($"{ConfigSettings.CACHE_MAINTAIN}", result.Content, _cacheEntryOptions);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "{Message}", e.Message);
         }
         finally
         {

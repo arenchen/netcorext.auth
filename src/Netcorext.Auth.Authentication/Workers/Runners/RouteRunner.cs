@@ -19,6 +19,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
     private readonly RedisClient _redis;
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheEntryOptions;
     private readonly ISerializer _serializer;
     private readonly KeyLocker _locker;
     private readonly IConfiguration _configuration;
@@ -26,11 +27,12 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
     private readonly ConfigSettings _config;
     private readonly ILogger<RouteRunner> _logger;
 
-    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, IConfiguration configuration, ILogger<RouteRunner> logger)
+    public RouteRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, MemoryCacheEntryOptions cacheEntryOptions, ISerializer serializer, KeyLocker locker, IProxyConfigProvider proxyConfigProvider, IOptions<ConfigSettings> config, IConfiguration configuration, ILogger<RouteRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _cacheEntryOptions = cacheEntryOptions;
         _serializer = serializer;
         _locker = locker;
         _configuration = configuration;
@@ -109,7 +111,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
                 }
             }
 
-            _cache.Set(ConfigSettings.CACHE_ROUTE, cacheRouteGroups);
+            _cache.Set(ConfigSettings.CACHE_ROUTE, cacheRouteGroups, _cacheEntryOptions);
 
             var gatewayConfig = _configuration.GetSection("ReverseProxy");
 
@@ -154,6 +156,10 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
                                          .ToArray();
 
             (_proxyConfigProvider as InMemoryConfigProvider)?.Update(routes, clusters);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "{Message}", e.Message);
         }
         finally
         {

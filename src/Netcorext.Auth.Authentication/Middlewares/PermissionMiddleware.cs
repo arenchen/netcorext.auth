@@ -75,7 +75,7 @@ internal class PermissionMiddleware
 
         if (string.IsNullOrWhiteSpace(functionId))
         {
-            _logger.LogWarning("Forbidden");
+            _logger.LogWarning("Forbidden, no function found");
 
             await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
 

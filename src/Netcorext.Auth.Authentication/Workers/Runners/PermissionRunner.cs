@@ -17,17 +17,19 @@ internal class PermissionRunner : IWorkerRunner<AuthWorker>
     private readonly IServiceProvider _serviceProvider;
     private readonly RedisClient _redis;
     private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheEntryOptions;
     private readonly ISerializer _serializer;
     private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<PermissionRunner> _logger;
     private IDisposable? _subscriber;
 
-    public PermissionRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<PermissionRunner> logger)
+    public PermissionRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, MemoryCacheEntryOptions cacheEntryOptions, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<PermissionRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _cacheEntryOptions = cacheEntryOptions;
         _serializer = serializer;
         _locker = locker;
         _config = config.Value;
@@ -91,7 +93,11 @@ internal class PermissionRunner : IWorkerRunner<AuthWorker>
                 cachePermissionRule[id] = i;
             }
 
-            _cache.Set(ConfigSettings.CACHE_PERMISSION_RULE, cachePermissionRule);
+            _cache.Set(ConfigSettings.CACHE_PERMISSION_RULE, cachePermissionRule, _cacheEntryOptions);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "{Message}", e.Message);
         }
         finally
         {

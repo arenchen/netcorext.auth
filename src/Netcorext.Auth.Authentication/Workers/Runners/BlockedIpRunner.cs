@@ -17,17 +17,19 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
     private readonly IServiceProvider _serviceProvider;
     private readonly RedisClient _redis;
     private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheEntryOptions;
     private readonly ISerializer _serializer;
     private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<BlockedIpRunner> _logger;
     private IDisposable? _subscriber;
 
-    public BlockedIpRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<BlockedIpRunner> logger)
+    public BlockedIpRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, MemoryCacheEntryOptions cacheEntryOptions, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<BlockedIpRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _cacheEntryOptions = cacheEntryOptions;
         _serializer = serializer;
         _locker = locker;
         _config = config.Value;
@@ -91,7 +93,11 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
                 cacheBlockedIp[id] = i;
             }
 
-            _cache.Set(ConfigSettings.CACHE_BLOCKED_IP, cacheBlockedIp);
+            _cache.Set(ConfigSettings.CACHE_BLOCKED_IP, cacheBlockedIp, _cacheEntryOptions);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "{Message}", e.Message);
         }
         finally
         {

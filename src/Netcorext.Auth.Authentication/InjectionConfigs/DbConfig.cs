@@ -1,5 +1,6 @@
 using FreeRedis;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Auth.Models;
@@ -68,6 +69,10 @@ public class DbConfig
                                                                                                       }).Client;
                                               });
 
+        services.AddSingleton<MemoryCacheEntryOptions>(_ => new MemoryCacheEntryOptions
+                                                                   {
+                                                                       Priority = CacheItemPriority.NeverRemove
+                                                                   });
         services.AddMemoryCache();
     }
 }

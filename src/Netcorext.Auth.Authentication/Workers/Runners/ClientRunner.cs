@@ -17,16 +17,18 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
     private readonly RedisClient _redis;
     private IDisposable? _subscriber;
     private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheEntryOptions;
     private readonly ISerializer _serializer;
     private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<UserRunner> _logger;
 
-    public ClientRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
+    public ClientRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, MemoryCacheEntryOptions cacheEntryOptions, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<UserRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _cacheEntryOptions = cacheEntryOptions;
         _serializer = serializer;
         _locker = locker;
         _config = config.Value;
@@ -94,7 +96,7 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
                 result.Content.ForEach(t => cacheClient.Add(t.Id, t));
             }
 
-            _cache.Set(ConfigSettings.CACHE_CLIENT, cacheClient);
+            _cache.Set(ConfigSettings.CACHE_CLIENT, cacheClient, _cacheEntryOptions);
         }
         catch (Exception e)
         {
@@ -142,7 +144,7 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
                 result.Content.ForEach(t => cacheBlockedClient.Add(t));
             }
 
-            _cache.Set(ConfigSettings.CACHE_BLOCKED_CLIENT, cacheBlockedClient);
+            _cache.Set(ConfigSettings.CACHE_BLOCKED_CLIENT, cacheBlockedClient, _cacheEntryOptions);
         }
         catch (Exception e)
         {

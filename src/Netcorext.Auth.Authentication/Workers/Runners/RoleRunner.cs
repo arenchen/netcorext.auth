@@ -18,17 +18,19 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
     private readonly IServiceProvider _serviceProvider;
     private readonly RedisClient _redis;
     private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheEntryOptions;
     private readonly ISerializer _serializer;
     private readonly KeyLocker _locker;
     private readonly ConfigSettings _config;
     private readonly ILogger<RoleRunner> _logger;
     private IDisposable? _subscriber;
 
-    public RoleRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<RoleRunner> logger)
+    public RoleRunner(IServiceProvider serviceProvider, RedisClient redis, IMemoryCache cache, MemoryCacheEntryOptions cacheEntryOptions, ISerializer serializer, KeyLocker locker, IOptions<ConfigSettings> config, ILogger<RoleRunner> logger)
     {
         _serviceProvider = serviceProvider;
         _redis = redis;
         _cache = cache;
+        _cacheEntryOptions = cacheEntryOptions;
         _serializer = serializer;
         _locker = locker;
         _config = config.Value;
@@ -99,7 +101,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
                     cacheRolePermission[id] = i;
                 }
 
-                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION, cacheRolePermission);
+                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION, cacheRolePermission, _cacheEntryOptions);
             }
 
             var resultCondition = await dispatcher.SendAsync(new GetRolePermissionCondition
@@ -118,8 +120,12 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
                     cacheRolePermissionCondition[id] = i;
                 }
 
-                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION, cacheRolePermissionCondition);
+                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION, cacheRolePermissionCondition, _cacheEntryOptions);
             }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "{Message}", e.Message);
         }
         finally
         {
