@@ -196,7 +196,13 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
         {
-            await _redis.SetAsync(cache.Key + ":" + signature, result.Content!, cache.ServerDuration.Value);
+            if (!await _redis.SetNxAsync(cache.Key + ":" + signature, result.Content!, cache.ServerDuration.Value))
+            {
+                var cacheResult = await _redis.GetAsync<TokenResult>(cache.Key + ":" + signature);
+
+                if (cacheResult != null)
+                    return Result<TokenResult>.Success.Clone(cacheResult);
+            }
         }
 
         var dsToken = _context.Set<Domain.Entities.Token>();
