@@ -10,6 +10,7 @@ public class CommonSetting
     public CommonSetting(IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<ConfigSettings>(configuration);
+        services.Configure<AuthOptions>(configuration.GetSection("AuthOptions"));
 
         services.AddSingleton<ISnowflake>(provider =>
                                           {
