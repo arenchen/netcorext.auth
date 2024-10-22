@@ -66,6 +66,16 @@ public class RevokeTokenHandler : IRequestHandler<RevokeToken, Result>
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        if (!resourceId.IsEmpty())
+        {
+            var signature = $"user:{resourceId}";
+
+            if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
+            {
+                await _redis.DelAsync(cache.Key + ":" + signature);
+            }
+        }
+
         await _redis.PublishAsync(_config.Queues[ConfigSettings.QUEUES_TOKEN_REVOKE_EVENT], await _serializer.SerializeAsync(lsToken.ToArray(), cancellationToken));
 
         return Result.Success;
