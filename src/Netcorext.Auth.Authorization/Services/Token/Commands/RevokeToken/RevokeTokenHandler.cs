@@ -19,12 +19,14 @@ public class RevokeTokenHandler : IRequestHandler<RevokeToken, Result>
     private readonly DatabaseContext _context;
     private readonly RedisClient _redis;
     private readonly ISerializer _serializer;
+    private readonly ILogger<RevokeTokenHandler> _logger;
     private readonly ConfigSettings _config;
 
-    public RevokeTokenHandler(DatabaseContextAdapter context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config)
+    public RevokeTokenHandler(DatabaseContextAdapter context, RedisClient redis, ISerializer serializer, IOptions<ConfigSettings> config, ILogger<RevokeTokenHandler> logger)
     {
         _context = context;
         _serializer = serializer;
+        _logger = logger;
         _redis = redis;
         _config = config.Value;
     }
@@ -72,7 +74,9 @@ public class RevokeTokenHandler : IRequestHandler<RevokeToken, Result>
 
             if (_config.Caches.TryGetValue(ConfigSettings.CACHE_TOKEN_RETAIN, out var cache) && !cache.Key.IsEmpty() && cache.ServerDuration is > 0 && !signature.IsEmpty())
             {
-                await _redis.DelAsync(cache.Key + ":" + signature);
+                var delCount = await _redis.DelAsync(cache.Key + ":" + signature);
+
+                _logger.LogDebug("Delete redis cache: {Key}, delete count: {Count}", cache.Key + ":" + signature, delCount);
             }
         }
 
