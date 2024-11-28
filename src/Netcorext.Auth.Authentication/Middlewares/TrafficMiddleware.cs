@@ -49,7 +49,7 @@ public class TrafficMiddleware
                               UserAgent = context.Request.Headers.GetUserAgent()
                           };
 
-            _loggerTraffic.LogTrace("{@Traffic}", traffic);
+            _loggerTraffic.LogInformation("{@Traffic}", traffic);
         }
         catch (Exception e)
         {
