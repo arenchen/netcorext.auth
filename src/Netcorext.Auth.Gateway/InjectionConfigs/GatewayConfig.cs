@@ -20,7 +20,7 @@ public class GatewayConfig
                                    builder.AddXForwardedFor(action: ForwardedTransformActions.Append);
                                    builder.AddResponseTransform(ctx =>
                                                                 {
-                                                                    if (ctx.ProxyResponse == null || !ctx.ProxyResponse.Headers.TryGetValues(requestIdHeaderName, out var requestIds))
+                                                                    if (ctx.ProxyResponse == null || string.IsNullOrWhiteSpace(requestIdHeaderName) || !ctx.ProxyResponse.Headers.TryGetValues(requestIdHeaderName, out var requestIds))
                                                                         return ValueTask.CompletedTask;
 
                                                                     var requestIdHeader = string.Join(',', requestIds);

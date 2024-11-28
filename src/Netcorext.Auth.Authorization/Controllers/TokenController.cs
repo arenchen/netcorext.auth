@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Netcorext.Auth.Attributes;
 using Netcorext.Auth.Authorization.Models;
 using Netcorext.Auth.Authorization.Services.Token.Commands;
+using Netcorext.Contracts;
 using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Contracts.AspNetCore;
 using Netcorext.Mediator;
@@ -31,6 +32,7 @@ public class TokenController : ControllerBase
     [ProducesResponseType(typeof(TokenResult), 200)]
     [ProducesResponseType(typeof(TokenResult), 400)]
     [ProducesResponseType(typeof(TokenResult), 401)]
+    [ProducesResponseType(typeof(TokenResult), 403)]
     public async Task<IActionResult> PostAsync(CreateToken request, CancellationToken cancellationToken = default)
     {
         return await ExecuteAsync(request, cancellationToken);
