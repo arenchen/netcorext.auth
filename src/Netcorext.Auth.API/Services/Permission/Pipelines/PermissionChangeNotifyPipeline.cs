@@ -1,10 +1,8 @@
 using FreeRedis;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Services.Permission.Commands;
 using Netcorext.Auth.API.Settings;
 using Netcorext.Contracts;
-using Netcorext.EntityFramework.UserIdentityPattern;
 using Netcorext.Mediator.Pipelines;
 using Netcorext.Serialization;
 

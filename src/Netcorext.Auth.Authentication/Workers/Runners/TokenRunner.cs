@@ -3,7 +3,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Contracts;
-using Netcorext.Extensions.Threading;
 using Netcorext.Serialization;
 using Netcorext.Worker;
 

@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Netcorext.EntityFramework.UserIdentityPattern.Entities.Mapping;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Netcorext.Auth.Domain.Entities.Mapping;
 

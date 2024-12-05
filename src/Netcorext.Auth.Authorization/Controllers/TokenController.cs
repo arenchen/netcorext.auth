@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Netcorext.Auth.Attributes;
 using Netcorext.Auth.Authorization.Models;
 using Netcorext.Auth.Authorization.Services.Token.Commands;
-using Netcorext.Contracts;
 using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Contracts.AspNetCore;
 using Netcorext.Mediator;

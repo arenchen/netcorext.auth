@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Services.Client.Queries;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Extensions.Linq;
-using Netcorext.Extensions.Threading;
 using Netcorext.Mediator;
 using Netcorext.Serialization;
 using Netcorext.Worker;

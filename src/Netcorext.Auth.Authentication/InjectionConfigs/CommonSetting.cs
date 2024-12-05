@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Netcorext.Algorithms;
 using Netcorext.Auth.Authentication.Settings;
-using Netcorext.Extensions.Threading;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
 

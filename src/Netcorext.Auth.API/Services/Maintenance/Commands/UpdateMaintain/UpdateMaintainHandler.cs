@@ -3,7 +3,6 @@ using Netcorext.Mediator;
 using FreeRedis;
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.API.Settings;
-using Netcorext.Serialization;
 
 namespace Netcorext.Auth.API.Services.Maintenance.Commands;
 
