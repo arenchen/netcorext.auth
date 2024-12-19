@@ -37,12 +37,13 @@ public class AppConfig
                     });
 
 
+        app.UseDefaultHealthChecks(config.Route.RoutePrefix + config.Route.HealthRoute, config.Route.HealthRoute);
+
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger((config.Route.RoutePrefix + config.Document.Url).ToLower());
         }
 
-        app.UseDefaultHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
         app.MapControllers();
         app.MapGrpcService<AuthorizationServiceFacade>();
 

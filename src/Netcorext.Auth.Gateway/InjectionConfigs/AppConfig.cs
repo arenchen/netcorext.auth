@@ -19,6 +19,8 @@ public class AppConfig
         if (config.AppSettings.EnableAspNetCoreLogger)
             app.UseAspNetCoreLogger();
 
+        app.UseJwtAuthentication();
+
         app.UseCors(b =>
                     {
                         b.SetIsOriginAllowed(host =>
@@ -33,8 +35,8 @@ public class AppConfig
                          .AllowCredentials();
                     });
 
-        app.UseJwtAuthentication();
-        app.UseDefaultHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
+        app.UseDefaultHealthChecks(config.Route.RoutePrefix + config.Route.HealthRoute, config.Route.HealthRoute);
+
         app.MapGrpcService<RouteServiceFacade>();
         app.MapReverseProxy();
 

@@ -41,7 +41,7 @@ public class AppConfig
                          .AllowCredentials();
                     });
 
-        app.UseDefaultHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
+        app.UseDefaultHealthChecks(config.Route.RoutePrefix + config.Route.HealthRoute, config.Route.HealthRoute);
 
         app.MapGrpcService<ClientServiceFacade>();
         app.MapGrpcService<PermissionServiceFacade>();

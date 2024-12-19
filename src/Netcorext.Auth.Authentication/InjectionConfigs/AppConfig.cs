@@ -38,12 +38,13 @@ public class AppConfig
         if (config.AppSettings.EnableTraffic)
             app.UseMiddleware<TrafficMiddleware>();
 
+        app.UseDefaultHealthChecks(config.Route.RoutePrefix + config.Route.HealthRoute, config.Route.HealthRoute);
+
         app.UseMiddleware<BlockedIpMiddleware>();
         app.UseMiddleware<TokenMiddleware>();
         app.UseJwtAuthentication();
         app.UseMiddleware<MaintainMiddleware>();
         app.UseMiddleware<PermissionMiddleware>();
-        app.UseDefaultHealthChecks(_ => (config.Route.RoutePrefix + config.Route.HealthRoute).ToLower());
         app.MapGrpcService<PermissionValidationServiceFacade>();
         app.MapGrpcService<TokenValidationServiceFacade>();
         app.MapReverseProxy();
