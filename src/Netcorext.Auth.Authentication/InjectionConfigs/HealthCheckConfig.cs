@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Configuration.Extensions;
+using Netcorext.Diagnostics.HealthChecks.MemoryCache;
 using Netcorext.Diagnostics.HealthChecks.PostgreSql;
 using Netcorext.Diagnostics.HealthChecks.Redis;
 using Netcorext.EntityFramework.UserIdentityPattern.Helpers;
@@ -14,6 +15,15 @@ public class HealthCheckConfig
     {
         services.AddHealthChecks()
                 .AddVersion()
+                .AddMemoryCache(provider =>
+                                {
+                                    var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;
+
+                                    return new MemoryCacheHealthCheckerOptions
+                                           {
+                                               CheckKeys = config.AppSettings.CheckCacheKeys
+                                           };
+                                }, "MemoryCache")
                 .AddPostgreSql(provider =>
                                {
                                    var config = provider.GetRequiredService<IOptions<ConfigSettings>>().Value;

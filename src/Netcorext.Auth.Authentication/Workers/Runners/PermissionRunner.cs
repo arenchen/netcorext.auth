@@ -93,6 +93,7 @@ internal class PermissionRunner : IWorkerRunner<AuthWorker>
             }
 
             _cache.Set(ConfigSettings.CACHE_PERMISSION_RULE, cachePermissionRule, _cacheEntryOptions);
+            _cache.Set(ConfigSettings.CACHE_PERMISSION_RULE_CHECK_KEY, cachePermissionRule.Count);
         }
         catch (Exception e)
         {

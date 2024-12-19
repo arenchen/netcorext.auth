@@ -101,6 +101,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
                 }
 
                 _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION, cacheRolePermission, _cacheEntryOptions);
+                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_CHECK_KEY, cacheRolePermission.Count);
             }
 
             var resultCondition = await dispatcher.SendAsync(new GetRolePermissionCondition
@@ -120,6 +121,7 @@ internal class RoleRunner : IWorkerRunner<AuthWorker>
                 }
 
                 _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION, cacheRolePermissionCondition, _cacheEntryOptions);
+                _cache.Set(ConfigSettings.CACHE_ROLE_PERMISSION_CONDITION_CHECK_KEY, cacheRolePermissionCondition.Count);
             }
         }
         catch (Exception e)

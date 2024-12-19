@@ -96,6 +96,7 @@ internal class ClientRunner : IWorkerRunner<AuthWorker>
             }
 
             _cache.Set(ConfigSettings.CACHE_CLIENT, cacheClient, _cacheEntryOptions);
+            _cache.Set(ConfigSettings.CACHE_CLIENT_CHECK_KEY, cacheClient.Count);
         }
         catch (Exception e)
         {

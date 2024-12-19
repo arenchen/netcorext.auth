@@ -7,6 +7,7 @@ namespace Netcorext.Auth.Gateway.Settings;
 public class ConfigSettings : Config<AppSettings>
 {
     public const string CACHE_ROUTE = "Route";
+    public const string CACHE_ROUTE_CHECK_KEY = "RouteCache";
     public const string QUEUES_HEALTH_CHECK_EVENT = "HealthCheckEvent";
     public const string QUEUES_ROUTE_CHANGE_EVENT = "RouteChangeEvent";
 
@@ -23,4 +24,5 @@ public class AppSettings
     public string RequestIdHeaderName { get; set; } = "X-Request-Id";
     public string[] RequestIdFromHeaderNames { get; set; } = { "X-Request-Id" };
     public bool EnableAspNetCoreLogger { get; set; }
+    public Dictionary<string, int>? CheckCacheKeys { get; set; }
 }

@@ -109,6 +109,7 @@ internal class RouteRunner : IWorkerRunner<AuthWorker>
             }
 
             _cache.Set(ConfigSettings.CACHE_ROUTE, cacheRouteGroups, _cacheEntryOptions);
+            _cache.Set(ConfigSettings.CACHE_ROUTE_CHECK_KEY, cacheRouteGroups.Count);
 
             var clusters = cacheRouteGroups.Values
                                            .Select(t => new ClusterConfig
