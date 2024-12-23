@@ -99,7 +99,6 @@ internal class UserRunner : IWorkerRunner<AuthWorker>
             }
 
             _cache.Set(ConfigSettings.CACHE_USER_PERMISSION_CONDITION, cacheUserPermissionCondition, _cacheEntryOptions);
-            _cache.Set(ConfigSettings.CACHE_USER_PERMISSION_CONDITION_CHECK_KEY, cacheUserPermissionCondition.Count);
         }
         catch (Exception e)
         {

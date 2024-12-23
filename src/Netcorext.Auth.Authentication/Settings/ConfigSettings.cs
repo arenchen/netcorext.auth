@@ -22,9 +22,7 @@ public class ConfigSettings : Config<AppSettings>
     public const string CACHE_CLIENT_CHECK_KEY = "ClientCache";
     public const string CACHE_PERMISSION_RULE_CHECK_KEY = "PermissionRuleCache";
     public const string CACHE_ROLE_PERMISSION_CHECK_KEY = "RolePermissionCache";
-    public const string CACHE_ROLE_PERMISSION_CONDITION_CHECK_KEY = "RolePermissionConditionCache";
     public const string CACHE_ROUTE_CHECK_KEY = "RouteCache";
-    public const string CACHE_USER_PERMISSION_CONDITION_CHECK_KEY = "UserPermissionConditionCache";
 
 
     public const string QUEUES_BLOCKED_IP_CHANGE_EVENT = "BlockedIpChangeEvent";
