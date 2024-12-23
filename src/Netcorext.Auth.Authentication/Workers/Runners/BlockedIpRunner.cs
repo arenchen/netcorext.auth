@@ -93,7 +93,6 @@ internal class BlockedIpRunner : IWorkerRunner<AuthWorker>
             }
 
             _cache.Set(ConfigSettings.CACHE_BLOCKED_IP, cacheBlockedIp, _cacheEntryOptions);
-            _cache.Set(ConfigSettings.CACHE_BLOCKED_IP_CHECK_KEY, cacheBlockedIp.Count);
         }
         catch (Exception e)
         {

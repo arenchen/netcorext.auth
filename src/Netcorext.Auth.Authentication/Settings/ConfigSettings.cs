@@ -19,10 +19,7 @@ public class ConfigSettings : Config<AppSettings>
     public const string CACHE_USER_ROLE = "UserRole";
 
 
-    public const string CACHE_BLOCKED_IP_CHECK_KEY = "BlockedIpCache";
-    public const string CACHE_BLOCKED_USER_CHECK_KEY = "BlockedUserCache";
     public const string CACHE_CLIENT_CHECK_KEY = "ClientCache";
-    public const string CACHE_MAINTAIN_CHECK_KEY = "MaintainCache";
     public const string CACHE_PERMISSION_RULE_CHECK_KEY = "PermissionRuleCache";
     public const string CACHE_ROLE_PERMISSION_CHECK_KEY = "RolePermissionCache";
     public const string CACHE_ROLE_PERMISSION_CONDITION_CHECK_KEY = "RolePermissionConditionCache";

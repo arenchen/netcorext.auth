@@ -67,7 +67,6 @@ internal class MaintainRunner : IWorkerRunner<AuthWorker>
             if (result.Content == null || result.Code != Result.Success) return;
 
             _cache.Set($"{ConfigSettings.CACHE_MAINTAIN}", result.Content, _cacheEntryOptions);
-            _cache.Set(ConfigSettings.CACHE_MAINTAIN_CHECK_KEY, 1);
         }
         catch (Exception e)
         {
