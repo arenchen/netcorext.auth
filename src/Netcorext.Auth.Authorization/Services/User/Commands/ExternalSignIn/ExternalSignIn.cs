@@ -18,12 +18,7 @@ public class ExternalSignIn : IRequest<Result<TokenResult>>
     public int? TokenExpireSeconds { get; set; }
     public int? RefreshTokenExpireSeconds { get; set; }
     public int? CodeExpireSeconds { get; set; }
-    public UserRole[]? Roles { get; set; }
+    public Role[]? Roles { get; set; }
     public bool ThrowErrorWhenUserNotFound { get; set; }
-
-    public class UserRole
-    {
-        public long RoleId { get; set; }
-        public DateTimeOffset? ExpireDate { get; set; }
-    }
+    public bool IncludeRolesInfo { get; set; }
 }

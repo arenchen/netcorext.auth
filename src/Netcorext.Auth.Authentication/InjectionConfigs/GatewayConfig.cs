@@ -1,3 +1,4 @@
+using Netcorext.Auth.Authentication.Settings;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms;
 
@@ -8,7 +9,7 @@ public class GatewayConfig
 {
     public GatewayConfig(IServiceCollection services, IConfiguration configuration)
     {
-        var requestIdHeaderName = configuration.GetValue<string>("AppSettings:RequestIdHeaderName");
+        var cfg = configuration.Get<ConfigSettings>()!;
 
         var gatewayConfig = configuration.GetSection("ReverseProxy");
 
@@ -26,7 +27,7 @@ public class GatewayConfig
 
                                        builder.AddResponseTransform(ctx =>
                                                                     {
-                                                                        if (ctx.ProxyResponse == null || !ctx.ProxyResponse.Headers.TryGetValues(requestIdHeaderName, out var requestIds))
+                                                                        if (ctx.ProxyResponse == null || !ctx.ProxyResponse.Headers.TryGetValues(cfg.AppSettings.RequestIdHeaderName, out var requestIds))
                                                                             return ValueTask.CompletedTask;
 
                                                                         var requestIdHeader = string.Join(',', requestIds);
@@ -34,7 +35,7 @@ public class GatewayConfig
                                                                         if (string.IsNullOrWhiteSpace(requestIdHeader))
                                                                             return ValueTask.CompletedTask;
 
-                                                                        ctx.HttpContext.Response.Headers[requestIdHeaderName] = requestIdHeader;
+                                                                        ctx.HttpContext.Response.Headers[cfg.AppSettings.RequestIdHeaderName] = requestIdHeader;
 
                                                                         return ValueTask.CompletedTask;
                                                                     });

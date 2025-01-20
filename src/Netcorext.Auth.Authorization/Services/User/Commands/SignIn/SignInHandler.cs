@@ -109,14 +109,23 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var scopes = entity.Roles
-                           .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                           .OrderBy(t => t.Role.Priority)
-                           .Select(t => t.RoleId)
-                           .ToArray();
+        var roles = entity.Roles
+                          .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                          .Select(t => new Role
+                                       {
+                                           Id = t.RoleId,
+                                           Name = t.Role.Name,
+                                           Priority = t.Role.Priority,
+                                           ExpireDate = t.ExpireDate
+                                       })
+                          .OrderBy(t => t.Priority)
+                          .ToArray();
 
-        var scope = scopes.Length > 0 ? string.Join(' ', scopes) : null;
-        var label = scopes.Length > 0 ? entity.Roles.FirstOrDefault(t => t.RoleId == scopes.First())?.Role.Name : null;
+        var scope = roles.Any() ? roles.Select(t => t.Id.ToString()).Aggregate((c, n) => c + " " + n) : null;
+
+        var label = roles.Length > 0
+                        ? roles[0].Name
+                        : null;
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), null, entity.DisplayName, entity.TokenExpireSeconds, scope, label);
 
@@ -130,7 +139,9 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                                                            AccessToken = accessToken.Token,
                                                            Scope = scope,
                                                            RefreshToken = refreshToken.Token,
-                                                           ExpiresIn = entity.TokenExpireSeconds
+                                                           ExpiresIn = entity.TokenExpireSeconds,
+                                                           NameId = entity.Id.ToString(),
+                                                           Roles = request.IncludeRolesInfo ? roles : null
                                                        });
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)

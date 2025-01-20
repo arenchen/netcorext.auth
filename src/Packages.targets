@@ -1,7 +1,7 @@
 <Project>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0.*" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="6.*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.*" />
+    <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.*" />
     <PackageReference Include="Mapster" Version="7.3.*" />
     <PackageReference Include="FreeRedis" Version="1.*" />
   </ItemGroup>

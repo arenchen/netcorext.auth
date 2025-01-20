@@ -25,10 +25,11 @@ public class AppConfig
                     {
                         b.SetIsOriginAllowed(host =>
                                              {
-                                                 var allowList = app.Configuration.GetValue("AllowedHosts", string.Empty)
+                                                 var allowList = app.Configuration
+                                                                    .GetValue("AllowedHosts", string.Empty)?
                                                                     .Split(";", StringSplitOptions.RemoveEmptyEntries);
 
-                                                 return allowList.Any(h => h.Equals(host, StringComparison.OrdinalIgnoreCase) || h == "*");
+                                                 return allowList != null && allowList.Any(h => h.Equals(host, StringComparison.OrdinalIgnoreCase) || h == "*");
                                              })
                          .AllowAnyHeader()
                          .AllowAnyMethod()
@@ -38,6 +39,12 @@ public class AppConfig
         app.UseDefaultHealthChecks(config.Route.RoutePrefix + config.Route.HealthRoute, config.Route.HealthRoute);
 
         app.MapGrpcService<RouteServiceFacade>();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.MapGrpcReflectionService();
+        }
+
         app.MapReverseProxy();
 
         app.Run();

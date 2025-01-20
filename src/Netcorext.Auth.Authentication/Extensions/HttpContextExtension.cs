@@ -87,12 +87,12 @@ public static class HttpContextExtension
         await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(msg));
     }
 
-    public static string GetPath(this HttpRequest request)
+    public static string? GetPath(this HttpRequest request)
     {
         return request.Headers.TryGetValue("X-Forwarded-Uri", out var xpath) ? xpath : request.Path;
     }
 
-    public static string GetMethod(this HttpRequest request)
+    public static string? GetMethod(this HttpRequest request)
     {
         return request.Headers.TryGetValue("X-Forwarded-Method", out var xmethod) ? xmethod : request.Method;
     }

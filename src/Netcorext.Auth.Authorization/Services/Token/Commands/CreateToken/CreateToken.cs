@@ -39,4 +39,8 @@ public class CreateToken : IRequest<Result<TokenResult>>
     [FromForm(Name = "refresh_token")]
     [JsonPropertyName("refresh_token")]
     public string? RefreshToken { get; set; }
+
+    [FromForm(Name = "include_roles_info")]
+    [JsonPropertyName("include_roles_info")]
+    public bool IncludeRolesInfo { get; set; }
 }

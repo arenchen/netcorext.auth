@@ -41,7 +41,6 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
     {
         var dsExternalLogin = _context.Set<Domain.Entities.UserExternalLogin>();
         var dsUser = _context.Set<Domain.Entities.User>();
-        var dsRole = _context.Set<Domain.Entities.Role>();
         var username = request.Username;
         var creationDate = DateTimeOffset.UtcNow;
 
@@ -123,7 +122,7 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                       .Select(t => new Domain.Entities.UserRole
                                                    {
                                                        Id = id,
-                                                       RoleId = t.RoleId,
+                                                       RoleId = t.Id,
                                                        ExpireDate = t.ExpireDate ?? Core.Constants.MaxDateTime
                                                    })
                                       .ToArray() ?? Array.Empty<Domain.Entities.UserRole>()
@@ -164,18 +163,22 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        var scopes = entity.Roles
-                           .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                           .OrderBy(t => t.Role.Priority)
-                           .Select(t => t.RoleId)
-                           .ToArray();
+        var roles = entity.Roles
+                          .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                          .Select(t => new Role
+                                       {
+                                           Id = t.RoleId,
+                                           Name = t.Role.Name,
+                                           Priority = t.Role.Priority,
+                                           ExpireDate = t.ExpireDate
+                                       })
+                          .OrderBy(t => t.Priority)
+                          .ToArray();
 
-        var scope = scopes.Length > 0 ? string.Join(' ', scopes) : null;
+        var scope = roles.Any() ? roles.Select(t => t.Id.ToString()).Aggregate((c, n) => c + " " + n) : null;
 
-        var label = scopes.Length > 0
-                        ? isNewRegister
-                              ? (await dsRole.FirstOrDefaultAsync(t => t.Id == scopes.First(), cancellationToken))?.Name
-                              : entity.Roles.FirstOrDefault(t => t.RoleId == scopes.First())?.Role.Name
+        var label = roles.Length > 0
+                        ? roles[0].Name
                         : null;
 
         var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.User, entity.Id.ToString(), request.UniqueId, entity.DisplayName, entity.TokenExpireSeconds, scope, label);
@@ -191,7 +194,8 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                            Scope = scope,
                                                            RefreshToken = refreshToken.Token,
                                                            ExpiresIn = accessToken.ExpiresIn,
-                                                           NameId = entity.Id.ToString()
+                                                           NameId = entity.Id.ToString(),
+                                                           Roles = request.IncludeRolesInfo ? roles : null
                                                        });
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)

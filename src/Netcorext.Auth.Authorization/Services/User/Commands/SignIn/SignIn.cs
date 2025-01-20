@@ -9,4 +9,5 @@ public class SignIn : IRequest<Result<TokenResult>>
     public string Username { get; set; } = null!;
     public string Password { get; set; } = null!;
     public string? Otp { get; set; }
+    public bool IncludeRolesInfo { get; set; }
 }

@@ -27,4 +27,7 @@ public class TokenResult
 
     [JsonPropertyName("error_description")]
     public string? ErrorDescription { get; set; }
+
+    [JsonPropertyName("roles")]
+    public virtual ICollection<Role>? Roles { get; set; }
 }

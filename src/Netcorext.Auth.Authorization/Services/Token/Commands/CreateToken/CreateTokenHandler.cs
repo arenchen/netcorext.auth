@@ -74,6 +74,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         var dsClient = _context.Set<Domain.Entities.Client>();
 
         var client = await dsClient.Include(t => t.Roles)
+                                   .ThenInclude(t => t.Role)
                                    .FirstOrDefaultAsync(t => t.Id == clientId, cancellationToken);
 
         if (client == null)
@@ -109,28 +110,42 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                 return Result<TokenResult>.Success.Clone(cacheResult);
         }
 
-        var clientScope = client.Roles.Any() ? client.Roles.Select(t => t.RoleId.ToString()).Aggregate((c, n) => c + " " + n) : null;
+        var roles = client.Roles
+                          .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                          .Select(t => new Role
+                                       {
+                                           Id = t.RoleId,
+                                           Name = t.Role.Name,
+                                           Priority = t.Role.Priority,
+                                           ExpireDate = t.ExpireDate
+                                       })
+                          .OrderBy(t => t.Priority)
+                          .ToArray();
 
-        if (!TokenHelper.ScopeCheck(clientScope, request.Scope))
+        var scope = roles.Any() ? roles.Select(t => t.Id.ToString()).Aggregate((c, n) => c + " " + n) : null;
+
+        if (!TokenHelper.ScopeCheck(scope, request.Scope))
             return Result<TokenResult>.InvalidInput.Clone(new TokenResult
                                                           {
                                                               Error = Constants.OAuth.INVALID_SCOPE,
                                                               ErrorDescription = string.Format(Constants.OAuth.INVALID_SCOPE_MESSAGE, request.Scope)
                                                           });
 
-        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.Name, client.TokenExpireSeconds, request.Scope ?? clientScope);
+        var accessToken = _jwtGenerator.Generate(TokenType.AccessToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.Name, client.TokenExpireSeconds, request.Scope ?? scope);
 
         var refreshToken = client.AllowedRefreshToken || _authOptions.AllowedRefreshToken
-                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.Name, client.RefreshTokenExpireSeconds, request.Scope ?? clientScope)
+                               ? _jwtGenerator.Generate(TokenType.RefreshToken, ResourceType.Client, client.Id.ToString(), request.UniqueId, client.Name, client.RefreshTokenExpireSeconds, request.Scope ?? scope)
                                : JwtGenerator.DefaultGenerateEmpty;
 
         var result = Result<TokenResult>.Success.Clone(new TokenResult
                                                        {
                                                            TokenType = Constants.OAuth.TOKEN_TYPE_BEARER,
                                                            AccessToken = accessToken.Token,
-                                                           Scope = request.Scope ?? clientScope,
+                                                           Scope = request.Scope ?? scope,
                                                            RefreshToken = refreshToken.Token,
-                                                           ExpiresIn = accessToken.ExpiresIn
+                                                           ExpiresIn = accessToken.ExpiresIn,
+                                                           NameId = client.Id.ToString(),
+                                                           Roles = request.IncludeRolesInfo ? roles : null
                                                        });
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
@@ -249,16 +264,22 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                 return Result<TokenResult>.Success.Clone(cacheResult);
         }
 
-        var scopes = user.Roles
-                         .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
-                         .OrderBy(t => t.Role.Priority)
-                         .Select(t => t.RoleId)
-                         .ToArray();
+        var roles = user.Roles
+                        .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                        .Select(t => new Role
+                                     {
+                                         Id = t.RoleId,
+                                         Name = t.Role.Name,
+                                         Priority = t.Role.Priority,
+                                         ExpireDate = t.ExpireDate
+                                     })
+                        .OrderBy(t => t.Priority)
+                        .ToArray();
 
-        var scope = scopes.Length > 0 ? string.Join(' ', scopes) : null;
+        var scope = roles.Any() ? roles.Select(t => t.Id.ToString()).Aggregate((c, n) => c + " " + n) : null;
 
-        var label = scopes.Length > 0
-                        ? user.Roles.FirstOrDefault(t => t.RoleId == scopes.First())?.Role.Name
+        var label = roles.Length > 0
+                        ? roles[0].Name
                         : null;
 
         if (!TokenHelper.ScopeCheck(scope, request.Scope))
@@ -280,7 +301,9 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                            AccessToken = accessToken.Token,
                                                            Scope = request.Scope ?? scope,
                                                            RefreshToken = refreshToken.Token,
-                                                           ExpiresIn = accessToken.ExpiresIn
+                                                           ExpiresIn = accessToken.ExpiresIn,
+                                                           NameId = user.Id.ToString(),
+                                                           Roles = request.IncludeRolesInfo ? roles : null
                                                        });
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
@@ -444,7 +467,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                            });
 
             if (request.Scope == "*")
-                scope = string.Join(' ', roles);
+                scope = roles.Any() ? roles.Select(t => t.Id.ToString()).Aggregate((c, n) => c + " " + n) : null;
             else if (!string.IsNullOrWhiteSpace(request.Scope))
                 scope = request.Scope;
 
@@ -460,7 +483,9 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                AccessToken = accessToken.Token,
                                                                Scope = scope,
                                                                RefreshToken = refreshToken.Token,
-                                                               ExpiresIn = accessToken.ExpiresIn
+                                                               ExpiresIn = accessToken.ExpiresIn,
+                                                               NameId = resourceId,
+                                                               Roles = request.IncludeRolesInfo ? roles : null
                                                            });
 
             if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
@@ -521,7 +546,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         }
     }
 
-    private async Task<(bool Disabled, long[] roles, string? label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
+    private async Task<(bool Disabled, Role[] roles, string? label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
     {
         return resourceType switch
                {
@@ -531,7 +556,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                };
     }
 
-    private async Task<(bool Disabled, long[] roles, string? label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
+    private async Task<(bool Disabled, Role[] roles, string? label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
@@ -541,32 +566,58 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                              .ThenInclude(t => t.Role)
                              .FirstOrDefaultAsync(t => t.Id == id);
 
-        if (entity == null) throw new Exception("Resource not found.");
+        if (entity == null)
+            throw new Exception("Resource not found.");
 
-        var roles = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow)
-                        ? entity.Roles.Where(t => t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId).ToArray()
-                        : Array.Empty<long>();
+        var roles = entity.Roles
+                          .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                          .Select(t => new Role
+                                       {
+                                           Id = t.RoleId,
+                                           Name = t.Role.Name,
+                                           Priority = t.Role.Priority,
+                                           ExpireDate = t.ExpireDate
+                                       })
+                          .OrderBy(t => t.Priority)
+                          .ToArray();
 
-        var label = roles.Length > 0 ? entity.Roles.FirstOrDefault(t => t.RoleId == roles.First())?.Role.Name : null;
+        var label = roles.Length > 0
+                        ? roles[0].Name
+                        : null;
 
         return (entity.Disabled, roles, label, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
     }
 
-    private async Task<(bool Disabled, long[] roles, string? label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
+    private async Task<(bool Disabled, Role[] roles, string? label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
         var ds = _context.Set<Domain.Entities.Client>();
 
-        var entity = await ds.FirstOrDefaultAsync(t => t.Id == id);
+        var entity = await ds.Include(t => t.Roles)
+                             .ThenInclude(t => t.Role)
+                             .FirstOrDefaultAsync(t => t.Id == id);
 
-        if (entity == null) throw new Exception("Resource not found.");
+        if (entity == null)
+            throw new Exception("Resource not found.");
 
-        var roles = entity.Roles.Any(t => t.ExpireDate > DateTimeOffset.UtcNow)
-                        ? entity.Roles.Where(t => t.ExpireDate > DateTimeOffset.UtcNow).Select(t => t.RoleId).ToArray()
-                        : Array.Empty<long>();
+        var roles = entity.Roles
+                          .Where(t => t.ExpireDate > DateTimeOffset.UtcNow && !t.Role.Disabled)
+                          .Select(t => new Role
+                                       {
+                                           Id = t.RoleId,
+                                           Name = t.Role.Name,
+                                           Priority = t.Role.Priority,
+                                           ExpireDate = t.ExpireDate
+                                       })
+                          .OrderBy(t => t.Priority)
+                          .ToArray();
 
-        return (entity.Disabled, roles, null, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+        var label = roles.Length > 0
+                        ? roles[0].Name
+                        : null;
+
+        return (entity.Disabled, roles, label, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
     }
 
     private Task<bool> IsValidAsync(string grantType)

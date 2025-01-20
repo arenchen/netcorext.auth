@@ -54,6 +54,15 @@ internal class PermissionMiddleware
         var path = context.Request.GetPath();
         var method = context.Request.GetMethod();
 
+        if (string.IsNullOrWhiteSpace(method))
+        {
+            _logger.LogWarning("Forbidden, no method found");
+
+            await context.ForbiddenAsync(_config.AppSettings.UseNativeStatus);
+
+            return;
+        }
+
         var endpoints = permissionEndpoints.Values
                                            .SelectMany(t => t.Routes)
                                            .Where(t => t.HttpMethod.Equals(method, StringComparison.CurrentCultureIgnoreCase));

@@ -14,7 +14,7 @@ public class DbConfig
 {
     public DbConfig(IServiceCollection services, IConfiguration config)
     {
-        var cfg = config.Get<ConfigSettings>();
+        var cfg = config.Get<ConfigSettings>()!;
         var slowCommandLoggingThreshold = cfg.AppSettings.SlowCommandLoggingThreshold;
         var mainDb = cfg.Connections.RelationalDb["Default"];
         var slaveDb = cfg.Connections.RelationalDb["Slave"];

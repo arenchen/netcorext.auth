@@ -1,3 +1,4 @@
+using Netcorext.Auth.Authentication.Settings;
 using Netcorext.Logging.HttpClientLogger;
 
 namespace Netcorext.Auth.Authentication.InjectionConfigs;
@@ -7,13 +8,11 @@ public class HttpConfig
 {
     public HttpConfig(IServiceCollection services, IConfiguration configuration)
     {
-        var requestIdHeaderName = configuration.GetValue<string>("AppSettings:RequestIdHeaderName");
-        var requestIdFromHeaderNames = configuration.GetSection("AppSettings:RequestIdFromHeaderNames").Get<string[]>();
+        var cfg = configuration.Get<ConfigSettings>()!;
 
         services.AddContextState();
-
         services.AddHttpClient("")
-                .AddRequestId(requestIdHeaderName, requestIdFromHeaderNames)
+                .AddRequestId(cfg.AppSettings.RequestIdHeaderName, cfg.AppSettings.RequestIdFromHeaderNames)
                 .AddLoggingHttpMessage();
     }
 }

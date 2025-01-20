@@ -10,7 +10,7 @@ public class MvcConfig
 {
     public MvcConfig(IServiceCollection services, IConfiguration configuration)
     {
-        var config = configuration.Get<ConfigSettings>();
+        var config = configuration.Get<ConfigSettings>()!;
 
         services.AddHttpLogging(options =>
                                 {

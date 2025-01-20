@@ -25,7 +25,7 @@ public class UpdateBlockedIpHandler : IRequestHandler<UpdateBlockedIp, Result>
 
         if (entity == null) return Result.NotFound;
 
-        var (beginRange, endRange, mask) = IpHelper.ParseCidrToRange(request.Cidr);
+        var (beginRange, endRange, mask) = IpHelper.ParseCidrToRange(request.Cidr!);
 
         if (beginRange == 0 && endRange == 0 && mask == 0)
             return Result<IEnumerable<long>>.InvalidInput;
