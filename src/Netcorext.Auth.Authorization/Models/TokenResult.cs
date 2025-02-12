@@ -30,4 +30,14 @@ public class TokenResult
 
     [JsonPropertyName("roles")]
     public virtual ICollection<Role>? Roles { get; set; }
+
+    [JsonPropertyName("hasPassword")]
+    public bool? HasPassword { get; set; }
+
+    [JsonPropertyName("emailConfirmed")]
+    public bool? EmailConfirmed { get; set; }
+
+    [JsonPropertyName("phoneNumberConfirmed")]
+    public bool? PhoneNumberConfirmed { get; set; }
+
 }

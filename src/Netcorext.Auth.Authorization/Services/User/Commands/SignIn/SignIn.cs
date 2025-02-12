@@ -10,4 +10,5 @@ public class SignIn : IRequest<Result<TokenResult>>
     public string Password { get; set; } = null!;
     public string? Otp { get; set; }
     public bool IncludeRolesInfo { get; set; }
+    public bool IncludeConfirmedInfo { get; set; }
 }

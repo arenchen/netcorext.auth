@@ -16,7 +16,6 @@ public class ConfigSettings : Config<AppSettings>
 
 public class AppSettings
 {
-    public RegisterConfig? RegisterConfig { get; set; }
     public string LockPrefixKey { get; set; } = Assembly.GetEntryAssembly()!.GetName().Name!.ToLower();
     public long SlowCommandLoggingThreshold { get; set; } = 1000;
     public int? WorkerTaskLimit { get; set; } = ConfigSettings.DEFAULT_WORKER_TASK_LIMIT;

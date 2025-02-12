@@ -35,7 +35,7 @@
     <PackageReference Include="Netcorext.Extensions.DependencyInjection.AspNetCore" Version="1.0.1-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Grpc" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Hash" Version="1.0.*" />
-    <PackageReference Include="Netcorext.Extensions.Linq" Version="1.0.1-dev.*" />
+    <PackageReference Include="Netcorext.Extensions.Linq" Version="1.0.2-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Mapster.Protobufs" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Extensions.Redis" Version="1.0.0-dev.*" />
     <PackageReference Include="Netcorext.Logging.AspNetCoreLogger" Version="1.0.1-dev.*" />

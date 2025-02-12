@@ -42,15 +42,12 @@ public class ConfigSettings : Config<AppSettings>
 
 public class AppSettings
 {
-    public RegisterConfig? RegisterConfig { get; set; }
-    public string LockPrefixKey { get; set; } = Assembly.GetEntryAssembly()!.GetName().Name!.ToLower();
     public string[]? InternalHost { get; set; }
     public long[]? Owner { get; set; }
     public bool ValidationPassUserId { get; set; }
     public int CacheTokenExpires { get; set; } = 30 * 60 * 1000;
     public bool UseNativeStatus { get; set; }
     public long SlowCommandLoggingThreshold { get; set; } = 1000;
-    public long StreamMaxLength { get; set; } = 65535;
     public int? WorkerTaskLimit { get; set; } = ConfigSettings.DEFAULT_WORKER_TASK_LIMIT;
     public int? RetryLimit { get; set; } = 3;
     public string RequestIdHeaderName { get; set; } = "X-Request-Id";

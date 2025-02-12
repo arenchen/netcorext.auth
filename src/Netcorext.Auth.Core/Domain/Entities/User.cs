@@ -8,7 +8,7 @@ public class User : Entity
     public string NormalizedUsername { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
     public string NormalizedDisplayName { get; set; } = null!;
-    public string Password { get; set; } = null!;
+    public string? Password { get; set; }
     public string? Email { get; set; }
     public string? NormalizedEmail { get; set; }
     public bool EmailConfirmed { get; set; }

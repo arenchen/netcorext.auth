@@ -8,7 +8,7 @@ public class CreateUser : IRequest<Result<long?>>
     public long? CustomId { get; set; }
     public string Username { get; set; } = null!;
     public string? DisplayName { get; set; }
-    public string Password { get; set; } = null!;
+    public string? Password { get; set; }
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
     public bool TwoFactorEnabled { get; set; }
