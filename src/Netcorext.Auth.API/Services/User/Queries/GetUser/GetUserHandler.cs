@@ -103,6 +103,7 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                                        Id = t2.Id,
                                                                                        Username = t2.Username,
                                                                                        DisplayName = t2.DisplayName,
+                                                                                       HasPassword = t2.Password != null && t2.Password != "",
                                                                                        Email = t2.Email,
                                                                                        EmailConfirmed = t2.EmailConfirmed,
                                                                                        PhoneNumber = t2.PhoneNumber,
