@@ -306,7 +306,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                            Roles = request.IncludeRolesInfo ? roles : null,
                                                            HasPassword = request.IncludeConfirmedInfo ? !user.Password.IsEmpty() : null,
                                                            EmailConfirmed = request.IncludeConfirmedInfo ? user.EmailConfirmed : null,
-                                                           PhoneNumberConfirmed = request.IncludeConfirmedInfo ? user.PhoneNumberConfirmed : null
+                                                           PhoneNumberConfirmed = request.IncludeConfirmedInfo ? user.PhoneNumberConfirmed : null,
+                                                           Verified = user.Verified
                                                        });
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
@@ -460,7 +461,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
 
         try
         {
-            var (disabled, roles, hasPassword, emailConfirmed, phoneNumberConfirmed, label, allowedRefreshToken, tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
+            var (verified, disabled, roles, hasPassword, emailConfirmed, phoneNumberConfirmed, label, allowedRefreshToken, tokenExpireSeconds, refreshTokenExpireSeconds, _) = await GetResourceExpireSecondsAsync(resourceType, resourceId!);
 
             if (disabled)
                 return Result<TokenResult>.Forbidden.Clone(new TokenResult
@@ -491,7 +492,8 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                                                                Roles = request.IncludeRolesInfo ? roles : null,
                                                                HasPassword = request.IncludeConfirmedInfo ? hasPassword : null,
                                                                EmailConfirmed = request.IncludeConfirmedInfo ? emailConfirmed : null,
-                                                               PhoneNumberConfirmed = request.IncludeConfirmedInfo ? phoneNumberConfirmed : null
+                                                               PhoneNumberConfirmed = request.IncludeConfirmedInfo ? phoneNumberConfirmed : null,
+                                                               Verified = verified
                                                            });
 
             if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)
@@ -552,7 +554,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
         }
     }
 
-    private async Task<(bool Disabled, Role[] Roles, bool? HasPassword, bool? EmailConfirmed, bool? PhoneNumberConfirmed, string? Label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
+    private async Task<(bool Verified, bool Disabled, Role[] Roles, bool? HasPassword, bool? EmailConfirmed, bool? PhoneNumberConfirmed, string? Label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetResourceExpireSecondsAsync(ResourceType resourceType, string resourceId)
     {
         return resourceType switch
                {
@@ -562,7 +564,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                };
     }
 
-    private async Task<(bool Disabled, Role[] Roles, bool? HasPassword, bool? EmailConfirmed, bool? PhoneNumberConfirmed, string? Label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
+    private async Task<(bool Verified, bool Disabled, Role[] Roles, bool? HasPassword, bool? EmailConfirmed, bool? PhoneNumberConfirmed, string? Label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetUserExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
@@ -591,10 +593,10 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         ? roles[0].Name
                         : null;
 
-        return (entity.Disabled, roles, !entity.Password.IsEmpty(), entity.EmailConfirmed, entity.PhoneNumberConfirmed, label, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+        return (entity.Verified, entity.Disabled, roles, !entity.Password.IsEmpty(), entity.EmailConfirmed, entity.PhoneNumberConfirmed, label, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
     }
 
-    private async Task<(bool Disabled, Role[] Roles, bool? HasPassword, bool? EmailConfirmed, bool? PhoneNumberConfirmed, string? Label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
+    private async Task<(bool Verified, bool Disabled, Role[] Roles, bool? HasPassword, bool? EmailConfirmed, bool? PhoneNumberConfirmed, string? Label, bool AllowedRefreshToken, int? TokenExpireSeconds, int? RefreshTokenExpireSeconds, int? CodeExpireSeconds)> GetClientExpireSecondsAsync(string resourceId)
     {
         if (resourceId.IsEmpty() || !long.TryParse(resourceId, out var id)) throw new ArgumentException($"Invalid {nameof(resourceId)}.");
 
@@ -623,7 +625,7 @@ public class CreateTokenHandler : IRequestHandler<CreateToken, Result<TokenResul
                         ? roles[0].Name
                         : null;
 
-        return (entity.Disabled, roles, null, null, null, label, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
+        return (false, entity.Disabled, roles, null, null, null, label, entity.AllowedRefreshToken, entity.TokenExpireSeconds, entity.RefreshTokenExpireSeconds, entity.CodeExpireSeconds);
     }
 
     private Task<bool> IsValidAsync(string grantType)

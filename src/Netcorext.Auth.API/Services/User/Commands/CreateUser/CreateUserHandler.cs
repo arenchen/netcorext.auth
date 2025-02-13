@@ -4,6 +4,7 @@ using Netcorext.Algorithms;
 using Netcorext.Auth.Domain.Entities;
 using Netcorext.Contracts;
 using Netcorext.EntityFramework.UserIdentityPattern;
+using Netcorext.Extensions.Commons;
 using Netcorext.Extensions.Hash;
 using Netcorext.Mediator;
 
@@ -51,11 +52,15 @@ public class CreateUserHandler : IRequestHandler<CreateUser, Result<long?>>
                                 NormalizedUsername = request.Username.ToUpper(),
                                 DisplayName = request.DisplayName ?? request.Username,
                                 NormalizedDisplayName = (request.DisplayName ?? request.Username).ToUpper(),
-                                Password = request.Password?.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
+                                Password = request.Password.IsEmpty() ? request.Password : request.Password?.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
                                 Email = request.Email,
+                                EmailConfirmed = request.EmailConfirmed,
                                 NormalizedEmail = request.Email?.ToUpper(),
                                 PhoneNumber = request.PhoneNumber,
+                                PhoneNumberConfirmed = request.PhoneNumberConfirmed,
                                 Otp = request.TwoFactorEnabled ? Otp.GenerateRandomKey().ToBase32String() : null,
+                                Verified = request.Verified,
+                                Disabled = request.Disabled,
                                 TwoFactorEnabled = request.TwoFactorEnabled,
                                 RequiredChangePassword = request.RequiredChangePassword,
                                 AllowedRefreshToken = request.AllowedRefreshToken,

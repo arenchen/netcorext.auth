@@ -110,10 +110,13 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                        NormalizedUsername = username.ToUpper(),
                        DisplayName = request.DisplayName ?? request.Username,
                        NormalizedDisplayName = (request.DisplayName ?? request.Username).ToUpper(),
-                       Password = Guid.NewGuid().ToString().Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
+                       Password = request.Password.IsEmpty() ? request.Password : request.Password.Pbkdf2HashCode(creationDate.ToUnixTimeMilliseconds()),
                        Email = request.Email,
+                       EmailConfirmed = request.EmailConfirmed ?? false,
                        NormalizedEmail = request.Email?.ToUpper(),
                        PhoneNumber = request.PhoneNumber,
+                       PhoneNumberConfirmed = request.PhoneNumberConfirmed ?? false,
+                       Verified = request.Verified ?? false,
                        AllowedRefreshToken = request.AllowedRefreshToken,
                        TokenExpireSeconds = request.TokenExpireSeconds ?? _authOptions.TokenExpireSeconds,
                        RefreshTokenExpireSeconds = request.RefreshTokenExpireSeconds ?? _authOptions.RefreshTokenExpireSeconds,
@@ -195,7 +198,11 @@ public class ExternalSignInHandler : IRequestHandler<ExternalSignIn, Result<Toke
                                                            RefreshToken = refreshToken.Token,
                                                            ExpiresIn = accessToken.ExpiresIn,
                                                            NameId = entity.Id.ToString(),
-                                                           Roles = request.IncludeRolesInfo ? roles : null
+                                                           Roles = request.IncludeRolesInfo ? roles : null,
+                                                           HasPassword = request.IncludeConfirmedInfo ? !entity.Password.IsEmpty() : null,
+                                                           EmailConfirmed = request.IncludeConfirmedInfo ? entity.EmailConfirmed : null,
+                                                           PhoneNumberConfirmed = request.IncludeConfirmedInfo ? entity.PhoneNumberConfirmed : null,
+                                                           Verified = entity.Verified
                                                        });
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)

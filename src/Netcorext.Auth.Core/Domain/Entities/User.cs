@@ -26,6 +26,7 @@ public class User : Entity
     public DateTimeOffset? LastSignInDate { get; set; }
     public string? LastSignInIp { get; set; }
     public bool Disabled { get; set; }
+    public bool Verified { get; set; }
 
     public virtual ICollection<UserRole> Roles { get; set; } = new HashSet<UserRole>();
     public virtual ICollection<UserExtendData> ExtendData { get; set; } = new HashSet<UserExtendData>();

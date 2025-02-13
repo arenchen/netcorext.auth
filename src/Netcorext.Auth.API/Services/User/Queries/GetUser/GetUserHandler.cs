@@ -42,6 +42,8 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
 
         if (!request.PhoneNumberConfirmed.IsEmpty()) predicate = predicate.And(p => p.PhoneNumberConfirmed == request.PhoneNumberConfirmed);
 
+        if (!request.Verified.IsEmpty()) predicate = predicate.And(p => p.Verified == request.Verified);
+
         if (!request.Disabled.IsEmpty()) predicate = predicate.And(p => p.Disabled == request.Disabled);
 
         if (request.Role != null)
@@ -118,6 +120,7 @@ public class GetUserHandler : IRequestHandler<GetUser, Result<IEnumerable<Models
                                                                                        CodeExpireSeconds = t2.CodeExpireSeconds,
                                                                                        LastSignInDate = t2.LastSignInDate,
                                                                                        LastSignInIp = t2.LastSignInIp,
+                                                                                       Verified = t2.Verified,
                                                                                        Disabled = t2.Disabled,
                                                                                        CreationDate = t2.CreationDate,
                                                                                        CreatorId = t2.CreatorId,

@@ -20,6 +20,7 @@ public class User
     public int? CodeExpireSeconds { get; set; }
     public DateTimeOffset? LastSignInDate { get; set; }
     public string? LastSignInIp { get; set; }
+    public bool Verified { get; set; }
     public bool Disabled { get; set; }
     public DateTimeOffset CreationDate { get; set; }
     public long CreatorId { get; set; }

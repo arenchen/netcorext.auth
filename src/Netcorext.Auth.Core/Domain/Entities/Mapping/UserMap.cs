@@ -26,6 +26,8 @@ public class UserMap : EntityMap<User>
 
         Builder.HasIndex(t => t.Disabled);
 
+        Builder.HasIndex(t => t.Verified);
+
         // Properties
         Builder.Property(t => t.Username)
                .HasColumnName(nameof(User.Username))
@@ -94,5 +96,8 @@ public class UserMap : EntityMap<User>
 
         Builder.Property(t => t.Disabled)
                .HasColumnName(nameof(User.Disabled));
+
+        Builder.Property(t => t.Verified)
+               .HasColumnName(nameof(User.Verified));
     }
 }

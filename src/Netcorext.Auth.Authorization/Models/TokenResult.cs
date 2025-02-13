@@ -40,4 +40,7 @@ public class TokenResult
     [JsonPropertyName("phoneNumberConfirmed")]
     public bool? PhoneNumberConfirmed { get; set; }
 
+    [JsonPropertyName("verified")]
+    public bool? Verified { get; set; }
+
 }

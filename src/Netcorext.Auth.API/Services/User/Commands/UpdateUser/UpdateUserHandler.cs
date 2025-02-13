@@ -63,10 +63,18 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                 .UpdateProperty(t => t.RequiredChangePassword, request.RequiredChangePassword)
                 .UpdateProperty(t => t.Email, request.Email, true, user =>
                                                                    {
-                                                                       _context.Entry(user).UpdateProperty(t => t.EmailConfirmed, false);
+                                                                       if (!request.EmailConfirmed.HasValue)
+                                                                           _context.Entry(user).UpdateProperty(t => t.EmailConfirmed, false);
+
                                                                        _context.Entry(user).UpdateProperty(t => t.NormalizedEmail, request.Email?.ToUpper());
                                                                    })
-                .UpdateProperty(t => t.PhoneNumber, request.PhoneNumber, true, user => { _context.Entry(user).UpdateProperty(t => t.PhoneNumberConfirmed, false); })
+                .UpdateProperty(t => t.PhoneNumber, request.PhoneNumber, true, user =>
+                                                                               {
+                                                                                   if (!request.PhoneNumberConfirmed.HasValue)
+                                                                                       _context.Entry(user).UpdateProperty(t => t.PhoneNumberConfirmed, false);
+
+                                                                                   _context.Entry(user).UpdateProperty(t => t.PhoneNumberConfirmed, false);
+                                                                               })
                 .UpdateProperty(t => t.AllowedRefreshToken, request.AllowedRefreshToken)
                 .UpdateProperty(t => t.TokenExpireSeconds, request.TokenExpireSeconds)
                 .UpdateProperty(t => t.RefreshTokenExpireSeconds, request.RefreshTokenExpireSeconds)
@@ -74,6 +82,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUser, Result>
                 .UpdateProperty(t => t.RequiredChangePassword, request.RequiredChangePassword)
                 .UpdateProperty(t => t.TwoFactorEnabled, request.TwoFactorEnabled, true, user => { _context.Entry(user).UpdateProperty(t => t.Otp, user.TwoFactorEnabled ? Otp.GenerateRandomKey().ToBase32String() : null); })
                 .UpdateProperty(t => t.Otp, request.TwoFactorEnabled.HasValue && request.TwoFactorEnabled.Value ? Otp.GenerateRandomKey().ToBase32String() : null)
+                .UpdateProperty(t => t.Verified, request.Verified)
                 .UpdateProperty(t => t.Disabled, request.Disabled, true, user =>
                                                                          {
                                                                              if (user.Disabled)

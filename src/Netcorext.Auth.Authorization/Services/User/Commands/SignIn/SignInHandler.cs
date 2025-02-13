@@ -141,7 +141,11 @@ public class SignInHandler : IRequestHandler<SignIn, Result<TokenResult>>
                                                            RefreshToken = refreshToken.Token,
                                                            ExpiresIn = entity.TokenExpireSeconds,
                                                            NameId = entity.Id.ToString(),
-                                                           Roles = request.IncludeRolesInfo ? roles : null
+                                                           Roles = request.IncludeRolesInfo ? roles : null,
+                                                           HasPassword = request.IncludeConfirmedInfo ? !entity.Password.IsEmpty() : null,
+                                                           EmailConfirmed = request.IncludeConfirmedInfo ? entity.EmailConfirmed : null,
+                                                           PhoneNumberConfirmed = request.IncludeConfirmedInfo ? entity.PhoneNumberConfirmed : null,
+                                                           Verified = entity.Verified
                                                        });
 
         if (cache != null && !cache.Key.IsEmpty() && cache.ServerDuration is > 0)

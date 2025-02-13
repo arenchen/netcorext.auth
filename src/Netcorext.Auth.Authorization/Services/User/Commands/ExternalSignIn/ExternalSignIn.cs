@@ -8,11 +8,15 @@ public class ExternalSignIn : IRequest<Result<TokenResult>>
 {
     public long? CustomId { get; set; }
     public string Username { get; set; } = null!;
+    public string? Password { get; set; }
     public string? DisplayName { get; set; }
     public string Provider { get; set; } = null!;
     public string UniqueId { get; set; } = null!;
     public string? Email { get; set; }
+    public bool? EmailConfirmed { get; set; }
     public string? PhoneNumber { get; set; }
+    public bool? PhoneNumberConfirmed { get; set; }
+    public bool? Verified { get; set; }
     public string? Otp { get; set; }
     public bool AllowedRefreshToken { get; set; }
     public int? TokenExpireSeconds { get; set; }

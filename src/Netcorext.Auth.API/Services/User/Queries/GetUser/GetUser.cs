@@ -12,6 +12,7 @@ public class GetUser : IRequest<Result<IEnumerable<Models.User>>>
     public bool? EmailConfirmed { get; set; }
     public string? PhoneNumber { get; set; }
     public bool? PhoneNumberConfirmed { get; set; }
+    public bool? Verified { get; set; }
     public bool? Disabled { get; set; }
     public UserRole? Role { get; set; }
     public UserExtendData[]? ExtendData { get; set; }
